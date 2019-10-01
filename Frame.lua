@@ -81,6 +81,14 @@ end
 
 function Frame:OnShow()
     PlaySound(SOUNDKIT.IG_BACKPACK_OPEN)
+
+    for key,value in pairs(self) do
+        print("found member " .. key);
+    end
+
+    for key,value in pairs(self.EmblemFrame) do
+        print("2found member " .. key);
+    end
     Frame:UpdateTabard()
 end
 
@@ -148,7 +156,7 @@ function Frame:UpdateEmblem()
 	if ( tabardBorderID < 10 ) then
 		tabardBorderID = "0"..tabardBorderID;
 	end
-	GuildBankEmblemBackgroundUL:SetTexture(format(TABARDBACKGROUNDUPPER, tabardBGID));
+	self.EmblemFrame.BackgroundUL:SetTexture(format(TABARDBACKGROUNDUPPER, tabardBGID));
 	GuildBankEmblemBackgroundUR:SetTexture(format(TABARDBACKGROUNDUPPER, tabardBGID));
 	GuildBankEmblemBackgroundBL:SetTexture(format(TABARDBACKGROUNDLOWER, tabardBGID));
 	GuildBankEmblemBackgroundBR:SetTexture(format(TABARDBACKGROUNDLOWER, tabardBGID));
@@ -171,7 +179,7 @@ function Frame:UpdateTabard()
 		tabardBackgroundUpper = "Textures\\GuildEmblems\\Background_49_TU_U";
 		tabardBackgroundLower = "Textures\\GuildEmblems\\Background_49_TL_U";
 	end
-	GuildBankEmblemBackgroundUL:SetTexture(tabardBackgroundUpper);
+	self.EmblemFrame.BackgroundUL:SetTexture(tabardBackgroundUpper);
 	GuildBankEmblemBackgroundUR:SetTexture(tabardBackgroundUpper);
 	GuildBankEmblemBackgroundBL:SetTexture(tabardBackgroundLower);
 	GuildBankEmblemBackgroundBR:SetTexture(tabardBackgroundLower);

@@ -131,7 +131,8 @@
 	</Frame>
 
     <Frame name="PLGuildBankFrame" resizable="true" clampedToScreen="true" enableMouse="true" movable="true"
-	       topLevel="true" frameStrata="HIGH" parent="UIParent" inherits="BasicFrameTemplate" hidden="true" virtual="true">
+	       topLevel="true" frameStrata="HIGH" parent="UIParent" hidden="true"
+	       inherits="ButtonFrameTemplate" virtual="true">
 		<Size>
 			<AbsDimension x="769" y="444"/>
 		</Size>
@@ -283,7 +284,7 @@
 			</Layer>
 		</Layers>
 		<Frames>
-			<Frame name="PLGuildBankEmblemFrame">
+			<Frame parentKey="EmblemFrame" name="PLGuildBankEmblemFrame">
 				<Size>
 					<AbsDimension x="700" y="80"/>
 				</Size>
@@ -318,7 +319,7 @@
 						</Texture>
 					</Layer>
 					<Layer level="BACKGROUND">
-						<Texture name="PLGuildBankEmblemBackgroundUL">
+						<Texture  parentKey="BackgroundUL" name="PLGuildBankEmblemBackgroundUL">
 							<Size>
 								<AbsDimension x="40" y="40"/>
 							</Size>
