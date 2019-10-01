@@ -1,0 +1,670 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\..\FrameXML\UI.xsd">
+    <Button name="PLGuildBankItemButtonTemplate" inherits="ItemButtonTemplate" virtual="true">
+		<Frames>
+			<Cooldown name="$parentCooldown" inherits="CooldownFrameTemplate"/>
+		</Frames>
+		<Scripts>
+			<OnClick>
+                return;
+			</OnClick>
+			<OnLoad>
+				--PLGuildBankItemButton_OnLoad(self);
+			</OnLoad>
+			<OnEnter>
+				--PLGuildBankItemButton_OnEnter(self, motion);
+			</OnEnter>
+			<OnLeave>
+				self.updateTooltip = nil;
+				GameTooltip:Hide();
+				ResetCursor();
+			</OnLeave>
+			<OnHide>
+			</OnHide>
+			<OnUpdate>
+				--PLGuildBankItemButton_OnUpdate(self, elapsed);
+			</OnUpdate>
+			<OnEvent>
+				if ( GameTooltip:IsOwned(self) ) then
+					--PLGuildBankItemButton_OnEnter(self);
+				end
+			</OnEvent>
+		</Scripts>
+	</Button>
+
+    <Frame name="PLGuildBankTabTemplate" enableMouse="true" virtual="true">
+		<Size>
+			<AbsDimension x="42" y="50"/>
+		</Size>
+		<Anchors>
+			<Anchor point="TOPLEFT">
+				<Offset x="0" y="0"/>
+			</Anchor>
+		</Anchors>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture file="Interface\GuildBankFrame\UI-GuildBankFrame-Tab">
+					<Size>
+						<AbsDimension x="64" y="64"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Frames>
+			<CheckButton name="$parentButton">
+				<Size>
+					<AbsDimension x="36" y="34"/>
+				</Size>
+			 	<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset x="2" y="-8"/>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BORDER">
+						<Texture name="$parentIconTexture"/>
+						<FontString name="$parentCount" inherits="NumberFontNormal" justifyH="RIGHT" hidden="true">
+							<Anchors>
+								<Anchor point="BOTTOMRIGHT">
+									<Offset>
+										<AbsDimension x="-5" y="2"/>
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</FontString>
+					</Layer>
+					<Layer level="ARTWORK">
+						<Texture name="$parentSearchOverlay" parentKey="searchOverlay" setAllPoints="true" hidden="true" textureSubLevel="4">
+							<Color r="0" g="0" b="0" a="0.8"/>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnLoad>
+						self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
+						self:RegisterEvent("INVENTORY_SEARCH_UPDATE");
+					</OnLoad>
+					<OnEvent>
+						if ( event == "INVENTORY_SEARCH_UPDATE" and self:IsVisible()) then
+							--local _,_,_,_,_,_, filtered = GetPLGuildBankTabInfo(self:GetParent():GetID());
+							--if ( filtered ) then
+							--	self.searchOverlay:Show();
+							--else
+							--	self.searchOverlay:Hide();
+							--end
+						end
+					</OnEvent>
+					<OnClick>
+						local currentTab = self:GetParent():GetID();
+						if ( GetCurrentPLGuildBankTab() ~= currentTab or button == "RightButton" ) then
+							PlaySound("GuildBankOpenBag");
+						end
+						--PLGuildBankTab_OnClick(self, button, currentTab);
+					</OnClick>
+					<OnEnter>
+						GameTooltip:SetOwner(self, "ANCHOR_LEFT");
+						GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, 1);
+					</OnEnter>
+					<OnLeave>
+						GameTooltip:Hide();
+					</OnLeave>
+				</Scripts>
+				<NormalTexture name="$parentNormalTexture" file="Interface\Buttons\UI-Quickslot2">
+					<Size>
+						<AbsDimension x="60" y="60"/>
+					</Size>
+					<Anchors>
+						<Anchor point="CENTER">
+							<Offset>
+								<AbsDimension x="0" y="-1"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</NormalTexture>
+				<PushedTexture file="Interface\Buttons\UI-Quickslot-Depress"/>
+				<HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD"/>
+				<CheckedTexture alphaMode="ADD" file="Interface\Buttons\CheckButtonHilight"/>
+			</CheckButton>
+		</Frames>
+	</Frame>
+
+    <Frame name="PLGuildBankFrame" resizable="true" clampedToScreen="true" enableMouse="true" movable="true"
+	       topLevel="true" frameStrata="HIGH" parent="UIParent" inherits="BasicFrameTemplate" hidden="true" virtual="true">
+		<Size>
+			<AbsDimension x="769" y="444"/>
+		</Size>
+		<Anchors>
+			<Anchor point="TOPLEFT">
+				<Offset>
+					<AbsDimension x="0" y="-104"/>
+				</Offset>
+			</Anchor>
+		</Anchors>
+		<Layers>
+			<Layer level="OVERLAY">
+				<Texture name="PLGuildBankTabTitleBackground" file="Interface\GuildBankFrame\UI-TabNameBorder">
+					<Size>
+						<AbsDimension x="10" y="18"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOP" relativeTo="$parent" relativePoint="TOP">
+							<Offset x="6" y="-43"/>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0.0625" right="0.546875" top="0" bottom="0.5625"/>
+				</Texture>
+				<Texture name="PLGuildBankTabTitleBackgroundLeft" file="Interface\GuildBankFrame\UI-TabNameBorder">
+					<Size>
+						<AbsDimension x="8" y="18"/>
+					</Size>
+					<Anchors>
+						<Anchor point="RIGHT" relativeTo="PLGuildBankTabTitleBackground" relativePoint="LEFT"/>
+					</Anchors>
+					<TexCoords left="0" right="0.0625" top="0" bottom="0.5625"/>
+				</Texture>
+				<Texture name="PLGuildBankTabTitleBackgroundRight" file="Interface\GuildBankFrame\UI-TabNameBorder">
+					<Size>
+						<AbsDimension x="8" y="18"/>
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT" relativeTo="PLGuildBankTabTitleBackground" relativePoint="RIGHT"/>
+					</Anchors>
+					<TexCoords left="0.546875" right="0.609375" top="0" bottom="0.5625"/>
+				</Texture>
+				<FontString name="PLGuildBankTabTitle" inherits="GameFontNormal">
+					<Anchors>
+						<Anchor point="CENTER" relativeTo="PLGuildBankTabTitleBackground">
+							<Offset x="0" y="1"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<Texture name="PLGuildBankTabLimitBackground" file="Interface\GuildBankFrame\UI-TabNameBorder">
+					<Size>
+						<AbsDimension x="10" y="18"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOP" relativeTo="$parent" relativePoint="TOP">
+							<Offset x="6" y="-388"/>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0.0625" right="0.546875" top="0" bottom="0.5625"/>
+				</Texture>
+				<Texture name="PLGuildBankTabLimitBackgroundLeft" file="Interface\GuildBankFrame\UI-TabNameBorder">
+					<Size>
+						<AbsDimension x="8" y="18"/>
+					</Size>
+					<Anchors>
+						<Anchor point="RIGHT" relativeTo="PLGuildBankTabLimitBackground" relativePoint="LEFT"/>
+					</Anchors>
+					<TexCoords left="0" right="0.0625" top="0" bottom="0.5625"/>
+				</Texture>
+				<Texture name="PLGuildBankTabLimitBackgroundRight" file="Interface\GuildBankFrame\UI-TabNameBorder">
+					<Size>
+						<AbsDimension x="8" y="18"/>
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT" relativeTo="PLGuildBankTabLimitBackground" relativePoint="RIGHT"/>
+					</Anchors>
+					<TexCoords left="0.546875" right="0.609375" top="0" bottom="0.5625"/>
+				</Texture>
+				<FontString name="PLGuildBankLimitLabel" inherits="GameFontNormalSmall">
+					<Anchors>
+						<Anchor point="CENTER" relativeTo="PLGuildBankTabLimitBackground">
+							<Offset x="0" y="1"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="PLGuildBankCashFlowLabel" inherits="GameFontNormalSmall" text="PLGuildBANK_CASHFLOW">
+					<Anchors>
+						<Anchor point="LEFT" relativeTo="PLGuildBankTabLimitBackground">
+							<Offset x="4" y="1"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="PLGuildBankMoneyLimitLabel" inherits="GameFontNormalSmall" text="PLGuildBANK_AVAILABLE_MONEY">
+					<Size x="0" y="13"/>
+					<Anchors>
+						<Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT">
+							<Offset x="26" y="16"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="PLGuildBankMoneyUnlimitedLabel" inherits="GameFontHighlightSmall" text="UNLIMITED">
+					<Size x="0" y="13"/>
+					<Anchors>
+						<Anchor point="LEFT" relativeTo="PLGuildBankMoneyLimitLabel" relativePoint="RIGHT">
+							<Offset x="5" y="0"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+			<Layer level="ARTWORK">
+				<FontString name="PLGuildBankErrorMessage" inherits="GameFontNormal" text="NO_PLGuildBANK_TABS">
+					<Anchors>
+						<Anchor point="TOP" relativeTo="$parent" relativePoint="TOP">
+							<Offset x="0" y="-216"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<Texture name="PLGuildBankFrameLeft" file="Interface\GuildBankFrame\UI-GuildBankFrame-Left">
+					<Size>
+						<AbsDimension x="512" y="512"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+					</Anchors>
+				</Texture>
+				<Texture name="PLGuildBankFrameRight" file="Interface\GuildBankFrame\UI-GuildBankFrame-Right">
+					<Size>
+						<AbsDimension x="512" y="512"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeTo="PLGuildBankFrameLeft" relativePoint="TOPRIGHT">
+							<Offset x="0" y="-11"/>
+						</Anchor>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentPortrait">
+                    <Size>
+                        <AbsDimension x="40" y="40"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="7" y="-5"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </Texture>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Frame name="PLGuildBankEmblemFrame">
+				<Size>
+					<AbsDimension x="700" y="80"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOP" relativeTo="$parent" relativePoint="TOP">
+						<Offset x="-70" y="46"/>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="ARTWORK">
+						<Texture name="PLGuildBankEmblemFrameLeft" file="Interface\GuildBankFrame\UI-GuildBankFrame-EmblemBorder">
+							<Size>
+								<AbsDimension x="512" y="80"/>
+							</Size>
+							<Anchors>
+								<Anchor point="TOPLEFT">
+									<Offset x="0" y="0"/>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0" right="1" top="0" bottom="0.3125"/>
+						</Texture>
+						<Texture name="PLGuildBankEmblemFrameRight" file="Interface\GuildBankFrame\UI-GuildBankFrame-EmblemBorder">
+							<Size>
+								<AbsDimension x="512" y="79"/>
+							</Size>
+							<Anchors>
+								<Anchor point="TOPLEFT" relativeTo="PLGuildBankEmblemFrameLeft" relativePoint="TOPRIGHT">
+									<Offset x="0" y="-1"/>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0" right="1" top="0.31640625" bottom="0.625"/>
+						</Texture>
+					</Layer>
+					<Layer level="BACKGROUND">
+						<Texture name="PLGuildBankEmblemBackgroundUL">
+							<Size>
+								<AbsDimension x="40" y="40"/>
+							</Size>
+							<Anchors>
+								<Anchor point="TOP" relativeTo="PLGuildBankEmblemFrame" relativePoint="TOP">
+									<Offset x="56" y="-19"/>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0.5" right="1" top="0" bottom="1"/>
+						</Texture>
+						<Texture name="PLGuildBankEmblemBackgroundUR">
+							<Size>
+								<AbsDimension x="40" y="40"/>
+							</Size>
+							<Anchors>
+								<Anchor point="LEFT" relativeTo="PLGuildBankEmblemBackgroundUL" relativePoint="RIGHT">
+									<Offset x="0" y="0"/>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="1" right="0.5" top="0" bottom="1"/>
+						</Texture>
+						<Texture name="PLGuildBankEmblemBackgroundBL">
+							<Size>
+								<AbsDimension x="40" y="20"/>
+							</Size>
+							<Anchors>
+								<Anchor point="TOP" relativeTo="PLGuildBankEmblemBackgroundUL" relativePoint="BOTTOM">
+									<Offset x="0" y="0"/>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0.5" right="1" top="0" bottom="1"/>
+						</Texture>
+						<Texture name="PLGuildBankEmblemBackgroundBR">
+							<Size>
+								<AbsDimension x="40" y="20"/>
+							</Size>
+							<Anchors>
+								<Anchor point="LEFT" relativeTo="PLGuildBankEmblemBackgroundBL" relativePoint="RIGHT">
+									<Offset x="0" y="0"/>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="1" right="0.5" top="0" bottom="1"/>
+						</Texture>
+					</Layer>
+					<Layer level="BORDER">
+						<Texture name="PLGuildBankEmblemBorderUL">
+							<Size>
+								<AbsDimension x="40" y="40"/>
+							</Size>
+							<Anchors>
+								<Anchor point="TOPLEFT" relativeTo="PLGuildBankEmblemBackgroundUL">
+									<Offset x="0" y="0"/>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0.5" right="1" top="0" bottom="1"/>
+						</Texture>
+						<Texture name="PLGuildBankEmblemBorderUR">
+							<Size>
+								<AbsDimension x="40" y="40"/>
+							</Size>
+							<Anchors>
+								<Anchor point="LEFT" relativeTo="PLGuildBankEmblemBorderUL" relativePoint="RIGHT">
+									<Offset x="0" y="0"/>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="1" right="0.5" top="0" bottom="1"/>
+						</Texture>
+						<Texture name="PLGuildBankEmblemBorderBL">
+							<Size>
+								<AbsDimension x="40" y="20"/>
+							</Size>
+							<Anchors>
+								<Anchor point="TOP" relativeTo="PLGuildBankEmblemBorderUL" relativePoint="BOTTOM">
+									<Offset x="0" y="0"/>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0.5" right="1" top="0" bottom="1"/>
+						</Texture>
+						<Texture name="PLGuildBankEmblemBorderBR">
+							<Size>
+								<AbsDimension x="40" y="20"/>
+							</Size>
+							<Anchors>
+								<Anchor point="LEFT" relativeTo="PLGuildBankEmblemBorderBL" relativePoint="RIGHT">
+									<Offset x="0" y="0"/>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="1" right="0.5" top="0" bottom="1"/>
+						</Texture>
+						<Texture name="PLGuildBankEmblemUL">
+							<Size>
+								<AbsDimension x="40" y="40"/>
+							</Size>
+							<Anchors>
+								<Anchor point="TOPLEFT" relativeTo="PLGuildBankEmblemBackgroundUL">
+									<Offset x="0" y="0"/>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0.5" right="1" top="0" bottom="1"/>
+						</Texture>
+						<Texture name="PLGuildBankEmblemUR">
+							<Size>
+								<AbsDimension x="40" y="40"/>
+							</Size>
+							<Anchors>
+								<Anchor point="LEFT" relativeTo="PLGuildBankEmblemBorderUL" relativePoint="RIGHT">
+									<Offset x="0" y="0"/>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="1" right="0.5" top="0" bottom="1"/>
+						</Texture>
+						<Texture name="PLGuildBankEmblemBL">
+							<Size>
+								<AbsDimension x="40" y="20"/>
+							</Size>
+							<Anchors>
+								<Anchor point="TOP" relativeTo="PLGuildBankEmblemUL" relativePoint="BOTTOM">
+									<Offset x="0" y="0"/>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0.5" right="1" top="0" bottom="1"/>
+						</Texture>
+						<Texture name="PLGuildBankEmblemBR">
+							<Size>
+								<AbsDimension x="40" y="20"/>
+							</Size>
+							<Anchors>
+								<Anchor point="LEFT" relativeTo="PLGuildBankEmblemBL" relativePoint="RIGHT">
+									<Offset x="0" y="0"/>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="1" right="0.5" top="0" bottom="1"/>
+						</Texture>
+					</Layer>
+				</Layers>
+			</Frame>
+			<Frame name="PLGuildBankMoneyFrame" inherits="SmallMoneyFrameTemplate">
+				<Anchors>
+					<Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
+						<Offset x="-4" y="16"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						SmallMoneyFrame_OnLoad(self, "PLAYER");
+					</OnLoad>
+				</Scripts>
+			</Frame>
+			<Button inherits="UIPanelCloseButton">
+				<Anchors>
+					<Anchor point="TOPRIGHT">
+						<Offset x="3" y="-8"/>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="PLGuildBankFrameTab1" inherits="CharacterFrameTabButtonTemplate" text="PLGuild_BANK" id="1">
+               <Anchors>
+					<Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT">
+						<Offset x="19" y="-24"/>
+					</Anchor>
+				</Anchors>
+                <Scripts>
+					<OnClick>
+						PLGuildBankFrameTab_OnClick(self, self:GetID());
+					</OnClick>
+                </Scripts>
+            </Button>
+            <Button name="PLGuildBankFrameTab2" inherits="CharacterFrameTabButtonTemplate" text="PLGuild_BANK_LOG" id="2">
+                <Anchors>
+                   <Anchor point="LEFT" relativeTo="PLGuildBankFrameTab1" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="-16" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+					<OnClick>
+						PLGuildBankFrameTab_OnClick(self, self:GetID());
+					</OnClick>
+                </Scripts>
+            </Button>
+			<Button name="PLGuildBankFrameTab3" inherits="CharacterFrameTabButtonTemplate" text="PLGuild_BANK_MONEY_LOG" id="3">
+                <Anchors>
+                   <Anchor point="LEFT" relativeTo="PLGuildBankFrameTab2" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="-16" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+					<OnClick>
+						PLGuildBankFrameTab_OnClick(self, self:GetID());
+					</OnClick>
+                </Scripts>
+            </Button>
+			<Button name="PLGuildBankFrameTab4" inherits="CharacterFrameTabButtonTemplate" text="PLGuild_BANK_TAB_INFO" id="4">
+                <Anchors>
+                   <Anchor point="LEFT" relativeTo="PLGuildBankFrameTab3" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="-16" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+					<OnClick>
+						PLGuildBankFrameTab_OnClick(self, self:GetID());
+					</OnClick>
+                </Scripts>
+            </Button>
+			<Frame name="PLGuildBankTab1" inherits="PLGuildBankTabTemplate" id="1">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPRIGHT">
+						<Offset x="-1" y="-32"/>
+					</Anchor>
+				</Anchors>
+			</Frame>
+			<Frame name="PLGuildBankTab2" inherits="PLGuildBankTabTemplate" id="2">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="PLGuildBankTab1" relativePoint="BOTTOMLEFT">
+						<Offset x="0" y="0"/>
+					</Anchor>
+				</Anchors>
+			</Frame>
+			<Frame name="PLGuildBankTab3" inherits="PLGuildBankTabTemplate" id="3">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="PLGuildBankTab2" relativePoint="BOTTOMLEFT">
+						<Offset x="0" y="0"/>
+					</Anchor>
+				</Anchors>
+			</Frame>
+			<Frame name="PLGuildBankTab4" inherits="PLGuildBankTabTemplate" id="4">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="PLGuildBankTab3" relativePoint="BOTTOMLEFT">
+						<Offset x="0" y="0"/>
+					</Anchor>
+				</Anchors>
+			</Frame>
+			<Frame name="PLGuildBankTab5" inherits="PLGuildBankTabTemplate" id="5">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="PLGuildBankTab4" relativePoint="BOTTOMLEFT">
+						<Offset x="0" y="0"/>
+					</Anchor>
+				</Anchors>
+			</Frame>
+			<Frame name="PLGuildBankTab6" inherits="PLGuildBankTabTemplate" id="6">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="PLGuildBankTab5" relativePoint="BOTTOMLEFT">
+						<Offset x="0" y="0"/>
+					</Anchor>
+				</Anchors>
+			</Frame>
+			<Frame name="PLGuildBankTab7" inherits="PLGuildBankTabTemplate" id="7">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="PLGuildBankTab6" relativePoint="BOTTOMLEFT">
+						<Offset x="0" y="0"/>
+					</Anchor>
+				</Anchors>
+			</Frame>
+			<Frame name="PLGuildBankTab8" inherits="PLGuildBankTabTemplate" id="8">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="PLGuildBankTab7" relativePoint="BOTTOMLEFT">
+						<Offset x="0" y="0"/>
+					</Anchor>
+				</Anchors>
+			</Frame>
+			<Frame name="PLGuildBankFrameLog">
+				<Size>
+					<AbsDimension x="10" y="10"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset x="0" y="0"/>
+					</Anchor>
+				</Anchors>
+				<Frames>
+					<ScrollingMessageFrame name="PLGuildBankMessageFrame" insertMode="TOP" maxLines="128" fade="false">
+						<Size>
+							<AbsDimension x="688" y="304"/>
+						</Size>
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="PLGuildBankFrameLog" relativePoint="TOPLEFT">
+								<Offset x="33" y="-73"/>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnHyperlinkClick>
+								SetItemRef(link, text, button);
+							</OnHyperlinkClick>
+						</Scripts>
+						<FontString inherits="ChatFontNormal" justifyH="LEFT"/>
+					</ScrollingMessageFrame>
+					<ScrollFrame name="PLGuildBankTransactionsScrollFrame" inherits="FauxScrollFrameTemplate" hidden="true">
+						<Size>
+							<AbsDimension x="688" y="304"/>
+						</Size>
+						<Anchors>
+							<Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPRIGHT">
+								<Offset x="-50" y="-75"/>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer level="ARTWORK">
+								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
+									<Size>
+										<AbsDimension x="31" y="256"/>
+									</Size>
+									<Anchors>
+										<Anchor point="TOPLEFT" relativePoint="TOPRIGHT">
+											<Offset>
+												<AbsDimension x="-2" y="5"/>
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0" right="0.484375" top="0" bottom="1.0"/>
+								</Texture>
+								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
+									<Size>
+										<AbsDimension x="31" y="106"/>
+									</Size>
+									<Anchors>
+										<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT">
+											<Offset>
+												<AbsDimension x="-2" y="-2"/>
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0.515625" right="1.0" top="0" bottom="0.4140625"/>
+								</Texture>
+							</Layer>
+						</Layers>
+						<Scripts>
+							<OnVerticalScroll>
+								FauxScrollFrame_OnVerticalScroll(self, offset, PLGuildBANK_TRANSACTION_HEIGHT, PLGuildBankLogScroll)
+							</OnVerticalScroll>
+						</Scripts>
+					</ScrollFrame>
+				</Frames>
+			</Frame>
+			<EditBox name="PLGuildItemSearchBox" inherits="BagSearchBoxTemplate" letters="15">
+				<Size x="130" y="20"/>
+				<Anchors>
+					<Anchor point="TOPRIGHT" x="-15" y="-42"/>
+				</Anchors>
+			</EditBox>
+		</Frames>
+	</Frame>
+
+    
+</Ui>
