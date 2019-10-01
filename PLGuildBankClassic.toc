@@ -1,0 +1,9 @@
+## Interface: 11302
+## Title: PL GuildBank Classic
+## Author: Klaus Comelli
+## Notes: Synchronized, multi character based guild bank interface
+## SavedVariables: PLGuildBank_Data
+## OptionalDeps: 
+## Version: 8.2.14
+
+modules\main.xml
