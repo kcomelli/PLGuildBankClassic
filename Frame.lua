@@ -76,7 +76,7 @@ function PLGuildBankClassic.Frame:Create(name, titleText, settings)
 end
 
 function Frame:OnLoad()
-    Frame:UpdateTabard()
+    self:UpdateTabard()
 end
 
 function Frame:OnShow()
@@ -89,7 +89,7 @@ function Frame:OnShow()
     for key,value in pairs(self.EmblemFrame) do
         print("2found member " .. key);
     end
-    Frame:UpdateTabard()
+    self:UpdateTabard()
 end
 
 function Frame:OnHide()
@@ -122,7 +122,7 @@ function Frame:ChangeBackground(id)
 		id = 50;
 	end
 	TABARDBACKGROUNDID = id;
-	Frame:UpdateEmblem();
+	self:UpdateEmblem();
 end
 function Frame:ChangeEmblem(id)
 	if ( id > 169 ) then
@@ -131,7 +131,7 @@ function Frame:ChangeEmblem(id)
 		id = 169;
 	end
 	TABARDEMBLEMID = id;
-	Frame:UpdateEmblem();
+	self:UpdateEmblem();
 end
 function Frame:ChangeBorder(id)
 	if ( id > 9 ) then
@@ -140,7 +140,7 @@ function Frame:ChangeBorder(id)
 		id = 9;
 	end
 	TABARDBORDERID = id;
-	Frame:UpdateEmblem();
+	self:UpdateEmblem();
 end
 
 function Frame:UpdateEmblem()
@@ -157,22 +157,23 @@ function Frame:UpdateEmblem()
 		tabardBorderID = "0"..tabardBorderID;
 	end
 	self.EmblemFrame.BackgroundUL:SetTexture(format(TABARDBACKGROUNDUPPER, tabardBGID));
-	GuildBankEmblemBackgroundUR:SetTexture(format(TABARDBACKGROUNDUPPER, tabardBGID));
-	GuildBankEmblemBackgroundBL:SetTexture(format(TABARDBACKGROUNDLOWER, tabardBGID));
-	GuildBankEmblemBackgroundBR:SetTexture(format(TABARDBACKGROUNDLOWER, tabardBGID));
+	self.EmblemFrame.BackgroundUR:SetTexture(format(TABARDBACKGROUNDUPPER, tabardBGID));
+	self.EmblemFrame.BackgroundBL:SetTexture(format(TABARDBACKGROUNDLOWER, tabardBGID));
+	self.EmblemFrame.BackgroundBR:SetTexture(format(TABARDBACKGROUNDLOWER, tabardBGID));
 
-	GuildBankEmblemUL:SetTexture(format(TABARDEMBLEMUPPER, tabardEmblemID));
-	GuildBankEmblemUR:SetTexture(format(TABARDEMBLEMUPPER, tabardEmblemID));
-	GuildBankEmblemBL:SetTexture(format(TABARDEMBLEMLOWER, tabardEmblemID));
-	GuildBankEmblemBR:SetTexture(format(TABARDEMBLEMLOWER, tabardEmblemID));
+	self.EmblemFrame.UL:SetTexture(format(TABARDEMBLEMUPPER, tabardEmblemID));
+	self.EmblemFrame.UR:SetTexture(format(TABARDEMBLEMUPPER, tabardEmblemID));
+	self.EmblemFrame.BL:SetTexture(format(TABARDEMBLEMLOWER, tabardEmblemID));
+	self.EmblemFrame.BR:SetTexture(format(TABARDEMBLEMLOWER, tabardEmblemID));
 
-	GuildBankEmblemBorderUL:SetTexture(format(TABARDBORDERUPPER, tabardBorderID));
-	GuildBankEmblemBorderUR:SetTexture(format(TABARDBORDERUPPER, tabardBorderID));
-	GuildBankEmblemBorderBL:SetTexture(format(TABARDBORDERLOWER, tabardBorderID));
-	GuildBankEmblemBorderBR:SetTexture(format(TABARDBORDERLOWER, tabardBorderID));
+	self.EmblemFrame.BorderUL:SetTexture(format(TABARDBORDERUPPER, tabardBorderID));
+	self.EmblemFrame.BorderUR:SetTexture(format(TABARDBORDERUPPER, tabardBorderID));
+	self.EmblemFrame.BorderBL:SetTexture(format(TABARDBORDERLOWER, tabardBorderID));
+	self.EmblemFrame.BorderBR:SetTexture(format(TABARDBORDERLOWER, tabardBorderID));
 end
 
 function Frame:UpdateTabard()
+
 	--Set the tabard images
 	local tabardBackgroundUpper, tabardBackgroundLower, tabardEmblemUpper, tabardEmblemLower, tabardBorderUpper, tabardBorderLower = GetGuildTabardFileNames();
 	if ( not tabardEmblemUpper ) then
@@ -180,19 +181,19 @@ function Frame:UpdateTabard()
 		tabardBackgroundLower = "Textures\\GuildEmblems\\Background_49_TL_U";
 	end
 	self.EmblemFrame.BackgroundUL:SetTexture(tabardBackgroundUpper);
-	GuildBankEmblemBackgroundUR:SetTexture(tabardBackgroundUpper);
-	GuildBankEmblemBackgroundBL:SetTexture(tabardBackgroundLower);
-	GuildBankEmblemBackgroundBR:SetTexture(tabardBackgroundLower);
+	self.EmblemFrame.BackgroundUR:SetTexture(tabardBackgroundUpper);
+	self.EmblemFrame.BackgroundBL:SetTexture(tabardBackgroundLower);
+	self.EmblemFrame.BackgroundBR:SetTexture(tabardBackgroundLower);
 
-	GuildBankEmblemUL:SetTexture(tabardEmblemUpper);
-	GuildBankEmblemUR:SetTexture(tabardEmblemUpper);
-	GuildBankEmblemBL:SetTexture(tabardEmblemLower);
-	GuildBankEmblemBR:SetTexture(tabardEmblemLower);
+	self.EmblemFrame.UL:SetTexture(tabardEmblemUpper);
+	self.EmblemFrame.UR:SetTexture(tabardEmblemUpper);
+	self.EmblemFrame.BL:SetTexture(tabardEmblemLower);
+	self.EmblemFrame.BR:SetTexture(tabardEmblemLower);
 
-	GuildBankEmblemBorderUL:SetTexture(tabardBorderUpper);
-	GuildBankEmblemBorderUR:SetTexture(tabardBorderUpper);
-	GuildBankEmblemBorderBL:SetTexture(tabardBorderLower);
-	GuildBankEmblemBorderBR:SetTexture(tabardBorderLower);
+	self.EmblemFrame.BorderUL:SetTexture(tabardBorderUpper);
+	self.EmblemFrame.BorderUR:SetTexture(tabardBorderUpper);
+	self.EmblemFrame.BorderBL:SetTexture(tabardBorderLower);
+	self.EmblemFrame.BorderBR:SetTexture(tabardBorderLower);
 end
 
 -----------------------------------------------------------------------
