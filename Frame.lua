@@ -36,13 +36,17 @@ MoneyTypeInfo["PLGUILDBANKCLASSIC"] = {
 PLGuildBankClassic.Frame = {}
 PLGuildBankClassic.Frame.defaults = {}
 PLGuildBankClassic.Frame.prototype = Frame
-function PLGuildBankClassic.Frame:Create(name, titleText, settings)
+function PLGuildBankClassic.Frame:Create(name, titleText, settings, guildSettings)
 	local frame = setmetatable(CreateFrame("Frame", name, UIParent, "PLGuildBankFrame"), Frame_MT)
 
 	-- settings
 	frame.settings = settings
+	frame.guildSettings = guildSettings
 	frame.titleText = titleText
 	frame.bagButtons = {}
+
+	frame.currentTab = 0
+	frame.currentAltTab = 0
 
 	-- components
 	--frame.itemContainer = PLGuildBankClassic.ItemContainer:Create(frame)
@@ -76,28 +80,25 @@ function PLGuildBankClassic.Frame:Create(name, titleText, settings)
 end
 
 function Frame:ApplyLocalization()
-    self.availableMoneyLabel:SetText(L["Available money"])
+	self.availableMoneyLabel:SetText(L["Available money"])
+	self.tabBankItems:SetText(L["Bank items"])
+	self.tabBankLog:SetText(L["Bank logs"])
+	self.tabBankInfo:SetText(L["Guild info"])
+	self.tabBankConfig:SetText(L["Configuration"])
+
     if PLGuildBankClassic:IsInGuild() == false then
         self.guildBankTitleLabel:SetText("")
         self.errorMessage:SetText(L["You are not in a guild!"])
-        self.errorMessage:Show()
+		self.errorMessage:Show()
+		self:HideFrames()
     else
         self.guildBankTitleLabel:SetFormattedText(L["%s's Guild Bank"], PLGuildBankClassic:GuildName())
     end
 
-    if PLGuildBankClassic:IGuildMaster() == false then
+    if PLGuildBankClassic:CanConfigureBankAlts() == false then
         self.errorMessage:SetText(L["Addon requires bank-character configuration which can only be done by the guild master!"])
         self.errorMessage:Show()
     end
-
-    guildName, guildRankName, guildRankIndex = GetGuildInfo("player")
-    if(guildName==nil) then
-        guildName = ""
-    end
-    if(guildRankName==nil) then
-        guildRankName = ""
-    end
-    self.errorMessage:SetFormattedText("Name: %s, rankName: %s, rankIndex: %d", guildName, guildRankName, guildRankIndex)
 end
 
 function Frame:OnLoad()
@@ -131,8 +132,108 @@ function Frame:OnSizeChanged(width, height)
 	--self:UpdateItemContainer()
 end
 
+function Frame:PLGuildBankFrameTab_OnClick(tabButton, id)
+	if PLGuildBankClassic:IsInGuild() then
+		local parent = tabButton:GetParent()
+		parent.currentTab = id
+
+		if parent.currentTab == 1 then
+			parent:ShowBankItems()
+		end
+		if parent.currentTab == 2 then
+			parent:ShowBankLog()
+		end
+		if parent.currentTab == 3 then
+			parent:ShowGuildInfo()
+		end
+		if parent.currentTab == 4 then
+			parent:ShowConfig()
+		end
+	end
+end
+
+function Frame:ShowBankItems()
+	if(self.currentTab ~= 1) then
+		return
+	end
+
+	self:HideFrames()
+end
+
+function Frame:ShowBankLog()
+	if(self.currentTab ~= 2) then
+		return
+	end
+
+	self:HideFrames()
+	self.logFrame:Show()
+end
+
+function Frame:ShowGuildInfo()
+	if(self.currentTab ~= 3) then
+		return
+	end
+
+	self:HideFrames()
+end
+
+function Frame:ShowConfig()
+	if(self.currentTab ~= 4) then
+		return
+	end
+
+	self:HideFrames()
+	self.configFrame:Show()
+	self:GuildRanksDropDown_DoLoad(self.configRankDropDown, self)
+end
+
+function Frame:HideFrames()
+	self.logFrame:Hide()
+	self.configFrame:Hide()
+end
+
+function Frame:GuildRanksDropDown_DoLoad(dropDown, mainFrame)
+	UIDropDownMenu_SetWidth(dropDown, 90);
+	UIDropDownMenu_Initialize(dropDown, PLGuildRanksDropDown_Initialize)
+	if PLGuildBankClassic:IsInGuild() then
+		UIDropDownMenu_SetSelectedID(dropDown, mainFrame.guildSettings.minGuildRank);
+	end
+end
+
+function PLGuildRanksDropDown_Initialize(self)
+	if PLGuildBankClassic:IsInGuild() then
+		local frame = self:GetParent():GetParent()
+		local numRanks = GuildControlGetNumRanks()
+		local info;
+
+		for i = 0, numRanks do
+			info = {
+				text = GuildControlGetRankName(i);
+				func = PLGuildRanksDropDown_OnClick;
+			};
+			UIDropDownMenu_AddButton(info);	
+		end
+	else
+		self:Hide()
+	end
+end
+
+function PLGuildRanksDropDown_OnClick(dropDown)
+	if PLGuildBankClassic:IsInGuild() then
+		local frame = self:GetParent():GetParent()
+		local oldID = UIDropDownMenu_GetSelectedID(dropDown)
+		UIDropDownMenu_SetSelectedID(dropDown, dropDown:GetID())
+		local newID = dropDown:GetID()
+
+		if(oldID ~= newID) then
+			frame.guildSettings.minGuildRank = newId
+		end
+	end
+end
+
 -----------------------------------------------------------------------
 -- Guild emblem and tabard functions
+
 function Frame:ChangeBackground(id)
 	if ( id > 50 ) then
 		id = 1;

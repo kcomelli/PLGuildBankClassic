@@ -2,7 +2,8 @@ local _, PLGuildBankClassic = ...
 PLGuildBankClassic = LibStub("AceAddon-3.0"):NewAddon(PLGuildBankClassic, "PLGuildBankClassic", "AceEvent-3.0", "AceHook-3.0", "AceConsole-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("PLGuildBankClassic")
 
-local db
+local dbProfile
+local dbFactionRealm
 local defaults = {
 	profile = {
 		vault = {
@@ -14,20 +15,26 @@ local defaults = {
 			showBags = false,
 		},
     },
-    guildDefaults = {
+    factionrealm  = {
         minGuildRank = 0
     }
 }
 
+-- guild master can change the min required guild rank
+-- for bank character configuration
+local minGuildRankForRankConfig = 0
+
 function PLGuildBankClassic:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("PLGuildBankClassicDB", defaults, true)
-    db = self.db
+    dbProfile = self.db.profile
+    dbFactionRealm = self.db.factionrealm
     self.isInGuild = false
     self:ScanGuildStatus()
 end
 
 function PLGuildBankClassic:OnEnable()
-	self.guildVault = PLGuildBankClassic.Frame:Create("PLGuildBankClassicFrame", "PLGuildBankClassicFrame", db.vault)
+    local guildSettings = PLGuildBankClassic:GetGuildConfig()
+	self.guildVault = PLGuildBankClassic.Frame:Create("PLGuildBankClassicFrame", "PLGuildBankClassicFrame", dbProfile.vault, guildSettings)
 
 	self:RegisterChatCommand("plgb", "HandleSlash")
 end
@@ -61,9 +68,18 @@ function PLGuildBankClassic:ScanGuildStatus()
 end
 
 function PLGuildBankClassic:PrepareGuildConfig() 
-    if not db.guildConfig or not db.guildConfig[self:GuildName()] then
-        db.guildConfig[self:GuildName()] = defaults.guildDefaults
+    if dbFactionRealm.guildConfig == nil or dbFactionRealm.guildConfig[self:GuildName()] == nil then
+        dbFactionRealm.guildConfig = {}
+        dbFactionRealm.guildConfig[self:GuildName()] = defaults.factionrealm
     end
+end
+
+function PLGuildBankClassic:GetGuildConfig() 
+    if dbFactionRealm.guildConfig ~= nil and dbFactionRealm.guildConfig[self:GuildName()] ~= nil then
+        return dbFactionRealm.guildConfig[self:GuildName()]
+    end
+
+    return nil
 end
 
 function PLGuildBankClassic:IsGuildBankChar()
@@ -78,10 +94,33 @@ function PLGuildBankClassic:GuildName()
     return self.guildName
 end
 
-function PLGuildBankClassic:IGuildMaster()
-    if self:IsGuildBankChar() then
+function PLGuildBankClassic:UpdateMinRankForAlts(newIndex)
+    if self:IsInGuild() then
+        dbFactionRealm.guildConfig[self:GuildName()].minGuildRank = newIndex
+    end
+end
+
+function PLGuildBankClassic:GetMinRankForAlts()
+    if self:IsInGuild() then
+        return dbFactionRealm.guildConfig[self:GuildName()].minGuildRank
+    end
+
+    return 0
+end
+
+function PLGuildBankClassic:CanConfigureBankAlts()
+    if self:IsInGuild() then
         guildName, guildRankName, guildRankIndex = GetGuildInfo("player")
-        return guildRankIndex <= db.guildConfig[self:GuildName()].minGuildRank
+        return guildRankIndex <= dbFactionRealm.guildConfig[self:GuildName()].minGuildRank
+    else
+        return false
+    end
+end
+
+function PLGuildBankClassic:CanConfigureRank()
+    if self:IsInGuild() then
+        guildName, guildRankName, guildRankIndex = GetGuildInfo("player")
+        return guildRankIndex <= minGuildRankForRankConfig
     else
         return false
     end

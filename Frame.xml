@@ -33,9 +33,9 @@
 
     <Frame name="PLGuildBankTabTemplate" enableMouse="true" virtual="true">
 		<Size>
-			<AbsDimension x="42" y="50"/>
+			<AbsDimension x="42" y="50"/> 
 		</Size>
-		<Anchors>
+		<Anchors> 
 			<Anchor point="TOPLEFT">
 				<Offset x="0" y="0"/>
 			</Anchor>
@@ -485,7 +485,7 @@
 					</Anchor>
 				</Anchors>
 			</Button>-->
-			<Button name="PLGuildBankFrameTab1" inherits="CharacterFrameTabButtonTemplate" text="PLGuild_BANK" id="1">
+			<Button parentKey="tabBankItems" name="PLGuildBankFrameTab1" inherits="CharacterFrameTabButtonTemplate" text="PLGuild_BANK" id="1">
                <Anchors>
 					<Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT">
 						<Offset x="19" y="-30"/>
@@ -493,11 +493,11 @@
 				</Anchors>
                 <Scripts>
 					<OnClick>
-						PLGuildBankFrameTab_OnClick(self, self:GetID());
+						self:GetParent():PLGuildBankFrameTab_OnClick(self, self:GetID());
 					</OnClick>
                 </Scripts>
             </Button>
-            <Button name="PLGuildBankFrameTab2" inherits="CharacterFrameTabButtonTemplate" text="PLGuild_BANK_LOG" id="2">
+            <Button parentKey="tabBankLog" name="PLGuildBankFrameTab2" inherits="CharacterFrameTabButtonTemplate" text="PLGuild_BANK_LOG" id="2">
                 <Anchors>
                    <Anchor point="LEFT" relativeTo="PLGuildBankFrameTab1" relativePoint="RIGHT">
                         <Offset>
@@ -507,11 +507,11 @@
                 </Anchors>
                 <Scripts>
 					<OnClick>
-						PLGuildBankFrameTab_OnClick(self, self:GetID());
+						self:GetParent():PLGuildBankFrameTab_OnClick(self, self:GetID());
 					</OnClick>
                 </Scripts>
             </Button>
-			<Button name="PLGuildBankFrameTab3" inherits="CharacterFrameTabButtonTemplate" text="PLGuild_BANK_MONEY_LOG" id="3">
+			<Button parentKey="tabBankInfo" name="PLGuildBankFrameTab3" inherits="CharacterFrameTabButtonTemplate" text="PLGuild_BANK_TAB_INFO" id="3">
                 <Anchors>
                    <Anchor point="LEFT" relativeTo="PLGuildBankFrameTab2" relativePoint="RIGHT">
                         <Offset>
@@ -521,11 +521,11 @@
                 </Anchors>
                 <Scripts>
 					<OnClick>
-						PLGuildBankFrameTab_OnClick(self, self:GetID());
+						self:GetParent():PLGuildBankFrameTab_OnClick(self, self:GetID());
 					</OnClick>
                 </Scripts>
             </Button>
-			<Button name="PLGuildBankFrameTab4" inherits="CharacterFrameTabButtonTemplate" text="PLGuild_BANK_TAB_INFO" id="4">
+			<Button parentKey="tabBankConfig" name="PLGuildBankFrameTab4" inherits="CharacterFrameTabButtonTemplate" text="PLGuild_BANK_TAB_CONFIG" id="4">
                 <Anchors>
                    <Anchor point="LEFT" relativeTo="PLGuildBankFrameTab3" relativePoint="RIGHT">
                         <Offset>
@@ -535,73 +535,128 @@
                 </Anchors>
                 <Scripts>
 					<OnClick>
-						PLGuildBankFrameTab_OnClick(self, self:GetID());
+						self:GetParent():PLGuildBankFrameTab_OnClick(self, self:GetID());
 					</OnClick>
                 </Scripts>
             </Button>
-			<Frame name="PLGuildBankTab1" inherits="PLGuildBankTabTemplate" id="1">
+			<Frame parentKey="tabBankAlt1" name="PLGuildBankTab1" inherits="PLGuildBankTabTemplate" id="1">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPRIGHT">
 						<Offset x="-1" y="-32"/>
 					</Anchor>
 				</Anchors>
 			</Frame>
-			<Frame name="PLGuildBankTab2" inherits="PLGuildBankTabTemplate" id="2">
+			<Frame parentKey="tabBankAlt2" name="PLGuildBankTab2" inherits="PLGuildBankTabTemplate" id="2" hidden="true">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="PLGuildBankTab1" relativePoint="BOTTOMLEFT">
 						<Offset x="0" y="0"/>
 					</Anchor>
 				</Anchors>
 			</Frame>
-			<Frame name="PLGuildBankTab3" inherits="PLGuildBankTabTemplate" id="3">
+			<Frame parentKey="tabBankAlt3" name="PLGuildBankTab3" inherits="PLGuildBankTabTemplate" id="3" hidden="true">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="PLGuildBankTab2" relativePoint="BOTTOMLEFT">
 						<Offset x="0" y="0"/>
 					</Anchor>
 				</Anchors>
 			</Frame>
-			<Frame name="PLGuildBankTab4" inherits="PLGuildBankTabTemplate" id="4">
+			<Frame parentKey="tabBankAlt4" name="PLGuildBankTab4" inherits="PLGuildBankTabTemplate" id="4" hidden="true">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="PLGuildBankTab3" relativePoint="BOTTOMLEFT">
 						<Offset x="0" y="0"/>
 					</Anchor>
 				</Anchors>
 			</Frame>
-			<Frame name="PLGuildBankTab5" inherits="PLGuildBankTabTemplate" id="5">
+			<Frame parentKey="tabBankAlt5" name="PLGuildBankTab5" inherits="PLGuildBankTabTemplate" id="5" hidden="true">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="PLGuildBankTab4" relativePoint="BOTTOMLEFT">
 						<Offset x="0" y="0"/>
 					</Anchor>
 				</Anchors>
 			</Frame>
-			<Frame name="PLGuildBankTab6" inherits="PLGuildBankTabTemplate" id="6">
+			<Frame parentKey="tabBankAlt6" name="PLGuildBankTab6" inherits="PLGuildBankTabTemplate" id="6" hidden="true">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="PLGuildBankTab5" relativePoint="BOTTOMLEFT">
 						<Offset x="0" y="0"/>
 					</Anchor>
 				</Anchors>
 			</Frame>
-			<Frame name="PLGuildBankTab7" inherits="PLGuildBankTabTemplate" id="7">
+			<Frame parentKey="tabBankAlt7" name="PLGuildBankTab7" inherits="PLGuildBankTabTemplate" id="7" hidden="true">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="PLGuildBankTab6" relativePoint="BOTTOMLEFT">
 						<Offset x="0" y="0"/>
 					</Anchor>
 				</Anchors>
 			</Frame>
-			<Frame name="PLGuildBankTab8" inherits="PLGuildBankTabTemplate" id="8">
+			<Frame parentKey="tabBankAlt8" name="PLGuildBankTab8" inherits="PLGuildBankTabTemplate" id="8" hidden="true">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="PLGuildBankTab7" relativePoint="BOTTOMLEFT">
 						<Offset x="0" y="0"/>
 					</Anchor>
 				</Anchors>
 			</Frame>
-			<Frame name="PLGuildBankFrameLog">
+
+			<Frame parentKey="configFrame" name="PLGuildBankFrameConfig" hidden="true">
 				<Size>
-					<AbsDimension x="10" y="10"/>
+					<AbsDimension x="200" y="200"/>
 				</Size>
 				<Anchors>
-					<Anchor point="TOPLEFT">
-						<Offset x="0" y="0"/>
+					<Anchor point="TOPLEFT" relativeTo="$parent">
+						<Offset x="50" y="50"/>
+					</Anchor>
+				</Anchors>
+				<Frames>
+					<Frame name="$parentChannel">
+						<Size>
+							<AbsDimension x="170" y="20" />
+						</Size>
+						<Anchors>
+							<Anchor point="TOPLEFT">
+								<Offset>
+									<AbsDimension x="10" y="-124" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer>
+								<FontString parentKey="configRankLabel" name="$parentLabel" font="Fonts\FRIZQT__.TTF" text="PLGuild_BANK_CONFIG_RANK" justifyH="RIGHT">
+									<Anchors>
+										<Anchor point="TOPLEFT" />
+										<Anchor point="BOTTOMRIGHT" />
+									</Anchors>
+									<FontHeight>
+										<AbsValue val="10" />
+									</FontHeight>
+									<Color r="1" g="0.8196079" b="0" />
+									<Shadow>
+										<Color r="0" g="0" b="0" />
+										<Offset>
+											<AbsDimension x="1" y="-1" />
+										</Offset>
+									</Shadow>
+								</FontString>
+							</Layer>
+						</Layers>
+					</Frame>
+					<Button parentKey="configRankDropDown" name="$parentChannelDropDown" inherits="UIDropDownMenuTemplate">
+						<Anchors>
+							<Anchor point="TOPLEFT">
+								<Offset>
+									<AbsDimension x="180" y="-123" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+					</Button>
+				</Frames>
+			</Frame>
+
+			<Frame parentKey="logFrame" name="PLGuildBankFrameLog" hidden="true">
+				<Size>
+					<AbsDimension x="400" y="300"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT"  relativeTo="$parent">
+						<Offset x="50" y="50"/>
 					</Anchor>
 				</Anchors>
 				<Frames>
