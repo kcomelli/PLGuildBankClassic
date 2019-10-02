@@ -81,14 +81,6 @@ end
 
 function Frame:OnShow()
     PlaySound(SOUNDKIT.IG_BACKPACK_OPEN)
-
-    for key,value in pairs(self) do
-        print("found member " .. key);
-    end
-
-    for key,value in pairs(self.EmblemFrame) do
-        print("2found member " .. key);
-    end
     self:UpdateTabard()
 end
 
