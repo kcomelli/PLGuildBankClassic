@@ -18,25 +18,32 @@ function PLGuildBankClassic.GuildConfigFrame:Create(mainFrame, parent)
 
 	-- scripts
 	frame:SetScript("OnShow", frame.OnShow)
-	frame:SetScript("OnHide", frame.OnHide)
+    frame:SetScript("OnHide", frame.OnHide)
+    
+    
+    --local container = AceGUI:Create("Frame")
+    --container:SetPoint("TOPLEFT", parent, "TOPLEFT", 10 ,10)
+    --container:SetParent(frame)
 
-    local raids_dropdown = AceGUI:Create("Dropdown")
-    raids_dropdown:SetWidth(350)
-    raids_dropdown:SetPoint("TOPLEFT", 10,10)
-    raids_dropdown:SetList(PLGuildBankClassic:GetGuildRankTable())
-    raids_dropdown:SetLabel(L["Select min. guild rank for bank-alt management"])
+    --local raids_dropdown = AceGUI:Create("Dropdown")
+    --raids_dropdown:SetWidth(350)
+    --raids_dropdown:SetPoint("TOPLEFT", container, "TOPLEFT", 0 ,0)
+    --raids_dropdown:SetList(PLGuildBankClassic:GetGuildRankTable())
+    --raids_dropdown:SetLabel(L["Select min. guild rank for bank-alt management"])
     --raids_dropdown:SetValue(frame.mainFrame.guildSettings.minGuildRank)
-    raids_dropdown:SetCallback("OnValueChanged", function()
-        if PLGuildBankClassic:IsInGuild() then
+    --raids_dropdown:SetCallback("OnValueChanged", function()
+        --if PLGuildBankClassic:IsInGuild() then
             --self:GetParent().mainFrame.guildSettings.minGuildRank = self:GetID()
-        end
-    end)
-    raids_dropdown:SetParent(frame)
+        --end
+    --end)
+    --container:AddChild(raids_dropdown)
 
+    --container:Hide()
 	return frame
 end
 
 function GuildConfigFrame:OnShow()
+    --container:Show()
 	--self:GenerateItemButtons()
 
 	--Events.Register(self, "ITEM_SLOT_ADD", "ITEM_SLOT_UPDATE")
@@ -48,5 +55,6 @@ function GuildConfigFrame:OnShow()
 end
 
 function GuildConfigFrame:OnHide()
-	Events.UnregisterAll(self)
+    Events.UnregisterAll(self)
+    --container:Hide()
 end
