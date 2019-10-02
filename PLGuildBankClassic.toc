@@ -31,3 +31,4 @@ PLGuildBankClassic.lua
 Events.lua 
 
 Frame.lua
+GuildConfigFrame.lua

@@ -49,6 +49,9 @@ function PLGuildBankClassic.Frame:Create(name, titleText, settings, guildSetting
 	frame.currentAltTab = 0
 
 	-- components
+	frame.guildConfigFrame = PLGuildBankClassic.GuildConfigFrame:Create(frame, frame.tabContentContainer)
+	frame.guildConfigFrame:SetPoint("TOPLEFT", 10, 10)
+
 	--frame.itemContainer = PLGuildBankClassic.ItemContainer:Create(frame)
 	--frame.itemContainer:SetPoint("TOPLEFT", 10, -64)
 	--frame.itemContainer:SetBags(config[1].bags)
@@ -158,6 +161,7 @@ function Frame:ShowBankItems()
 	end
 
 	self:HideFrames()
+	self:SetTabContentVisibility(true)
 end
 
 function Frame:ShowBankLog()
@@ -167,6 +171,7 @@ function Frame:ShowBankLog()
 
 	self:HideFrames()
 	self.logFrame:Show()
+	self:SetTabContentVisibility(true)
 end
 
 function Frame:ShowGuildInfo()
@@ -175,6 +180,7 @@ function Frame:ShowGuildInfo()
 	end
 
 	self:HideFrames()
+	self:SetTabContentVisibility(true)
 end
 
 function Frame:ShowConfig()
@@ -183,13 +189,25 @@ function Frame:ShowConfig()
 	end
 
 	self:HideFrames()
-	self.configFrame:Show()
-	self:GuildRanksDropDown_DoLoad(self.configRankDropDown, self)
+	--self.configFrame:Show()
+	--self:GuildRanksDropDown_DoLoad(self.configRankDropDown, self)
+	self.guildConfigFrame:Show()
+	self:SetTabContentVisibility(true)
 end
 
 function Frame:HideFrames()
+	self:SetTabContentVisibility(false)
 	self.logFrame:Hide()
-	self.configFrame:Hide()
+	--self.configFrame:Hide()
+	self.guildConfigFrame:Hide()
+end
+
+function Frame:SetTabContentVisibility(visible)
+	if visible then
+		self.tabContentContainer:Show()
+	else
+		self.tabContentContainer:Hide()
+	end
 end
 
 function Frame:GuildRanksDropDown_DoLoad(dropDown, mainFrame)

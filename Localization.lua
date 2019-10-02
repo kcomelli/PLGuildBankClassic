@@ -17,3 +17,4 @@ L["Bank items"] = true
 L["Bank logs"] = true
 L["Guild info"] = true
 L["Configuration"] = true
+L["Select min. guild rank for bank-alt management"] = true

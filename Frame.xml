@@ -596,6 +596,17 @@
 				</Anchors>
 			</Frame>
 
+			<Frame parentKey="tabContentContainer" name="PLGuildBankFrameTabContent" hidden="true">
+				<Size>
+					<AbsDimension x="200" y="200"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parent">
+						<Offset x="50" y="50"/>
+					</Anchor>
+				</Anchors>
+			</Frame>
+
 			<Frame parentKey="configFrame" name="PLGuildBankFrameConfig" hidden="true">
 				<Size>
 					<AbsDimension x="200" y="200"/>
