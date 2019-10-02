@@ -67,12 +67,37 @@ function PLGuildBankClassic.Frame:Create(name, titleText, settings)
 	LibWindow.RegisterConfig(frame, settings)
 	LibWindow.RestorePosition(frame)
 
-	--frame:UpdateTitleText()
+    --frame:UpdateTitleText()
 	--frame:UpdateBags()
 
 	tinsert(UISpecialFrames, name)
 
 	return frame
+end
+
+function Frame:ApplyLocalization()
+    self.availableMoneyLabel:SetText(L["Available money"])
+    if PLGuildBankClassic:IsInGuild() == false then
+        self.guildBankTitleLabel:SetText("")
+        self.errorMessage:SetText(L["You are not in a guild!"])
+        self.errorMessage:Show()
+    else
+        self.guildBankTitleLabel:SetFormattedText(L["%s's Guild Bank"], PLGuildBankClassic:GuildName())
+    end
+
+    if PLGuildBankClassic:IGuildMaster() == false then
+        self.errorMessage:SetText(L["Addon requires bank-character configuration which can only be done by the guild master!"])
+        self.errorMessage:Show()
+    end
+
+    guildName, guildRankName, guildRankIndex = GetGuildInfo("player")
+    if(guildName==nil) then
+        guildName = ""
+    end
+    if(guildRankName==nil) then
+        guildRankName = ""
+    end
+    self.errorMessage:SetFormattedText("Name: %s, rankName: %s, rankIndex: %d", guildName, guildRankName, guildRankIndex)
 end
 
 function Frame:OnLoad()
@@ -81,6 +106,7 @@ end
 
 function Frame:OnShow()
     PlaySound(SOUNDKIT.IG_BACKPACK_OPEN)
+    self:ApplyLocalization()
     self:UpdateTabard()
 end
 

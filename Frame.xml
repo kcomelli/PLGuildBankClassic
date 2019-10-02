@@ -133,9 +133,10 @@
     <Frame name="PLGuildBankFrame" resizable="true" clampedToScreen="true" enableMouse="true" movable="true"
 	       topLevel="true" frameStrata="HIGH" parent="UIParent" hidden="true"
 	       inherits="BasicFrameTemplate" virtual="true">
-		<Size>
-			<AbsDimension x="769" y="444"/>
-		</Size>
+		<Size x="690" y="455"/>
+		<ResizeBounds>
+			<minResize x="690" y="455"/>
+		</ResizeBounds>
 		<Anchors>
 			<Anchor point="TOPLEFT">
 				<Offset>
@@ -174,84 +175,63 @@
 					</Anchors>
 					<TexCoords left="0.546875" right="0.609375" top="0" bottom="0.5625"/>
 				</Texture>
-				<FontString name="PLGuildBankTabTitle" inherits="GameFontNormal">
+				<FontString parentKey="guildBankTitleLabel" name="PLGuildBankTabTitle" inherits="GameFontNormal" text="PLGUILDBANK_TITLE">
 					<Anchors>
 						<Anchor point="CENTER" relativeTo="PLGuildBankTabTitleBackground">
 							<Offset x="0" y="1"/>
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<Texture name="PLGuildBankTabLimitBackground" file="Interface\GuildBankFrame\UI-TabNameBorder">
-					<Size>
-						<AbsDimension x="10" y="18"/>
-					</Size>
-					<Anchors>
-						<Anchor point="TOP" relativeTo="$parent" relativePoint="TOP">
-							<Offset x="6" y="-388"/>
-						</Anchor>
-					</Anchors>
-					<TexCoords left="0.0625" right="0.546875" top="0" bottom="0.5625"/>
-				</Texture>
-				<Texture name="PLGuildBankTabLimitBackgroundLeft" file="Interface\GuildBankFrame\UI-TabNameBorder">
-					<Size>
-						<AbsDimension x="8" y="18"/>
-					</Size>
-					<Anchors>
-						<Anchor point="RIGHT" relativeTo="PLGuildBankTabLimitBackground" relativePoint="LEFT"/>
-					</Anchors>
-					<TexCoords left="0" right="0.0625" top="0" bottom="0.5625"/>
-				</Texture>
-				<Texture name="PLGuildBankTabLimitBackgroundRight" file="Interface\GuildBankFrame\UI-TabNameBorder">
-					<Size>
-						<AbsDimension x="8" y="18"/>
-					</Size>
-					<Anchors>
-						<Anchor point="LEFT" relativeTo="PLGuildBankTabLimitBackground" relativePoint="RIGHT"/>
-					</Anchors>
-					<TexCoords left="0.546875" right="0.609375" top="0" bottom="0.5625"/>
-				</Texture>
-				<FontString name="PLGuildBankLimitLabel" inherits="GameFontNormalSmall">
-					<Anchors>
-						<Anchor point="CENTER" relativeTo="PLGuildBankTabLimitBackground">
-							<Offset x="0" y="1"/>
-						</Anchor>
-					</Anchors>
-				</FontString>
-				<FontString name="PLGuildBankCashFlowLabel" inherits="GameFontNormalSmall" text="PLGuildBANK_CASHFLOW">
-					<Anchors>
-						<Anchor point="LEFT" relativeTo="PLGuildBankTabLimitBackground">
-							<Offset x="4" y="1"/>
-						</Anchor>
-					</Anchors>
-				</FontString>
-				<FontString name="PLGuildBankMoneyLimitLabel" inherits="GameFontNormalSmall" text="PLGuildBANK_AVAILABLE_MONEY">
+				<FontString parentKey="availableMoneyLabel" name="PLGuildBankMoneyLimitLabel" inherits="GameFontNormalSmall" text="PLGUILDBANK_AVAILABLE_MONEY">
 					<Size x="0" y="13"/>
 					<Anchors>
 						<Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT">
-							<Offset x="26" y="16"/>
-						</Anchor>
-					</Anchors>
-				</FontString>
-				<FontString name="PLGuildBankMoneyUnlimitedLabel" inherits="GameFontHighlightSmall" text="UNLIMITED">
-					<Size x="0" y="13"/>
-					<Anchors>
-						<Anchor point="LEFT" relativeTo="PLGuildBankMoneyLimitLabel" relativePoint="RIGHT">
-							<Offset x="5" y="0"/>
+							<Offset x="26" y="8"/>   
 						</Anchor>
 					</Anchors>
 				</FontString>
 			</Layer>
 			<Layer level="ARTWORK">
-				<FontString name="PLGuildBankErrorMessage" inherits="GameFontNormal" text="NO_PLGuildBANK_TABS">
+				<FontString parentKey="errorMessage" name="PLGuildBankErrorMessage" inherits="GameFontNormal" text="NO_PLGuildBANK_TABS" hidden="true">
 					<Anchors>
 						<Anchor point="TOP" relativeTo="$parent" relativePoint="TOP">
 							<Offset x="0" y="-216"/>
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<Texture name="PLGuildBankFrameLeft" file="Interface\GuildBankFrame\UI-GuildBankFrame-Left">
+				<Texture file="Interface\MerchantFrame\UI-Merchant-BotLeft"> <!-- Left -->
+					<Size x="64" y="24"/>
+					<Anchors>
+						<Anchor point="BOTTOMLEFT">
+							<Offset x="156" y="2"/>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0.72" right="1" top="0.675" bottom=".754"/>
+				</Texture>
+				<Texture file="Interface\MerchantFrame\UI-Merchant-BotRight">
+					<Size x="64" y="24"/>
+					<Anchors>
+						<Anchor point="BOTTOMRIGHT">
+							<Offset x="-30" y="2"/>
+						</Anchor>
+						<Anchor point="BOTTOMLEFT">
+							<Offset x="220" y="2"/>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0" right="0.5" top="0.675" bottom=".754"/>
+				</Texture>
+				<Texture file="Interface\MerchantFrame\UI-Merchant-BotRight"> <!-- Right -->
+					<Size x="64" y="24"/>
+					<Anchors>
+						<Anchor point="BOTTOMRIGHT">
+							<Offset x="34" y="2"/>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0.5" right="1" top="0.675" bottom=".754"/>
+				</Texture>
+				<!--<Texture name="PLGuildBankFrameLeft" file="Interface\GuildBankFrame\UI-GuildBankFrame-Left">
 					<Size>
-						<AbsDimension x="512" y="512"/>
+						<AbsDimension x="812" y="512"/>
 					</Size>
 					<Anchors>
 						<Anchor point="TOPLEFT"/>
@@ -259,16 +239,18 @@
 				</Texture>
 				<Texture name="PLGuildBankFrameRight" file="Interface\GuildBankFrame\UI-GuildBankFrame-Right">
 					<Size>
-						<AbsDimension x="512" y="512"/>
+						<AbsDimension x="812" y="512"/>
 					</Size>
 					<Anchors>
 						<Anchor point="TOPLEFT" relativeTo="PLGuildBankFrameLeft" relativePoint="TOPRIGHT">
 							<Offset x="0" y="-11"/>
 						</Anchor>
 					</Anchors>
-				</Texture>
+				</Texture>-->
 			</Layer>
 			<Layer level="BACKGROUND">
+				<Texture parentKey="BgTexture" file="Interface\GuildBankFrame\GuildVaultBG" horizTile="true" vertTile="true" setAllPoints="true"/>
+
 				<Texture name="$parentPortrait">
                     <Size>
                         <AbsDimension x="40" y="40"/>
@@ -290,7 +272,7 @@
 				</Size>
 				<Anchors>
 					<Anchor point="TOP" relativeTo="$parent" relativePoint="TOP">
-						<Offset x="-70" y="46"/>
+						<Offset x="-70" y="60"/>
 					</Anchor>
 				</Anchors>
 				<Layers>
@@ -456,10 +438,38 @@
 					</Layer>
 				</Layers>
 			</Frame>
+
+			<Button parentKey="DragArea" name="$parentDragArea">
+				<Size x="80" y="80"/>
+				<Anchors>
+					<Anchor point="TOP" relativeTo="PLGuildBankEmblemFrame" relativePoint="TOP">
+						<Offset x="56" y="-19"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						self:RegisterForDrag("LeftButton")
+					</OnLoad>
+					<OnMouseDown>
+						self.moving = true
+						self:GetParent():StartMoving()
+					</OnMouseDown>
+					<OnMouseUp>
+						if self.moving then
+							self.moving = nil
+							self:GetParent():StopMovingOrSizing()
+							LibStub("LibWindow-1.1").SavePosition(self:GetParent())
+						end
+					</OnMouseUp>
+				</Scripts>
+				<NormalFont style="GameFontNormal"/>
+				<HighlightFont style="GameFontHighlight"/>
+			</Button>
+
 			<Frame name="PLGuildBankMoneyFrame" inherits="SmallMoneyFrameTemplate">
 				<Anchors>
 					<Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
-						<Offset x="-4" y="16"/>
+						<Offset x="-4" y="8"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
@@ -468,17 +478,17 @@
 					</OnLoad>
 				</Scripts>
 			</Frame>
-			<Button inherits="UIPanelCloseButton">
+			<!--<Button inherits="UIPanelCloseButton">
 				<Anchors>
 					<Anchor point="TOPRIGHT">
 						<Offset x="3" y="-8"/>
 					</Anchor>
 				</Anchors>
-			</Button>
+			</Button>-->
 			<Button name="PLGuildBankFrameTab1" inherits="CharacterFrameTabButtonTemplate" text="PLGuild_BANK" id="1">
                <Anchors>
 					<Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT">
-						<Offset x="19" y="-24"/>
+						<Offset x="19" y="-30"/>
 					</Anchor>
 				</Anchors>
                 <Scripts>
@@ -664,6 +674,34 @@
 					<Anchor point="TOPRIGHT" x="-15" y="-42"/>
 				</Anchors>
 			</EditBox>
+
+			<Button name="$parentResize">
+				<Size x="16" y="16"/>
+
+				<Anchors>
+					<Anchor point="BOTTOMRIGHT">
+						<Offset x="-7" y="4"/>
+					</Anchor>
+				</Anchors>
+
+				<Scripts>
+					<OnLoad>
+						self:SetFrameLevel(self:GetFrameLevel() + 4)
+						self:GetNormalTexture():SetVertexColor(1, 0.82, 0, .8)
+						self:GetNormalTexture():SetAlpha(.5)
+					</OnLoad>
+					<OnMouseDown>
+						self:GetParent():StartSizing()
+					</OnMouseDown>
+					<OnMouseUp>
+						self:GetParent():StopMovingOrSizing()
+					</OnMouseUp>
+				</Scripts>
+
+				<NormalTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Up" setAllPoints="true"/>
+				<PushedTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Down" setAllPoints="true"/>
+				<HighlightTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Highlight" alphaMode="ADD" setAllPoints="true"/>
+			</Button>
 		</Frames>
 	</Frame>
 

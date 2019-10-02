@@ -13,18 +13,21 @@ local defaults = {
 			height = 512,
 			showBags = false,
 		},
-	}
+    },
+    guildDefaults = {
+        minGuildRank = 0
+    }
 }
 
 function PLGuildBankClassic:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("PLGuildBankClassicDB", defaults, true)
-    db = self.db.profile
-
+    db = self.db
+    self.isInGuild = false
     self:ScanGuildStatus()
 end
 
 function PLGuildBankClassic:OnEnable()
-	self.guildVault = PLGuildBankClassic.Frame:Create("PLGuildBankClassicFrame", L["%s's Guild Bank"], db.vault)
+	self.guildVault = PLGuildBankClassic.Frame:Create("PLGuildBankClassicFrame", "PLGuildBankClassicFrame", db.vault)
 
 	self:RegisterChatCommand("plgb", "HandleSlash")
 end
@@ -47,5 +50,39 @@ function PLGuildBankClassic:ToggleFrame()
 end
 
 function PLGuildBankClassic:ScanGuildStatus()
+    guildName, guildRankName, guildRankIndex = GetGuildInfo("player")
 
+    if guildName and guildRankName then
+        self.isInGuild = true
+        self.guildName = guildName
+
+        self:PrepareGuildConfig()
+    end
+end
+
+function PLGuildBankClassic:PrepareGuildConfig() 
+    if not db.guildConfig or not db.guildConfig[self:GuildName()] then
+        db.guildConfig[self:GuildName()] = defaults.guildDefaults
+    end
+end
+
+function PLGuildBankClassic:IsGuildBankChar()
+    return false
+end
+
+function PLGuildBankClassic:IsInGuild()
+    return self.isInGuild
+end
+
+function PLGuildBankClassic:GuildName()
+    return self.guildName
+end
+
+function PLGuildBankClassic:IGuildMaster()
+    if self:IsGuildBankChar() then
+        guildName, guildRankName, guildRankIndex = GetGuildInfo("player")
+        return guildRankIndex <= db.guildConfig[self:GuildName()].minGuildRank
+    else
+        return false
+    end
 end

@@ -28,20 +28,18 @@ function Events:GenericEvent(event, ...)
 	self:Fire(event, ...)
 end
 
-function Events:IsGuildBankChar()
-    return false
-end
+
 
 -- events
 function Events:BAG_UPDATE(event, bag)
-    if Events:IsGuildBankChar() then
+    if PLGuildBankClassic:IsGuildBankChar() then
 	    --self:UpdateBagSizes()
         --self:UpdateItems(bag)
     end
 end
 
 function Events:BAG_NEW_ITEMS_UPDATED(event)
-    if Events:IsGuildBankChar() then
+    if PLGuildBankClassic:IsGuildBankChar() then
         --for bag = 0, NUM_BAG_SLOTS do
         --	self:UpdateItems(bag)
         --end
@@ -49,14 +47,14 @@ function Events:BAG_NEW_ITEMS_UPDATED(event)
 end
 
 function Events:PLAYERBANKSLOTS_CHANGED()
-    if Events:IsGuildBankChar() then
+    if PLGuildBankClassic:IsGuildBankChar() then
         --self:UpdateBagSizes()
         --self:UpdateItems(BANK_CONTAINER)
     end
 end
 
 function Events:BANKFRAME_OPENED()
-    if Events:IsGuildBankChar() then
+    if PLGuildBankClassic:IsGuildBankChar() then
         self.atBank = true
         ItemCache.AtBank = true
 
@@ -72,7 +70,7 @@ function Events:BANKFRAME_OPENED()
 end
 
 function Events:BANKFRAME_CLOSED()
-    if Events:IsGuildBankChar() then
+    if PLGuildBankClassic:IsGuildBankChar() then
         self.atBank = false
         ItemCache.AtBank = false
         self:Fire("BANK_CLOSED")
@@ -80,7 +78,7 @@ function Events:BANKFRAME_CLOSED()
 end
 
 function Events:BAG_UPDATE_COOLDOWN()
-    if Events:IsGuildBankChar() then
+    if PLGuildBankClassic:IsGuildBankChar() then
         --self:UpdateCooldowns(BACKPACK_CONTAINER)
 
         --for bag = 1, NUM_BAG_SLOTS do
