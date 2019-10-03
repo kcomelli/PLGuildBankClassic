@@ -602,9 +602,18 @@
 				</Size>
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="$parent">
-						<Offset x="50" y="50"/>
+						<Offset x="20" y="-80"/>
+					</Anchor>
+					<Anchor point="BOTTOMRIGHT" relativeTo="$parent">
+						<Offset x="-20" y="40"/>
 					</Anchor>
 				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND" textureSubLevel="-5">
+						<!-- TODO: Convert this to atlas -->
+						<Texture parentKey="Bg" file="Interface\FrameGeneral\UI-Background-Marble" horizTile="true" vertTile="true" setAllPoints="true"/>
+					</Layer>
+				</Layers>
 			</Frame>
 
 			<Frame parentKey="configFrame" name="PLGuildBankFrameConfig" hidden="true">

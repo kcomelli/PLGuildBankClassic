@@ -22,7 +22,7 @@ local defaults = {
 
 -- guild master can change the min required guild rank
 -- for bank character configuration
-local minGuildRankForRankConfig = 0
+local minGuildRankForRankConfig = 0 
 
 function PLGuildBankClassic:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("PLGuildBankClassicDB", defaults, true)

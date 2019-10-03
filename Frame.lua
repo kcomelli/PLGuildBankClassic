@@ -170,8 +170,8 @@ function Frame:ShowBankLog()
 	end
 
 	self:HideFrames()
-	self.logFrame:Show()
 	self:SetTabContentVisibility(true)
+	self.logFrame:Show()
 end
 
 function Frame:ShowGuildInfo()
@@ -191,8 +191,8 @@ function Frame:ShowConfig()
 	self:HideFrames()
 	--self.configFrame:Show()
 	--self:GuildRanksDropDown_DoLoad(self.configRankDropDown, self)
-	self.guildConfigFrame:Show()
 	self:SetTabContentVisibility(true)
+	self.guildConfigFrame:Show()
 end
 
 function Frame:HideFrames()
