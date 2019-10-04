@@ -16,20 +16,22 @@ local defaults = {
 		},
     },
     factionrealm  = {
-        minGuildRank = 0
+        minGuildRank = 1
     }
 }
 
 -- guild master can change the min required guild rank
 -- for bank character configuration
-local minGuildRankForRankConfig = 0 
+local minGuildRankForRankConfig = 1 
 
 function PLGuildBankClassic:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("PLGuildBankClassicDB", defaults, true)
     dbProfile = self.db.profile
     dbFactionRealm = self.db.factionrealm
     self.isInGuild = false
-    self:ScanGuildStatus()
+
+    self:RegisterEvent("PLAYER_ENTERING_WORLD", "InitializePlayerStatus")
+    self:RegisterEvent("PLAYER_GUILD_UPDATE", "InitializePlayerStatus")
 end
 
 function PLGuildBankClassic:OnEnable()
@@ -48,6 +50,11 @@ function PLGuildBankClassic:HandleSlash(cmd)
 	end
 end
 
+function PLGuildBankClassic:InitializePlayerStatus()
+    print("saccing guild status")
+    self:ScanGuildStatus()
+end
+
 function PLGuildBankClassic:ToggleFrame()
     if self.guildVault:IsShown() then
         self.guildVault:HideFrame()
@@ -62,10 +69,12 @@ function PLGuildBankClassic:ScanGuildStatus()
     if guildName and guildRankName then
         self.isInGuild = true
         self.guildName = guildName
+        self.guildRank = guildRankIndex+1
         self.rankTable = {}
 
 
         self:PrepareGuildConfig()
+        self.guildVault:UpdateGuildSettings(PLGuildBankClassic:GetGuildConfig())
     end
 end
 
@@ -84,6 +93,16 @@ function PLGuildBankClassic:GetGuildConfig()
     return nil
 end
 
+function PLGuildBankClassic:NumberOfConfiguredAlts()
+    local guildConfig = PLGuildBankClassic:GetGuildConfig() 
+    
+    if guildConfig ~= nil and guildConfig.bankChars ~= nill then
+        return getn(guildConfig.bankChars)
+    end
+    
+    return 0
+end
+
 function PLGuildBankClassic:IsGuildBankChar()
     return false
 end
@@ -98,8 +117,7 @@ end
 
 function PLGuildBankClassic:CanConfigureBankAlts()
     if self:IsInGuild() then
-        guildName, guildRankName, guildRankIndex = GetGuildInfo("player")
-        return guildRankIndex <= dbFactionRealm.guildConfig[self:GuildName()].minGuildRank
+        return self.guildRank <= dbFactionRealm.guildConfig[self:GuildName()].minGuildRank
     else
         return false
     end
@@ -107,8 +125,7 @@ end
 
 function PLGuildBankClassic:CanConfigureRank()
     if self:IsInGuild() then
-        guildName, guildRankName, guildRankIndex = GetGuildInfo("player")
-        return guildRankIndex <= minGuildRankForRankConfig
+        return self.guildRank <= minGuildRankForRankConfig
     else
         return false
     end
@@ -119,7 +136,7 @@ function PLGuildBankClassic:GetGuildRankTable()
         if self.rankTable == nil or table.getn(self.rankTable) <= 0 then
             self.rankTable = {}
             local numRanks = GuildControlGetNumRanks()
-    		for i = 0, numRanks do
+    		for i = 1, numRanks do
 	    		self.rankTable[i] = GuildControlGetRankName(i)
 		    end
         end
@@ -139,9 +156,9 @@ end
 
 
 
-function PLGuildBankClassic:UpdateMinRankForAlts(newIndex)
+function PLGuildBankClassic:UpdateMinRankForAlts(newRank)
     if self:IsInGuild() then
-        dbFactionRealm.guildConfig[self:GuildName()].minGuildRank = newIndex
+        dbFactionRealm.guildConfig[self:GuildName()].minGuildRank = newRank
     end
 end
 
@@ -150,5 +167,5 @@ function PLGuildBankClassic:GetMinRankForAlts()
         return dbFactionRealm.guildConfig[self:GuildName()].minGuildRank
     end
 
-    return 0
+    return minGuildRankForRankConfig
 end

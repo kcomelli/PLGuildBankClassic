@@ -596,7 +596,7 @@
 				</Anchors>
 			</Frame>
 
-			<Frame parentKey="tabContentContainer" name="PLGuildBankFrameTabContent" hidden="true">
+			<Frame parentKey="tabContentContainer" name="PLGuildBankFrameTabContent" hidden="false">
 				<Size>
 					<AbsDimension x="200" y="200"/>
 				</Size>
@@ -614,60 +614,6 @@
 						<Texture parentKey="Bg" file="Interface\FrameGeneral\UI-Background-Marble" horizTile="true" vertTile="true" setAllPoints="true"/>
 					</Layer>
 				</Layers>
-			</Frame>
-
-			<Frame parentKey="configFrame" name="PLGuildBankFrameConfig" hidden="true">
-				<Size>
-					<AbsDimension x="200" y="200"/>
-				</Size>
-				<Anchors>
-					<Anchor point="TOPLEFT" relativeTo="$parent">
-						<Offset x="50" y="50"/>
-					</Anchor>
-				</Anchors>
-				<Frames>
-					<Frame name="$parentChannel">
-						<Size>
-							<AbsDimension x="170" y="20" />
-						</Size>
-						<Anchors>
-							<Anchor point="TOPLEFT">
-								<Offset>
-									<AbsDimension x="10" y="-124" />
-								</Offset>
-							</Anchor>
-						</Anchors>
-						<Layers>
-							<Layer>
-								<FontString parentKey="configRankLabel" name="$parentLabel" font="Fonts\FRIZQT__.TTF" text="PLGuild_BANK_CONFIG_RANK" justifyH="RIGHT">
-									<Anchors>
-										<Anchor point="TOPLEFT" />
-										<Anchor point="BOTTOMRIGHT" />
-									</Anchors>
-									<FontHeight>
-										<AbsValue val="10" />
-									</FontHeight>
-									<Color r="1" g="0.8196079" b="0" />
-									<Shadow>
-										<Color r="0" g="0" b="0" />
-										<Offset>
-											<AbsDimension x="1" y="-1" />
-										</Offset>
-									</Shadow>
-								</FontString>
-							</Layer>
-						</Layers>
-					</Frame>
-					<Button parentKey="configRankDropDown" name="$parentChannelDropDown" inherits="UIDropDownMenuTemplate">
-						<Anchors>
-							<Anchor point="TOPLEFT">
-								<Offset>
-									<AbsDimension x="180" y="-123" />
-								</Offset>
-							</Anchor>
-						</Anchors>
-					</Button>
-				</Frames>
 			</Frame>
 
 			<Frame parentKey="logFrame" name="PLGuildBankFrameLog" hidden="true">
@@ -704,7 +650,7 @@
 							<Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPRIGHT">
 								<Offset x="-50" y="-75"/>
 							</Anchor>
-						</Anchors>
+						</Anchors> 
 						<Layers>
 							<Layer level="ARTWORK">
 								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
