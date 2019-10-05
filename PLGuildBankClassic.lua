@@ -74,7 +74,9 @@ function PLGuildBankClassic:ScanGuildStatus()
 
 
         self:PrepareGuildConfig()
-        self.guildVault:UpdateGuildSettings(PLGuildBankClassic:GetGuildConfig())
+        if self.guildVault ~= nil then
+            self.guildVault:UpdateGuildSettings(PLGuildBankClassic:GetGuildConfig())
+        end
     end
 end
 

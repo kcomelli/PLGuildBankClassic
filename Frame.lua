@@ -71,6 +71,8 @@ function PLGuildBankClassic.Frame:Create(name, titleText, settings, guildSetting
 	frame:SetWidth(settings.width)
 	frame:SetHeight(settings.height)
 
+	frame:ConfigureTabs(frame)
+
 	LibWindow.RegisterConfig(frame, settings)
 	LibWindow.RestorePosition(frame)
 
@@ -83,7 +85,7 @@ function PLGuildBankClassic.Frame:Create(name, titleText, settings, guildSetting
 end
 
 function Frame:ApplyLocalization()
-	self.availableMoneyLabel:SetText(L["Available money"])
+	self.moneyFrameBackground.availableMoneyLabel:SetText(L["Available money"])
 	self.tabBankItems:SetText(L["Bank items"])
 	self.tabBankLog:SetText(L["Bank logs"])
 	self.tabBankInfo:SetText(L["Guild info"])
@@ -95,8 +97,29 @@ function Frame:ApplyLocalization()
 		self.errorMessage:Show()
 		self:HideFrames()
     else
-        self.guildBankTitleLabel:SetFormattedText(L["%s's Guild Bank"], PLGuildBankClassic:GuildName())
+		self.guildBankTitleLabel:SetFormattedText(L["%s's Guild Bank"], PLGuildBankClassic:GuildName())
+		self.guildBankTitleBackground:SetWidth(self.guildBankTitleLabel:GetWidth() + 20)
     end
+end
+
+function Frame:ConfigureTabs(frame)
+	frame.numTabs = 4
+	frame.maxTabWidth = 128
+	frame.Tabs = {}
+	frame.Tabs[1] = frame.tabBankItems
+	frame.Tabs[2] = frame.tabBankLog
+	frame.Tabs[3] = frame.tabBankInfo
+	frame.Tabs[4] = frame.tabBankConfig
+
+	frame.CharTabs = {}
+	frame.CharTabs[1] = frame.tabBankAlt1
+	frame.CharTabs[2] = frame.tabBankAlt2
+	frame.CharTabs[3] = frame.tabBankAlt3
+	frame.CharTabs[4] = frame.tabBankAlt4
+	frame.CharTabs[5] = frame.tabBankAlt5
+	frame.CharTabs[6] = frame.tabBankAlt6
+	frame.CharTabs[7] = frame.tabBankAlt7
+	frame.CharTabs[8] = frame.tabBankAlt8
 end
 
 function Frame:OnLoad()
@@ -107,7 +130,9 @@ function Frame:OnShow()
     PlaySound(SOUNDKIT.IG_BACKPACK_OPEN)
     self:ApplyLocalization()
 	self:UpdateTabard()
-	self:CheckBankAlts();
+	
+	self:PLGuildBankFrameTab_OnClick(self.tabBankItems, 1)
+	self:UpdateBankAltTabs()
 end
 
 function Frame:OnHide()
@@ -148,16 +173,16 @@ end
 
 function Frame:CheckBankAlts()
 	if PLGuildBankClassic:NumberOfConfiguredAlts() <= 0 or PLGuildBankClassic:CanConfigureBankAlts() == false then
-		if PLGuildBankClassic:CanConfigureBankAlts() == false then
-			local minRank = PLGuildBankClassic:GetGuildRankTable()[PLGuildBankClassic:GetMinRankForAlts()]
-
-			self:DisplayErrorMessage(string.format(L["Addon requires bank-character configuration which can only be done by rank '%s' or higher!"], minRank))
-		end
-
 		if PLGuildBankClassic:NumberOfConfiguredAlts() <= 0 then
 			self:DisplayErrorMessage(L["Currently there are no guild bank-alt's configured.\nPlease use the right + button to add a new character."])
 		end
-		
+
+		if PLGuildBankClassic:CanConfigureBankAlts() == false then
+			local minRank = PLGuildBankClassic:GetGuildRankTable()[PLGuildBankClassic:GetMinRankForAlts()]
+
+			self:DisplayErrorMessage(string.format(L["Addon requires bank-character configuration\nwhich can only be done by rank '%s' or higher!"], minRank))
+		end
+
 		return false
 	end
 
@@ -165,8 +190,11 @@ function Frame:CheckBankAlts()
 end
 
 function Frame:PLGuildBankFrameTab_OnClick(tabButton, id)
+	local parent = tabButton:GetParent()
+
+	PanelTemplates_SetTab(self, id);
+
 	if PLGuildBankClassic:IsInGuild() then
-		local parent = tabButton:GetParent()
 		parent.currentTab = id
 		parent:DisplayTab(parent.currentTab)
 	end
@@ -245,6 +273,32 @@ function Frame:SetTabContentVisibility(visible)
 	else
 		self.tabContentContainer:Hide()
 	end
+end
+
+-----------------------------------------------------------------------
+-- Bank character tab buttons
+
+function Frame:UpdateBankAltTabs()
+	local disableAll = false
+	local numberOfBankAlts = PLGuildBankClassic:NumberOfConfiguredAlts()
+	for i = 1, 8 do
+		if i > numberOfBankAlts then
+			if i == numberOfBankAlts + 1 and PLGuildBankClassic:CanConfigureBankAlts() then
+				self.CharTabs[i]:Show()
+				self.CharTabs[i].checkButton.iconTexture:SetTexture("Interface\\GuildBankFrame\\UI-GuildBankFrame-NewTab");
+			else
+				self.CharTabs[i]:Hide()
+			end
+		else
+			-- todo configure tab button icon, text etc
+			self.CharTabs[i]:Show()
+		end
+
+		if disableAll then
+			self.CharTabs[i].checkButton:Disable()
+		end
+	end
+
 end
 
 -----------------------------------------------------------------------
