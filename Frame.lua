@@ -40,7 +40,7 @@ function PLGuildBankClassic.Frame:Create(name, titleText, settings, guildSetting
 	local frame = setmetatable(CreateFrame("Frame", name, UIParent, "PLGuildBankFrame"), Frame_MT)
 
 	-- settings
-	frame.settings = settings
+	frame.settings = settings.vault
 	frame.guildSettings = guildSettings
 	frame.titleText = titleText
 	frame.bagButtons = {}
@@ -50,12 +50,8 @@ function PLGuildBankClassic.Frame:Create(name, titleText, settings, guildSetting
 
 	-- components
 	frame.guildConfigFrame = PLGuildBankClassic.GuildConfigFrame:Create(frame.tabContentContainer)
-	--frame.guildConfigFrame:SetPoint("TOPLEFT", 10, 10)
-
-	--frame.itemContainer = PLGuildBankClassic.ItemContainer:Create(frame)
-	--frame.itemContainer:SetPoint("TOPLEFT", 10, -64)
-	--frame.itemContainer:SetBags(config[1].bags)
-	--frame.itemContainer:Show()
+	frame.addEditBankAltChar = PLGuildBankClassic.CreateEditBankAltDialogFrame:Create(UIParent, settings)
+	
 
     -- scripts
     frame:SetScript("OnLoad", frame.OnLoad)
@@ -68,12 +64,12 @@ function PLGuildBankClassic.Frame:Create(name, titleText, settings, guildSetting
 	frame:RegisterUnitEvent("UNIT_PORTRAIT_UPDATE", "player")
 
 	-- load and apply config
-	frame:SetWidth(settings.width)
-	frame:SetHeight(settings.height)
+	frame:SetWidth(frame.settings.width)
+	frame:SetHeight(frame.settings.height)
 
 	frame:ConfigureTabs(frame)
 
-	LibWindow.RegisterConfig(frame, settings)
+	LibWindow.RegisterConfig(frame, frame.settings)
 	LibWindow.RestorePosition(frame)
 
     --frame:UpdateTitleText()
@@ -104,7 +100,7 @@ end
 
 function Frame:ConfigureTabs(frame)
 	frame.numTabs = 4
-	frame.maxTabWidth = 128
+	frame.maxTabWidth = 110
 	frame.Tabs = {}
 	frame.Tabs[1] = frame.tabBankItems
 	frame.Tabs[2] = frame.tabBankLog
@@ -282,15 +278,21 @@ function Frame:UpdateBankAltTabs()
 	local disableAll = false
 	local numberOfBankAlts = PLGuildBankClassic:NumberOfConfiguredAlts()
 	for i = 1, 8 do
+		self.CharTabs[i].addMode = false
+
 		if i > numberOfBankAlts then
 			if i == numberOfBankAlts + 1 and PLGuildBankClassic:CanConfigureBankAlts() then
 				self.CharTabs[i]:Show()
 				self.CharTabs[i].checkButton.iconTexture:SetTexture("Interface\\GuildBankFrame\\UI-GuildBankFrame-NewTab");
+				self.CharTabs[i].checkButton.tooltip = L["Add a new bank character"]
+				self.CharTabs[i].addMode = true
 			else
+				self.CharTabs[i].checkButton.tooltip = ""
 				self.CharTabs[i]:Hide()
 			end
 		else
 			-- todo configure tab button icon, text etc
+			self.CharTabs[i].checkButton.tooltip = " "
 			self.CharTabs[i]:Show()
 		end
 
@@ -299,6 +301,20 @@ function Frame:UpdateBankAltTabs()
 		end
 	end
 
+end
+
+function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTab)
+	local tab = checkButton:GetParent()
+
+	if tab.addMode then
+		-- this tab is currently displaying the + symbol allowing the
+		-- player to add a new bank character
+		self.addEditBankAltChar:InitCreateNew()
+		self.addEditBankAltChar:Show()
+		checkButton.checked = false
+	else
+		self.currentAltTab = currentTab
+	end
 end
 
 -----------------------------------------------------------------------

@@ -26,6 +26,7 @@ libs\LibItemSearch-1.2\LibItemSearch-1.2.lua
 
 Frame.xml
 TabGuildConfigFrame.xml
+CreateEditBankAltDialogFrame.xml
 
 Localization.lua
 PLGuildBankClassic.lua
@@ -33,4 +34,5 @@ Events.lua
 
 Frame.lua
 TabGuildConfigFrame.lua
+CreateEditBankAltDialogFrame.lua
 

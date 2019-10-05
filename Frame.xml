@@ -97,11 +97,12 @@
 						end
 					</OnEvent>
 					<OnClick>
-						local currentTab = self:GetParent():GetID();
-						if ( GetCurrentPLGuildBankTab() ~= currentTab or button == "RightButton" ) then
-							PlaySound("GuildBankOpenBag");
+						local currentTab = self:GetParent():GetID()
+						local parentFrame = self:GetParent():GetParent()
+						if ( parentFrame.currentAltTab ~= currentTab or button == "RightButton" ) then
+							PlaySound(SOUNDKIT.GUILD_VAULT_OPEN)
 						end
-						--PLGuildBankTab_OnClick(self, button, currentTab);
+						parentFrame:PLGuildBankTab_OnClick(self, button, currentTab);
 					</OnClick>
 					<OnEnter>
 						GameTooltip:SetOwner(self, "ANCHOR_LEFT");
@@ -133,6 +134,7 @@
 		<Scripts>
 			<OnClick>
 				--GuildBankPopupButton_OnClick(self, button, down);
+
 			</OnClick>
 		</Scripts>
 	</CheckButton>
@@ -772,7 +774,7 @@
 			<EditBox name="PLGuildItemSearchBox" inherits="BagSearchBoxTemplate" letters="15">
 				<Size x="130" y="20"/>
 				<Anchors>
-					<Anchor point="TOPRIGHT" x="-15" y="-36"/>
+					<Anchor point="TOPRIGHT" x="-12" y="-36"/>
 				</Anchors>
 			</EditBox>
 

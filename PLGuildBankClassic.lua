@@ -13,7 +13,14 @@ local defaults = {
 			width = 512,
 			height = 512,
 			showBags = false,
-		},
+        },
+        charConfig = {
+			x = 220,
+			y = 120,
+			point = "LEFT",
+			width = 400,
+			height = 475,
+        },
     },
     factionrealm  = {
         minGuildRank = 1
@@ -36,7 +43,7 @@ end
 
 function PLGuildBankClassic:OnEnable()
     local guildSettings = PLGuildBankClassic:GetGuildConfig()
-	self.guildVault = PLGuildBankClassic.Frame:Create("PLGuildBankClassicFrame", "PLGuildBankClassicFrame", dbProfile.vault, guildSettings)
+	self.guildVault = PLGuildBankClassic.Frame:Create("PLGuildBankClassicFrame", "PLGuildBankClassicFrame", dbProfile, guildSettings)
 
 	self:RegisterChatCommand("plgb", "HandleSlash")
 end
