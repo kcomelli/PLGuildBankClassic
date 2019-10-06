@@ -103,18 +103,18 @@ function CreateEditBankAltDialogFrame:IconPopupButton_OnClick(iconBtn, button, d
 end
 
 function CreateEditBankAltDialogFrame:PopupButton_SelectTexture(selectedIcon)
-	self.characterData.icon = selectedIcon;
+	self.characterData.icon = selectedIcon
 	-- Clear out selected texture
-	self.characterData.iconTexture = nil;
-    local curMacroInfo = self:GetSpellorMacroIconInfo(self.characterData.icon);
+	self.characterData.iconTexture = nil
+    local curMacroInfo = self:GetSpellorMacroIconInfo(self.characterData.icon)
     
-    selectedMacroIcon = _G["CreateEditBankAltDialogFrameSelectedIconButtonIcon"];
-    selectedMacroIconButton = _G["CreateEditBankAltDialogFrameSelectedIconButton"];
+    local buttonSelectedIcon = _G["CreateEditBankAltDialogFrameSelectedIconButtonIcon"]
+    local buttonSelectedIconButton = _G["CreateEditBankAltDialogFrameSelectedIconButton"]
 
 	if(type(curMacroInfo) == "number") then
-		selectedMacroIcon:SetTexture(curMacroInfo);
+		buttonSelectedIcon:SetTexture(curMacroInfo)
 	else
-		selectedMacroIcon:SetTexture("INTERFACE\\ICONS\\"..curMacroInfo);
+		buttonSelectedIcon:SetTexture("INTERFACE\\ICONS\\"..curMacroInfo)
 	end	
 	self:UpdateIconFrame()
 end
