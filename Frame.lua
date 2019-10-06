@@ -36,9 +36,6 @@ MoneyTypeInfo["PLGUILDBANKCLASSIC"] = {
 PLGuildBankClassic.Frame = {}
 PLGuildBankClassic.Frame.defaults = {}
 PLGuildBankClassic.Frame.prototype = Frame
-
-
-
 function PLGuildBankClassic.Frame:Create(name, titleText, settings, guildSettings)
 	local frame = setmetatable(CreateFrame("Frame", name, UIParent, "PLGuildBankFrame"), Frame_MT)
 
@@ -359,7 +356,7 @@ function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTabId)
 		Events:GenericEvent("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", currentTabId, charData)
 
 		if mouseButton == "RightButton" then
-			PLGuildBankClassic:debug("Changeing character info by index: " .. id)
+			PLGuildBankClassic:debug("Changeing character info by index: " .. currentTabId)
 
 			if charData then
 				PLGuildBankClassic:debug("Changeing character name: " .. charData.name)
@@ -367,7 +364,7 @@ function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTabId)
 				self.addEditBankAltChar:Show()
 				self.addEditBankAltChar.openedByTab = tab
 			else
-				PLGuildBankClassic:debug("Could not load bank character data by index: " .. id)
+				PLGuildBankClassic:debug("Could not load bank character data by index: " .. currentTabId)
 			end
 			checkButton.checked = false
 		end
@@ -379,14 +376,17 @@ end
 
 function Frame:PLGBC_EVENT_BANKCHAR_ADDED(event, index, characterData)
 	PLGuildBankClassic:debug("Bankchar added at index " .. tostring(index) .. " using name " .. characterData.name)
+	PLGuildBankClassic:UpdateAtBankCharState()
 end
 
 function Frame:PLGBC_EVENT_BANKCHAR_UPDATED(event, index, characterData, nameChanged)
 	PLGuildBankClassic:debug("Bankchar updated at index " .. tostring(index) .. " using name " .. characterData.name .. " (Name changed: " ..  tostring(nameChanged) .. ")")
+	PLGuildBankClassic:UpdateAtBankCharState()
 end
 
 function Frame:PLGBC_EVENT_BANKCHAR_REMOVED(event, index, characterData)
 	PLGuildBankClassic:debug("Bankchar removed at index " .. tostring(index) .. " using name " .. characterData.name)
+	PLGuildBankClassic:UpdateAtBankCharState()
 end
 
 function Frame:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED(event, index, characterData)
@@ -399,9 +399,9 @@ function Frame:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED(event, index, characterData)
 
 	if characterData.acceptState ~= 1 then
 		if cacheOwnerInfo.class then
-			PLGuildBankClassic:debug("No cached data found")
-		else
 			PLGuildBankClassic:debug("Cached data found")
+		else
+			PLGuildBankClassic:debug("No cached data found")
 		end
 
 		self:DisplayErrorMessage(L["The bank character must install this AddOn and accept the new state of being a guild bank character!\n \nThis is required because the character's inventory, bank \nand money will be synced with all guild-members which are using this AddOn!"])

@@ -160,15 +160,15 @@ function PLGuildBankClassic:IsPlayerInGuild(characterName)
 end
 
 function PLGuildBankClassic:IsGuildBankChar()
-    return false
+    return PLGuildBankClassic.atBankChar ~= nil
 end
 
 function PLGuildBankClassic:IsInGuild()
-    return self.isInGuild
+    return PLGuildBankClassic.isInGuild
 end
 
 function PLGuildBankClassic:GuildName()
-    return self.guildName
+    return PLGuildBankClassic.guildName
 end
 
 

@@ -15,7 +15,6 @@ PLGBC_EVENT_BANKCHAR_SLOT_SELECTED = "PLGBC_EVENT_BANKCHAR_SLOT_SELECTED"
 local slots = {}
 
 function Events:OnEnable()
-	self.firstVisit = true
 	self.atBank = false
 
 	self:RegisterEvent("BAG_UPDATE")
@@ -24,8 +23,8 @@ function Events:OnEnable()
 	self:RegisterEvent("PLAYERBANKSLOTS_CHANGED")
 	self:RegisterEvent("BANKFRAME_OPENED")
 	self:RegisterEvent("BANKFRAME_CLOSED")
-	self:RegisterEvent("ITEM_LOCK_CHANGED", "GenericEvent")
-
+    self:RegisterEvent("ITEM_LOCK_CHANGED", "GenericEvent")
+    
 	--self:UpdateBagSize(BACKPACK_CONTAINER)
 	--self:UpdateItems(BACKPACK_CONTAINER)
 end
@@ -33,8 +32,6 @@ end
 function Events:GenericEvent(event, ...)
 	self:Fire(event, ...)
 end
-
-
 
 -- events
 function Events:BAG_UPDATE(event, bag)

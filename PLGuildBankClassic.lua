@@ -35,6 +35,23 @@ local defaults = {
 PLGBC_BAG_CONFIG = { BACKPACK_CONTAINER, 1, 2, 3, 4 }
 PLGBC_BANK_CONFIG = { BANK_CONTAINER, 5, 6, 7, 8, 9, 10 }
 
+StaticPopupDialogs["PLGBC_POPUP_ACCEPT_BANKCHARSTATE"] = {
+    text = L["%s has configured your char as guild-bank character!\nDo you accept this state of the character?\n \nNote: All your inventory, bank and money will be shared across the guild!"],
+    button1 = L["Accept"],
+    button2 = L["Decline"],
+    OnAccept = function()
+        PLGuildBankClassic:AcceptOrDeclineState("accept")
+    end,
+    OnCancel = function (_,reason)
+        if reason == "clicked" then
+            PLGuildBankClassic:AcceptOrDeclineState("decline")
+        end
+    end,
+    sound = 888,
+    timeout = 30,
+    whileDead = true,
+    hideOnEscape = true,
+  }
 
 -- guild master can change the min required guild rank
 -- for bank character configuration
@@ -47,11 +64,14 @@ function PLGuildBankClassic:OnInitialize()
     self.isInGuild = false
 
     self.iconFilenames = nil
+    self.atBankChar = nil
+    self.atBankCharIndex = 0
 
     self:RefreshPlayerSpellIconInfo()
 
-    self:RegisterEvent("PLAYER_ENTERING_WORLD", "InitializePlayerStatus")
+    self:RegisterEvent("PLAYER_ENTERING_WORLD", "PlayerEnteringWorld")
     self:RegisterEvent("PLAYER_GUILD_UPDATE", "InitializePlayerStatus")
+    
 end
 
 function PLGuildBankClassic:OnEnable()
@@ -71,8 +91,51 @@ function PLGuildBankClassic:HandleSlash(cmd)
 end
 
 function PLGuildBankClassic:InitializePlayerStatus()
-    print("saccing guild status")
+    PLGuildBankClassic:debug("Scaning guild status")
     self:ScanGuildStatus()
+    self:UpdateAtBankCharState()
+    self:CheckIfAcceptenceIsPending()
+end
+
+function PLGuildBankClassic:PlayerEnteringWorld()
+    PLGuildBankClassic:debug("Entering world")
+    self:ScanGuildStatus()
+    self:UpdateAtBankCharState()
+    self:CheckIfAcceptenceIsPending()
+end
+
+function PLGuildBankClassic:CheckIfAcceptenceIsPending()
+    if self.atBankChar and (self.atBankChar.acceptState == nil or self.atBankChar.acceptState == 0) then
+        PLGuildBankClassic:debug("CheckIfAcceptenceIsPending: Sending popup for initiator " .. self.atBankChar.createdBy)
+
+        local initiatorName, initiatorRealm, initiatorServerName = PLGuildBankClassic:CharaterNameTranslation(self.atBankChar.createdBy)
+
+        StaticPopup_Show("PLGBC_POPUP_ACCEPT_BANKCHARSTATE", initiatorName)
+    else
+        if not self.atBankChar then
+            PLGuildBankClassic:debug("CheckIfAcceptenceIsPending: Not logged in with bank char")
+        else
+            PLGuildBankClassic:debug("CheckIfAcceptenceIsPending: Acceptance state is " .. tostring(self.atBankChar.acceptState or 0))
+        end
+    end
+end
+
+function PLGuildBankClassic:UpdateAtBankCharState()
+    self.atBankChar = self:GetBankCharDataByName(UnitName("player"))
+    self.atBankCharIndex = self:IndexOfBankCharData(self.atBankChar)
+end
+
+function PLGuildBankClassic:AcceptOrDeclineState(state)
+    if PLGuildBankClassic.atBankChar then
+        if state == "accept" then
+            PLGuildBankClassic.atBankChar.acceptState = 1
+        elseif state == "decline" then
+            PLGuildBankClassic.atBankChar.acceptState = -1
+        end
+
+        local Events = self:GetModule("Events")
+        Events:GenericEvent("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", PLGuildBankClassic.atBankCharIndex, PLGuildBankClassic.atBankChar)
+    end
 end
 
 function PLGuildBankClassic:ToggleFrame()
@@ -195,6 +258,46 @@ function PLGuildBankClassic:GetBankCharDataByIndex(index)
     end
 
     return guildConfig.bankChars[index]
+end
+
+function PLGuildBankClassic:GetBankCharDataByName(characterName)
+    local myName, myRealm, myServerName = PLGuildBankClassic:CharaterNameTranslation(characterName)
+
+    local guildConfig = PLGuildBankClassic:GetGuildConfig() 
+
+    if guildConfig == nil or guildConfig.bankChars == nil then
+        return nil
+    end
+
+    for i=1, getn(guildConfig.bankChars) do
+        local checkData = guildConfig.bankChars[i]
+        if checkData.name == myName and checkData.realm == myRealm then
+            return guildConfig.bankChars[i]
+        end
+    end
+
+    return nil
+end
+
+function PLGuildBankClassic:IndexOfBankCharData(characterData)
+    if not characterData then
+        return 0
+    end
+
+    local guildConfig = PLGuildBankClassic:GetGuildConfig() 
+
+    if guildConfig == nil or guildConfig.bankChars == nil then
+        return 0
+    end
+
+    for i=1, getn(guildConfig.bankChars) do
+        local checkData = guildConfig.bankChars[i]
+        if checkData == characterData then
+            return i
+        end
+    end
+
+    return 0
 end
 
 function PLGuildBankClassic:CanConfigureBankAlts()

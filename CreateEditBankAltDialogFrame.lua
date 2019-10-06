@@ -143,6 +143,8 @@ function CreateEditBankAltDialogFrame:CanUseCharacter(editBox)
     end
 
     local newName, newRealm, newServerName = PLGuildBankClassic:CharaterNameTranslation(self.characterData.name)
+    local myName, myRealm, myServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
+
     PLGuildBankClassic:debug("CanUseCharacter: Translated to: " .. newName .. ", " .. newRealm .. ", " .. newServerName)
     local isInGuild, name, rank, level, class, note, officerNote = PLGuildBankClassic:IsPlayerInGuild(newServerName)
     PLGuildBankClassic:debug("CanUseCharacter: Guild check retruned: " .. tostring(isInGuild))
@@ -159,6 +161,10 @@ function CreateEditBankAltDialogFrame:CanUseCharacter(editBox)
         self.characterData.note = note
         self.characterData.officerNote = officerNote
         self.characterData.realm = newRealm
+        if newServerName == myServerName then
+            -- auto accept if the player adds himself as bank char
+            self.characterData.acceptState = 1
+        end
     end
 end
 
