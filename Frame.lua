@@ -252,6 +252,7 @@ function Frame:ShowBankItems()
 	self:SetTabContentVisibility(true)
 	if self:CheckBankAlts() then
 		-- fill bank items
+		self.bankContents:Show()
 	end
 end
 
@@ -262,7 +263,6 @@ function Frame:ShowBankLog()
 
 	self:HideFrames()
 	self:SetTabContentVisibility(true)
-
 end
 
 function Frame:ShowGuildInfo()
@@ -290,6 +290,7 @@ function Frame:HideFrames()
 	self:SetTabContentVisibility(false)
 	self.logFrame:Hide()
 	self.guildConfigFrame:Hide()
+	self.bankContents:Hide()
 end
 
 function Frame:SetTabContentVisibility(visible)
@@ -322,8 +323,8 @@ function Frame:UpdateBankAltTabs()
 		else
 			local charData = PLGuildBankClassic:GetBankCharDataByIndex(i)
 			local class = charData.class
-			local player = charData.name
 			if not RAID_CLASS_COLORS[class] or not RAID_CLASS_COLORS[class].colorStr then class = nil end
+			local player = charData.name
 
 			-- todo configure tab button icon, text etc
 			self.CharTabs[i].checkButton.iconTexture:SetTexture(PLGuildBankClassic:GetSpellorMacroIconInfo(charData.icon));
@@ -353,8 +354,6 @@ function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTabId)
 		self.currentAltTab = currentTabId
 		local charData = PLGuildBankClassic:GetBankCharDataByIndex(currentTabId)
 
-		Events:GenericEvent("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", currentTabId, charData)
-
 		if mouseButton == "RightButton" then
 			PLGuildBankClassic:debug("Changeing character info by index: " .. currentTabId)
 
@@ -367,6 +366,8 @@ function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTabId)
 				PLGuildBankClassic:debug("Could not load bank character data by index: " .. currentTabId)
 			end
 			checkButton.checked = false
+		else
+			Events:GenericEvent("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", currentTabId, charData)
 		end
 	end
 end
@@ -404,7 +405,7 @@ function Frame:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED(event, index, characterData)
 			PLGuildBankClassic:debug("No cached data found")
 		end
 
-		self:DisplayErrorMessage(L["The bank character must install this AddOn and accept the new state of being a guild bank character!\n \nThis is required because the character's inventory, bank \nand money will be synced with all guild-members which are using this AddOn!"])
+		self:DisplayErrorMessage(L["The bank character must install this AddOn and accept the state of being a guild-bank character!\n \nThis is required because the character's inventory, bank \nand money will be synced with all guild-members which are using this AddOn!"])
 		return
 	end
 
@@ -412,29 +413,7 @@ function Frame:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED(event, index, characterData)
 		PLGuildBankClassic:debug("Found cached data!")
 		PLGuildBankClassic:debug(cacheOwnerInfo.name .. " (" .. cacheOwnerInfo.race .. " " .. cacheOwnerInfo.class .. ") Money: " .. tostring(cacheOwnerInfo.money))
 
-		PLGuildBankClassic:debug("BAG DATA")
-		for _, bagId in pairs(PLGBC_BAG_CONFIG) do
-			local info = ItemCache:GetBagInfo(cacheOwnerInfo.name, bagId)
-			for slot = 1, (info.count or 0) do
-				local id = ItemCache:GetItemID(cacheOwnerInfo.name, bagId, slot)
-				local itemInfo = ItemCache:GetItemInfo(cacheOwnerInfo.name, bagId, slot)
-
-				PLGuildBankClassic:debug("   BAG#" .. tostring(bagId) .. " " .. tostring(itemInfo.count) .. "x " .. (itemInfo.link or itemInfo.readable or "EMPTY"))
-			end
-		end
-		PLGuildBankClassic:debug("---")
-		PLGuildBankClassic:debug("BANK DATA")
-		for _, bagId in pairs(PLGBC_BANK_CONFIG) do
-			local info = ItemCache:GetBagInfo(cacheOwnerInfo.name, bagId)
-			for slot = 1, (info.count or 0) do
-				local id = ItemCache:GetItemID(cacheOwnerInfo.name, bagId, slot)
-				local itemInfo = ItemCache:GetItemInfo(cacheOwnerInfo.name, bagId, slot)
-
-				PLGuildBankClassic:debug("   BAG#" .. tostring(bagId) .. " " .. tostring(itemInfo.count) .. "x " .. (itemInfo.link or itemInfo.readable or "EMPTY"))
-			end
-		end
-		PLGuildBankClassic:debug("---")
-		PLGuildBankClassic:debug("End of cache info")
+		self.bankContents:Update(characterData)
 	else
 		PLGuildBankClassic:debug("No cached data found")
 
