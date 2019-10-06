@@ -32,6 +32,10 @@ local defaults = {
     }
 }
 
+PLGBC_BAG_CONFIG = { BACKPACK_CONTAINER, 1, 2, 3, 4 }
+PLGBC_BANK_CONFIG = { BANK_CONTAINER, 5, 6, 7, 8, 9, 10 }
+
+
 -- guild master can change the min required guild rank
 -- for bank character configuration
 local minGuildRankForRankConfig = 1 
@@ -155,7 +159,7 @@ function PLGuildBankClassic:EditBankChar(index, name, description, class, icon, 
     end
 
     if( getn(guildConfig.bankChars) < index ) then
-        return
+        return false
     end
 
     local charData = guildConfig.bankChars[index]
@@ -177,6 +181,8 @@ function PLGuildBankClassic:EditBankChar(index, name, description, class, icon, 
         charData.log = {}
         charData.items = {}
     end
+
+    return charChanged
 end
 
 function PLGuildBankClassic:GetBankCharDataByIndex(index)

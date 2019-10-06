@@ -369,7 +369,7 @@
             <Button name="$parentEditCancel" inherits="UIPanelButtonTemplate" text="CANCEL">
                 <Size x="124" y="21"/>
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="EditSave" relativePoint="RIGHT">
+                    <Anchor point="LEFT" relativeTo="$parentEditSave" relativePoint="RIGHT">
                         <Offset x="10" y="0"/>
                     </Anchor>
                 </Anchors>

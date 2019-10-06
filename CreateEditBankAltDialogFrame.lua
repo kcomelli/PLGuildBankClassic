@@ -7,12 +7,11 @@ local CreateEditBankAltDialogFrame_MT = {__index = CreateEditBankAltDialogFrame}
 local LibWindow = LibStub("LibWindow-1.1")
 local Events = PLGuildBankClassic:GetModule("Events")
 
---SEND_MAIL_TAB_LIST = {};
---SEND_MAIL_TAB_LIST[1] = "SendMailNameEditBox";
---SEND_MAIL_TAB_LIST[2] = "SendMailSubjectEditBox";
---SEND_MAIL_TAB_LIST[3] = "SendMailBodyEditBox";
---SEND_MAIL_TAB_LIST[4] = "SendMailMoneyGold";
---SEND_MAIL_TAB_LIST[5] = "SendMailMoneyCopper";
+PLGBC_CREATE_BANK_ALT_TAB_LIST = {};
+PLGBC_CREATE_BANK_ALT_TAB_LIST[1] = "CreateEditBankAltDialogFrameCharacterEditBox";
+PLGBC_CREATE_BANK_ALT_TAB_LIST[2] = "CreateEditBankAltDialogFrameGuildTabDescription";
+PLGBC_CREATE_BANK_ALT_TAB_LIST[3] = "CreateEditBankAltDialogFrameEditSave";
+PLGBC_CREATE_BANK_ALT_TAB_LIST[4] = "CreateEditBankAltDialogFrameEditCancel";
 
 PLGuildBankClassic.CreateEditBankAltDialogFrame = {}
 PLGuildBankClassic.CreateEditBankAltDialogFrame.defaults = {}

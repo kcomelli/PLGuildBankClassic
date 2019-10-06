@@ -85,16 +85,23 @@ end
 
 function Frame:AddEditBankCharDialogResult(initiator, tab, mode, characterData, createNew)
 	if mode == "save" then
+			local changedName = false
 			--local tab = initiator.addEditBankAltChar.openedByTab
 			if createNew then
 				PLGuildBankClassic:debug("Creating new bank character config using char: " .. characterData.name)
 				PLGuildBankClassic:CreateBankChar(characterData.name, characterData.description, characterData.class, characterData.icon, characterData.iconTexture)
 			else
 				PLGuildBankClassic:debug("Updating new bank character config using char: " .. characterData.name)
-				PLGuildBankClassic:EditBankChar(tab:GetID(), characterData.name, characterData.description, characterData.class, characterData.icon, characterData.iconTexture)
+				changedName = PLGuildBankClassic:EditBankChar(tab:GetID(), characterData.name, characterData.description, characterData.class, characterData.icon, characterData.iconTexture)
 			end
 
 			initiator:UpdateBankAltTabs()
+
+			if createNew then
+				Events:GenericEvent("PLGBC_EVENT_BANKCHAR_ADDED", tab:GetID(), characterData)
+			else
+				Events:GenericEvent("PLGBC_EVENT_BANKCHAR_UPDATED", tab:GetID(), characterData, changedName)
+			end
 	end
 end
 
@@ -148,11 +155,16 @@ function Frame:OnShow()
 	
 	self:PLGuildBankFrameTab_OnClick(self.tabBankItems, 1)
 	self:UpdateBankAltTabs()
+
+	Events.Register(self, "PLGBC_EVENT_BANKCHAR_ADDED")
+	Events.Register(self, "PLGBC_EVENT_BANKCHAR_UPDATED")
+	Events.Register(self, "PLGBC_EVENT_BANKCHAR_REMOVED")
+	Events.Register(self, "PLGBC_EVENT_BANKCHAR_SLOT_SELECTED")
 end
 
 function Frame:OnHide()
 	PlaySound(SOUNDKIT.IG_BACKPACK_CLOSE)
-
+	Events.UnregisterAll(self)
 	-- clear search on hide
 	--self.SearchBox.clearButton:Click()
 end
@@ -183,7 +195,7 @@ end
 
 function Frame:HideError()
 	self.errorMessage:Hide()
-	parent:DisplayTab(parent.currentTab)
+	self:DisplayTab(self.currentTab)
 end
 
 function Frame:CheckBankAlts()
@@ -329,7 +341,7 @@ function Frame:UpdateBankAltTabs()
 
 end
 
-function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTab)
+function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTabId)
 	local tab = checkButton:GetParent()
 
 	if tab.addMode then
@@ -340,13 +352,13 @@ function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTab)
 		self.addEditBankAltChar.openedByTab = tab
 		checkButton.checked = false
 	else
-		self.currentAltTab = currentTab
+		self.currentAltTab = currentTabId
+		local charData = PLGuildBankClassic:GetBankCharDataByIndex(currentTabId)
+
+		Events:GenericEvent("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", currentTabId, charData)
 
 		if mouseButton == "RightButton" then
-			local id = tab:GetID()
 			PLGuildBankClassic:debug("Changeing character info by index: " .. id)
-
-			local charData = PLGuildBankClassic:GetBankCharDataByIndex(id)
 
 			if charData then
 				PLGuildBankClassic:debug("Changeing character name: " .. charData.name)
@@ -358,6 +370,62 @@ function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTab)
 			end
 			checkButton.checked = false
 		end
+	end
+end
+
+-----------------------------------------------------------------------
+-- event handlers
+
+function Frame:PLGBC_EVENT_BANKCHAR_ADDED(event, index, characterData)
+	PLGuildBankClassic:debug("Bankchar added at index " .. tostring(index) .. " using name " .. characterData.name)
+end
+
+function Frame:PLGBC_EVENT_BANKCHAR_UPDATED(event, index, characterData, nameChanged)
+	PLGuildBankClassic:debug("Bankchar updated at index " .. tostring(index) .. " using name " .. characterData.name .. " (Name changed: " ..  tostring(nameChanged) .. ")")
+end
+
+function Frame:PLGBC_EVENT_BANKCHAR_REMOVED(event, index, characterData)
+	PLGuildBankClassic:debug("Bankchar removed at index " .. tostring(index) .. " using name " .. characterData.name)
+end
+
+function Frame:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED(event, index, characterData)
+	self:HideError()
+
+	PLGuildBankClassic:debug("Bankchar selected at index " .. tostring(index) .. " using name " .. characterData.name)
+	local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterData.name)
+
+	local cacheOwnerInfo = ItemCache:GetOwnerInfo(charServerName)
+	if cacheOwnerInfo.class then
+		PLGuildBankClassic:debug("Found cached data!")
+		PLGuildBankClassic:debug(cacheOwnerInfo.name .. " (" .. cacheOwnerInfo.race .. " " .. cacheOwnerInfo.class .. ") Money: " .. tostring(cacheOwnerInfo.money))
+
+		PLGuildBankClassic:debug("BAG DATA")
+		for _, bagId in pairs(PLGBC_BAG_CONFIG) do
+			local info = ItemCache:GetBagInfo(cacheOwnerInfo.name, bagId)
+			for slot = 1, (info.count or 0) do
+				local id = ItemCache:GetItemID(cacheOwnerInfo.name, bagId, slot)
+				local itemInfo = ItemCache:GetItemInfo(cacheOwnerInfo.name, bagId, slot)
+
+				PLGuildBankClassic:debug("   BAG#" .. tostring(bagId) .. " " .. tostring(itemInfo.count) .. "x " .. (itemInfo.link or itemInfo.readable or "EMPTY"))
+			end
+		end
+		PLGuildBankClassic:debug("---")
+		PLGuildBankClassic:debug("BANK DATA")
+		for _, bagId in pairs(PLGBC_BANK_CONFIG) do
+			local info = ItemCache:GetBagInfo(cacheOwnerInfo.name, bagId)
+			for slot = 1, (info.count or 0) do
+				local id = ItemCache:GetItemID(cacheOwnerInfo.name, bagId, slot)
+				local itemInfo = ItemCache:GetItemInfo(cacheOwnerInfo.name, bagId, slot)
+
+				PLGuildBankClassic:debug("   BAG#" .. tostring(bagId) .. " " .. tostring(itemInfo.count) .. "x " .. (itemInfo.link or itemInfo.readable or "EMPTY"))
+			end
+		end
+		PLGuildBankClassic:debug("---")
+		PLGuildBankClassic:debug("End of cache info")
+	else
+		PLGuildBankClassic:debug("No cached data found")
+
+		self:DisplayErrorMessage(L["No cached or received data found for this character.\nIf you are the owner of the character, log on and visit the bank!\nIf not, then you will receive bank information as soon as the ownser visited the bank!"])
 	end
 end
 

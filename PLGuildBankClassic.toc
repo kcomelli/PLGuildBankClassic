@@ -1,10 +1,14 @@
 ## Interface: 11302
 ## Title: PL GuildBank Classic
 ## Author: Klaus Comelli
+## Version: 0.1
 ## Notes: Synchronized, multi character based guild bank interface
+## URL: https://www.primal-legion.net
 ## OptionalDeps: Ace3, LibWindow-1.1
+## Dependencies: BagBrother
 ## SavedVariables:  PLGuildBankClassicDB
 ## Version: 8.2.14
+## LoadOnDemand: 0
 
 libs\LibStub\LibStub.lua
 libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
