@@ -32,6 +32,7 @@ Localization.lua
 PLGuildBankClassic.lua
 Events.lua 
 
+Utility.lua
 Frame.lua
 TabGuildConfigFrame.lua
 CreateEditBankAltDialogFrame.lua

@@ -243,7 +243,7 @@
                 </Layers>
                 <Scripts>
                     <OnTextChanged>
-                        --ScrollingEdit_OnTextChanged(self, self:GetParent():GetParent());
+                        self:GetParent():DescriptionEditBox_OnTextChanged(self);
                     </OnTextChanged>
                     <OnTabPressed>
                         --EditBox_HandleTabbing(self, SEND_MAIL_TAB_LIST);
@@ -353,7 +353,7 @@
 				</Scripts>
 			</CheckButton>
 
-            <Button name="EditSave" inherits="UIPanelButtonTemplate" text="Save">
+            <Button parentKey="saveButton" name="EditSave" inherits="UIPanelButtonTemplate" text="SAVE">
                 <Size x="124" y="21"/>
                 <Anchors>
                     <Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT">
@@ -366,7 +366,7 @@
                     </OnClick>
                 </Scripts>
             </Button>
-            <Button name="EditCancel" inherits="UIPanelButtonTemplate" text="Cancel">
+            <Button name="EditCancel" inherits="UIPanelButtonTemplate" text="CANCEL">
                 <Size x="124" y="21"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="EditSave" relativePoint="RIGHT">

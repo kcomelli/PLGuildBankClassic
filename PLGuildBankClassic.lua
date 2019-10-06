@@ -8,10 +8,10 @@ local defaults = {
 	profile = {
 		vault = {
 			x = 220,
-			y = 120,
+			y = 128,
 			point = "LEFT",
-			width = 512,
-			height = 512,
+			width = 690,
+			height = 455,
 			showBags = false,
         },
         charConfig = {
@@ -21,6 +21,11 @@ local defaults = {
 			width = 400,
 			height = 475,
         },
+        config = {
+            debug = false,
+            printMessage = false,
+            printErrors = true
+        }
     },
     factionrealm  = {
         minGuildRank = 1
@@ -36,6 +41,10 @@ function PLGuildBankClassic:OnInitialize()
     dbProfile = self.db.profile
     dbFactionRealm = self.db.factionrealm
     self.isInGuild = false
+
+    self.iconFilenames = nil
+
+    self:RefreshPlayerSpellIconInfo()
 
     self:RegisterEvent("PLAYER_ENTERING_WORLD", "InitializePlayerStatus")
     self:RegisterEvent("PLAYER_GUILD_UPDATE", "InitializePlayerStatus")
@@ -112,16 +121,72 @@ function PLGuildBankClassic:NumberOfConfiguredAlts()
     return 0
 end
 
-function PLGuildBankClassic:IsGuildBankChar()
-    return false
+function PLGuildBankClassic:CreateBankChar(name, description, class, icon, texture)
+    local guildConfig = PLGuildBankClassic:GetGuildConfig() 
+
+    if guildConfig ~= nil and guildConfig.bankChars == nil then
+        guildConfig.bankChars = {}
+    end
+
+    local charData = {}
+    local timestamp = time()
+    local myName, myRealm, myServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
+
+    charData.name = name
+    charData.description = description
+    charData.class = class
+    charData.icon = icon
+    charData.iconTexture = texture
+    charData.createdAt = timestamp
+    charData.modifiedAt = timestamp
+    charData.createdBy = myServerName
+    charData.modifiedBy = myServerName
+    charData.log = {}
+    charData.items = {}
+    
+    guildConfig.bankChars[getn(guildConfig.bankChars)+1] = charData
 end
 
-function PLGuildBankClassic:IsInGuild()
-    return self.isInGuild
+function PLGuildBankClassic:EditBankChar(index, name, description, class, icon, texture)
+    local guildConfig = PLGuildBankClassic:GetGuildConfig() 
+
+    if guildConfig ~= nil and guildConfig.bankChars == nil then
+        guildConfig.bankChars = {}
+    end
+
+    if( getn(guildConfig.bankChars) < index ) then
+        return
+    end
+
+    local charData = guildConfig.bankChars[index]
+    local timestamp = time()
+    local myName, myRealm, myServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
+    local charChanged = charData.name ~= name
+
+    charData.name = name
+    charData.description = description
+    charData.class = class
+    charData.icon = icon
+    charData.iconTexture = texture
+    charData.modifiedAt = timestamp
+    charData.modifiedBy = myServerName
+    if charChanged then
+        -- may save log somewhere else
+        -- only retained in the addon
+        -- or global log not char based
+        charData.log = {}
+        charData.items = {}
+    end
 end
 
-function PLGuildBankClassic:GuildName()
-    return self.guildName
+function PLGuildBankClassic:GetBankCharDataByIndex(index)
+    local guildConfig = PLGuildBankClassic:GetGuildConfig() 
+
+    if guildConfig == nil or guildConfig.bankChars == nil or getn(guildConfig.bankChars) < index then
+        return nil
+    end
+
+    return guildConfig.bankChars[index]
 end
 
 function PLGuildBankClassic:CanConfigureBankAlts()

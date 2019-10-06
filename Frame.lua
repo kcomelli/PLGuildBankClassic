@@ -36,6 +36,9 @@ MoneyTypeInfo["PLGUILDBANKCLASSIC"] = {
 PLGuildBankClassic.Frame = {}
 PLGuildBankClassic.Frame.defaults = {}
 PLGuildBankClassic.Frame.prototype = Frame
+
+
+
 function PLGuildBankClassic.Frame:Create(name, titleText, settings, guildSettings)
 	local frame = setmetatable(CreateFrame("Frame", name, UIParent, "PLGuildBankFrame"), Frame_MT)
 
@@ -50,7 +53,7 @@ function PLGuildBankClassic.Frame:Create(name, titleText, settings, guildSetting
 
 	-- components
 	frame.guildConfigFrame = PLGuildBankClassic.GuildConfigFrame:Create(frame.tabContentContainer)
-	frame.addEditBankAltChar = PLGuildBankClassic.CreateEditBankAltDialogFrame:Create(UIParent, settings)
+	frame.addEditBankAltChar = PLGuildBankClassic.CreateEditBankAltDialogFrame:Create(frame, settings)
 	
 
     -- scripts
@@ -78,6 +81,21 @@ function PLGuildBankClassic.Frame:Create(name, titleText, settings, guildSetting
 	tinsert(UISpecialFrames, name)
 
 	return frame
+end
+
+function Frame:AddEditBankCharDialogResult(initiator, tab, mode, characterData, createNew)
+	if mode == "save" then
+			--local tab = initiator.addEditBankAltChar.openedByTab
+			if createNew then
+				PLGuildBankClassic:debug("Creating new bank character config using char: " .. characterData.name)
+				PLGuildBankClassic:CreateBankChar(characterData.name, characterData.description, characterData.class, characterData.icon, characterData.iconTexture)
+			else
+				PLGuildBankClassic:debug("Updating new bank character config using char: " .. characterData.name)
+				PLGuildBankClassic:EditBankChar(tab:GetID(), characterData.name, characterData.description, characterData.class, characterData.icon, characterData.iconTexture)
+			end
+
+			initiator:UpdateBankAltTabs()
+	end
 end
 
 function Frame:ApplyLocalization()
@@ -123,7 +141,8 @@ function Frame:OnLoad()
 end
 
 function Frame:OnShow()
-    PlaySound(SOUNDKIT.IG_BACKPACK_OPEN)
+	PlaySound(SOUNDKIT.IG_BACKPACK_OPEN)
+	self.addEditBankAltChar.callback = self.AddEditBankCharDialogResult
     self:ApplyLocalization()
 	self:UpdateTabard()
 	
@@ -291,8 +310,15 @@ function Frame:UpdateBankAltTabs()
 				self.CharTabs[i]:Hide()
 			end
 		else
+			local charData = PLGuildBankClassic:GetBankCharDataByIndex(i)
+			local class = charData.class
+			local player = charData.name
+			if not RAID_CLASS_COLORS[class] or not RAID_CLASS_COLORS[class].colorStr then class = nil end
+
 			-- todo configure tab button icon, text etc
-			self.CharTabs[i].checkButton.tooltip = " "
+			self.CharTabs[i].checkButton.iconTexture:SetTexture(PLGuildBankClassic:GetSpellorMacroIconInfo(charData.icon));
+			self.CharTabs[i].checkButton.tooltip = string.format(L["Bank: %s\nChar: %s"], charData.description or L["Common"], class and ("|c%s%s|r"):format(RAID_CLASS_COLORS[class].colorStr, player) or player)
+			self.CharTabs[i].addMode = false
 			self.CharTabs[i]:Show()
 		end
 
@@ -311,9 +337,27 @@ function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTab)
 		-- player to add a new bank character
 		self.addEditBankAltChar:InitCreateNew()
 		self.addEditBankAltChar:Show()
+		self.addEditBankAltChar.openedByTab = tab
 		checkButton.checked = false
 	else
 		self.currentAltTab = currentTab
+
+		if mouseButton == "RightButton" then
+			local id = tab:GetID()
+			PLGuildBankClassic:debug("Changeing character info by index: " .. id)
+
+			local charData = PLGuildBankClassic:GetBankCharDataByIndex(id)
+
+			if charData then
+				PLGuildBankClassic:debug("Changeing character name: " .. charData.name)
+				self.addEditBankAltChar:InitEditExisting(charData)
+				self.addEditBankAltChar:Show()
+				self.addEditBankAltChar.openedByTab = tab
+			else
+				PLGuildBankClassic:debug("Could not load bank character data by index: " .. id)
+			end
+			checkButton.checked = false
+		end
 	end
 end
 

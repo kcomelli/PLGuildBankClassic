@@ -17,8 +17,8 @@ local Events = PLGuildBankClassic:GetModule("Events")
 PLGuildBankClassic.CreateEditBankAltDialogFrame = {}
 PLGuildBankClassic.CreateEditBankAltDialogFrame.defaults = {}
 PLGuildBankClassic.CreateEditBankAltDialogFrame.prototype = CreateEditBankAltDialogFrame
-function PLGuildBankClassic.CreateEditBankAltDialogFrame:Create(parent, settings)
-	local frame = setmetatable(CreateFrame("Frame", "CreateEditBankAltDialogFrame", parent, "CreateEditBankAltDialogFrame"), CreateEditBankAltDialogFrame_MT)
+function PLGuildBankClassic.CreateEditBankAltDialogFrame:Create(mainFrame, settings)
+	local frame = setmetatable(CreateFrame("Frame", "CreateEditBankAltDialogFrame", UIParent, "CreateEditBankAltDialogFrame"), CreateEditBankAltDialogFrame_MT)
 
     -- settings
     frame.settings = settings.charConfig
@@ -28,9 +28,10 @@ function PLGuildBankClassic.CreateEditBankAltDialogFrame:Create(parent, settings
     frame.iconRowHeight = 36
 
     frame.iconArrayBuilt = false
-    frame.iconFilenames = nil
-
+    frame.modeNew = true
+    
     frame.characterData = {}
+    frame.mainFrame = mainFrame
 
     -- scripts
 	frame:SetScript("OnShow", frame.OnShow)
@@ -55,15 +56,17 @@ function CreateEditBankAltDialogFrame:OnShow()
     self.configTabDescription.Text:SetText(L["Add a short description (e.g. Consumables or Professions)"])
     self.configIconSelect.Text:SetText(L["Select an icon to use for the tab"])
 
+    self:EnsureIcons()
+    self:UpdateIconFrame()
+end
+
+function CreateEditBankAltDialogFrame:EnsureIcons()
     if ( not self.iconArrayBuilt ) then
 		BuildIconArray(self.selectIconFrame, "BankCharIconPopupButton", "IconPopupButtonTemplate", self.numIconsPerRow, self.numIconRows);
         self.iconArrayBuilt = true;
         local firsticonPopupButton = _G["BankCharIconPopupButton"..1];
         firsticonPopupButton:SetPoint("TOPLEFT", 16, -12);
     end
-    
-    self:RefreshPlayerSpellIconInfo()
-    self:UpdateIconFrame()
 end
 
 function CreateEditBankAltDialogFrame:OnHide()
@@ -76,18 +79,51 @@ function CreateEditBankAltDialogFrame:InitCreateNew()
     self.characterData.description = ""
     self.characterData.icon = 0
     self.characterData.iconTexture = ""
+
+    self:InitEditExisting(self.characterData)
+    self.modeNew = true
 end
 
 function CreateEditBankAltDialogFrame:InitEditExisting(charaterInfo)
+    self.characterData.name = charaterInfo.name
+    self.characterData.description = charaterInfo.description
+    self.characterData.icon = charaterInfo.icon
+    self.characterData.iconTexture = charaterInfo.iconTexture
+
+    if(self.characterData.name) then
+        self.dragArea:SetText(L["Edit bank character"])
+    else
+        self.dragArea:SetText(L["Add new bank character"])
+    end
+
+    self.configCharacterEditBox:SetText(self.characterData.name)
+    self.configDescriptionEditBox:SetText(self.characterData.description)
+    if(self.characterData.icon > 0) then
+        self:PopupButton_SelectTexture(self.characterData.icon, false)
+    end
+    self:EnsureIcons()
+    self:CanUseCharacter(self.configCharacterEditBox)
+    self.modeNew = false
 end
 
 function CreateEditBankAltDialogFrame:OnSaveClick()
-    print("Save clicked")
+    if self.callback then
+        PLGuildBankClassic:debug("OnSaveClick: calling callback")
+        self:callback(self.mainFrame, self.openedByTab, "save", self.characterData, self.modeNew)
+        self:Hide()
+    else
+        PLGuildBankClassic:debug("OnSaveClick: No callback registered")
+    end
 end
 
 function CreateEditBankAltDialogFrame:OnCancelClick()
     self:Hide()
-    self:InitCreateNew()
+    if self.callback then
+        PLGuildBankClassic:debug("OnCancelClick: calling callback")
+        self:callback(self.mainFrame, self.openedByTab, "cancel", self.characterData, self.modeNew)
+    else
+        PLGuildBankClassic:debug("OnCancelClick: No callback registered")
+    end
 end
 
 function CreateEditBankAltDialogFrame:SetCharacterEditFocus(editBox)
@@ -95,18 +131,43 @@ function CreateEditBankAltDialogFrame:SetCharacterEditFocus(editBox)
 end
 
 function CreateEditBankAltDialogFrame:CanUseCharacter(editBox)
-    return true
+    local charName = editBox:GetText()
+    PLGuildBankClassic:debug("CanUseCharacter: Checking character usage - " .. charName)
+    if(self.characterData.name ~= charName) then
+        self.characterData.name = charName
+    end
+
+    local newName, newRealm, newServerName = PLGuildBankClassic:CharaterNameTranslation(self.characterData.name)
+    PLGuildBankClassic:debug("CanUseCharacter: Translated to: " .. newName .. ", " .. newRealm .. ", " .. newServerName)
+    local isInGuild, name, rank, level, class, note, officerNote = PLGuildBankClassic:IsPlayerInGuild(newServerName)
+    PLGuildBankClassic:debug("CanUseCharacter: Guild check retruned: " .. tostring(isInGuild))
+
+    if charName == nil or carName == "" or not isInGuild then
+        self.saveButton:Disable()
+        self.characterData.class = nil
+        self.characterData.note = nil
+        self.characterData.officerNote = nil
+    else
+        self.saveButton:Enable()
+        self.characterData.class = class
+        self.characterData.note = note
+        self.characterData.officerNote = officerNote
+    end
+end
+
+function CreateEditBankAltDialogFrame:DescriptionEditBox_OnTextChanged(editBox)
+    self.characterData.description = editBox:GetText()
 end
 
 function CreateEditBankAltDialogFrame:IconPopupButton_OnClick(iconBtn, button, down)
-    self:PopupButton_SelectTexture(iconBtn:GetID() + (FauxScrollFrame_GetOffset(self.selectIconFrame.selectableIcons) * self.numIconsPerRow));
+    self:PopupButton_SelectTexture(iconBtn:GetID() + (FauxScrollFrame_GetOffset(self.selectIconFrame.selectableIcons) * self.numIconsPerRow), true);
 end
 
-function CreateEditBankAltDialogFrame:PopupButton_SelectTexture(selectedIcon)
+function CreateEditBankAltDialogFrame:PopupButton_SelectTexture(selectedIcon, doUpdateIconFrame)
 	self.characterData.icon = selectedIcon
 	-- Clear out selected texture
 	self.characterData.iconTexture = nil
-    local curMacroInfo = self:GetSpellorMacroIconInfo(self.characterData.icon)
+    local curMacroInfo = PLGuildBankClassic:GetSpellorMacroIconInfo(self.characterData.icon)
     
     local buttonSelectedIcon = _G["CreateEditBankAltDialogFrameSelectedIconButtonIcon"]
     local buttonSelectedIconButton = _G["CreateEditBankAltDialogFrameSelectedIconButton"]
@@ -115,18 +176,20 @@ function CreateEditBankAltDialogFrame:PopupButton_SelectTexture(selectedIcon)
 		buttonSelectedIcon:SetTexture(curMacroInfo)
 	else
 		buttonSelectedIcon:SetTexture("INTERFACE\\ICONS\\"..curMacroInfo)
-	end	
-	self:UpdateIconFrame()
+    end	
+    if doUpdateIconFrame then
+        self:UpdateIconFrame()
+    end
 end
 
 function CreateEditBankAltDialogFrame:UpdateIconFrame()
     local parentFrame = self
     
-    if(not parentFrame.iconFilenames) then
+    if(not parentFrame.characterData) then
         parentFrame = self:GetParent():GetParent()
     end
 
-    local numIcons = #parentFrame.iconFilenames;
+    local numIcons = #PLGuildBankClassic.iconFilenames;
 	local iconPopupIcon, iconPopupButton;
 	local iconPopupOffset = FauxScrollFrame_GetOffset(parentFrame.selectIconFrame.selectableIcons);
 	local index;
@@ -137,7 +200,7 @@ function CreateEditBankAltDialogFrame:UpdateIconFrame()
 		iconPopupIcon = _G["BankCharIconPopupButton"..i.."Icon"];
 		iconPopupButton = _G["BankCharIconPopupButton"..i];
 		index = (iconPopupOffset * parentFrame.numIconsPerRow) + i;
-		texture = parentFrame:GetSpellorMacroIconInfo(index);
+		texture = PLGuildBankClassic:GetSpellorMacroIconInfo(index);
 
 		if ( index <= numIcons and texture ) then
 			if(type(texture) == "number") then
@@ -161,66 +224,4 @@ function CreateEditBankAltDialogFrame:UpdateIconFrame()
 	
 	-- Scrollbar stuff
 	FauxScrollFrame_Update(parentFrame.selectIconFrame.selectableIcons, ceil(numIcons / parentFrame.numIconsPerRow) + 1, parentFrame.numIconRows, parentFrame.iconRowHeight );
-end
-
-function CreateEditBankAltDialogFrame:RefreshPlayerSpellIconInfo()
-	if ( self.iconFilenames ) then
-		return;
-	end
-	
-	-- We need to avoid adding duplicate spellIDs from the spellbook tabs for your other specs.
-	local activeIcons = {};
-	
-	for i = 1, GetNumSpellTabs() do
-		local tab, tabTex, offset, numSpells, _ = GetSpellTabInfo(i);
-		offset = offset + 1;
-		local tabEnd = offset + numSpells;
-		for j = offset, tabEnd - 1 do
-			--to get spell info by slot, you have to pass in a pet argument
-			local spellType, ID = GetSpellBookItemInfo(j, "player"); 
-			if (spellType ~= "FUTURESPELL") then
-				local fileID = GetSpellBookItemTexture(j, "player");
-				if (fileID) then
-					activeIcons[fileID] = true;
-				end
-			end
-			if (spellType == "FLYOUT") then
-				local _, _, numSlots, isKnown = GetFlyoutInfo(ID);
-				if (isKnown and numSlots > 0) then
-					for k = 1, numSlots do 
-						local spellID, overrideSpellID, isKnown = GetFlyoutSlotInfo(ID, k)
-						if (isKnown) then
-							local fileID = GetSpellTexture(spellID);
-							if (fileID) then
-								activeIcons[fileID] = true;
-							end
-						end
-					end
-				end
-			end
-		end
-	end
-
-	self.iconFilenames = { "INV_MISC_QUESTIONMARK" };
-	for fileDataID in pairs(activeIcons) do
-		self.iconFilenames[#self.iconFilenames + 1] = fileDataID;
-	end
-
-	GetLooseMacroIcons( self.iconFilenames );
-	GetLooseMacroItemIcons( self.iconFilenames );
-	GetMacroIcons( self.iconFilenames );
-	GetMacroItemIcons( self.iconFilenames );
-end
-
-function CreateEditBankAltDialogFrame:GetSpellorMacroIconInfo(index)
-	if ( not index ) then
-		return;
-	end
-	local texture = self.iconFilenames[index];
-	local texnum = tonumber(texture);
-	if (texnum ~= nil) then
-		return texnum;
-	else
-		return texture;
-	end
 end
