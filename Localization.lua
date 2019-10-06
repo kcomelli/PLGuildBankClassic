@@ -41,4 +41,5 @@ L["Select an icon to use for the tab"] = true
 L["unkown-player"] = true
 L["Bank: %s\nChar: %s"] = true
 L["Common"] = true
+L["No cached or received data found for this character.\nIf you are the owner of the character, log on and visit the bank!\nIf not, then you will receive bank information as soon as the ownser visited the bank!"] = true
  
