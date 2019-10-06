@@ -144,7 +144,7 @@
                     </OnLoad>
                     <OnTabPressed>
                         if ( not AutoCompleteEditBox_OnTabPressed(self) ) then
-                            --EditBox_HandleTabbing(self, SEND_MAIL_TAB_LIST);
+                            EditBox_HandleTabbing(self, PLGBC_CREATE_BANK_ALT_TAB_LIST);
                         end
                     </OnTabPressed>
                     <OnEditFocusLost>
@@ -246,7 +246,7 @@
                         self:GetParent():DescriptionEditBox_OnTextChanged(self);
                     </OnTextChanged>
                     <OnTabPressed>
-                        --EditBox_HandleTabbing(self, SEND_MAIL_TAB_LIST);
+                        EditBox_HandleTabbing(self, PLGBC_CREATE_BANK_ALT_TAB_LIST);
                     </OnTabPressed>
                     <OnEscapePressed function="EditBox_ClearFocus"/>
                 </Scripts>
@@ -353,7 +353,7 @@
 				</Scripts>
 			</CheckButton>
 
-            <Button parentKey="saveButton" name="EditSave" inherits="UIPanelButtonTemplate" text="SAVE">
+            <Button parentKey="saveButton" name="$parentEditSave" inherits="UIPanelButtonTemplate" text="SAVE">
                 <Size x="124" y="21"/>
                 <Anchors>
                     <Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT">
@@ -366,7 +366,7 @@
                     </OnClick>
                 </Scripts>
             </Button>
-            <Button name="EditCancel" inherits="UIPanelButtonTemplate" text="CANCEL">
+            <Button name="$parentEditCancel" inherits="UIPanelButtonTemplate" text="CANCEL">
                 <Size x="124" y="21"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="EditSave" relativePoint="RIGHT">
