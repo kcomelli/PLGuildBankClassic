@@ -42,4 +42,4 @@ L["unkown-player"] = true
 L["Bank: %s\nChar: %s"] = true
 L["Common"] = true
 L["No cached or received data found for this character.\nIf you are the owner of the character, log on and visit the bank!\nIf not, then you will receive bank information as soon as the ownser visited the bank!"] = true
- 
+L["The bank character must install this AddOn and accept the new state of being a guild bank character!\n \nThis is required because the character's inventory, bank \nand money will be synced with all guild-members which are using this AddOn!"] = true

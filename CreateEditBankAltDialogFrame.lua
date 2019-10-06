@@ -75,9 +75,11 @@ end
 
 function CreateEditBankAltDialogFrame:InitCreateNew()
     self.characterData.name = ""
+    self.characterData.realm = ""
     self.characterData.description = ""
     self.characterData.icon = 0
     self.characterData.iconTexture = ""
+    self.characterData.acceptState = 0 -- 0..pending, -1..declined, 1..accepted
 
     self:InitEditExisting(self.characterData)
     self.modeNew = true
@@ -85,9 +87,11 @@ end
 
 function CreateEditBankAltDialogFrame:InitEditExisting(charaterInfo)
     self.characterData.name = charaterInfo.name
+    self.characterData.realm = charaterInfo.realm
     self.characterData.description = charaterInfo.description
     self.characterData.icon = charaterInfo.icon
     self.characterData.iconTexture = charaterInfo.iconTexture
+    self.characterData.acceptState = charaterInfo.acceptState
 
     if(self.characterData.name) then
         self.dragArea:SetText(L["Edit bank character"])
@@ -99,6 +103,8 @@ function CreateEditBankAltDialogFrame:InitEditExisting(charaterInfo)
     self.configDescriptionEditBox:SetText(self.characterData.description)
     if(self.characterData.icon > 0) then
         self:PopupButton_SelectTexture(self.characterData.icon, false)
+    else
+        self:PopupButton_SelectTexture("INV_MISC_QUESTIONMARK", false)
     end
     self:EnsureIcons()
     self:CanUseCharacter(self.configCharacterEditBox)
@@ -141,16 +147,18 @@ function CreateEditBankAltDialogFrame:CanUseCharacter(editBox)
     local isInGuild, name, rank, level, class, note, officerNote = PLGuildBankClassic:IsPlayerInGuild(newServerName)
     PLGuildBankClassic:debug("CanUseCharacter: Guild check retruned: " .. tostring(isInGuild))
 
-    if charName == nil or carName == "" or not isInGuild then
+    if charName == nil or charName == "" or not isInGuild then
         self.saveButton:Disable()
         self.characterData.class = nil
         self.characterData.note = nil
         self.characterData.officerNote = nil
+        self.characterData.realm = ""
     else
         self.saveButton:Enable()
         self.characterData.class = class
         self.characterData.note = note
         self.characterData.officerNote = officerNote
+        self.characterData.realm = newRealm
     end
 end
 
@@ -163,10 +171,16 @@ function CreateEditBankAltDialogFrame:IconPopupButton_OnClick(iconBtn, button, d
 end
 
 function CreateEditBankAltDialogFrame:PopupButton_SelectTexture(selectedIcon, doUpdateIconFrame)
-	self.characterData.icon = selectedIcon
-	-- Clear out selected texture
-	self.characterData.iconTexture = nil
-    local curMacroInfo = PLGuildBankClassic:GetSpellorMacroIconInfo(self.characterData.icon)
+    local texnum = tonumber(selectedIcon)
+
+    if (texnum ~= nil) then
+        self.characterData.icon = selectedIcon
+        self.characterData.iconTexture = nil
+    else
+        self.characterData.icon = 0
+        self.characterData.iconTexture = selectedIcon
+    end
+    local curMacroInfo = PLGuildBankClassic:GetSpellorMacroIconInfo(selectedIcon)
     
     local buttonSelectedIcon = _G["CreateEditBankAltDialogFrameSelectedIconButtonIcon"]
     local buttonSelectedIconButton = _G["CreateEditBankAltDialogFrameSelectedIconButton"]

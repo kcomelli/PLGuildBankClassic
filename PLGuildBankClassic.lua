@@ -125,7 +125,7 @@ function PLGuildBankClassic:NumberOfConfiguredAlts()
     return 0
 end
 
-function PLGuildBankClassic:CreateBankChar(name, description, class, icon, texture)
+function PLGuildBankClassic:CreateBankChar(name, description, realm, class, icon, texture)
     local guildConfig = PLGuildBankClassic:GetGuildConfig() 
 
     if guildConfig ~= nil and guildConfig.bankChars == nil then
@@ -137,6 +137,7 @@ function PLGuildBankClassic:CreateBankChar(name, description, class, icon, textu
     local myName, myRealm, myServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
 
     charData.name = name
+    charData.realm = realm
     charData.description = description
     charData.class = class
     charData.icon = icon
@@ -151,7 +152,7 @@ function PLGuildBankClassic:CreateBankChar(name, description, class, icon, textu
     guildConfig.bankChars[getn(guildConfig.bankChars)+1] = charData
 end
 
-function PLGuildBankClassic:EditBankChar(index, name, description, class, icon, texture)
+function PLGuildBankClassic:EditBankChar(index, name, realm, description, class, icon, texture)
     local guildConfig = PLGuildBankClassic:GetGuildConfig() 
 
     if guildConfig ~= nil and guildConfig.bankChars == nil then
@@ -168,6 +169,7 @@ function PLGuildBankClassic:EditBankChar(index, name, description, class, icon, 
     local charChanged = charData.name ~= name
 
     charData.name = name
+    charData.realm = realm
     charData.description = description
     charData.class = class
     charData.icon = icon

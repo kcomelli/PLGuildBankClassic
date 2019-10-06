@@ -54,6 +54,7 @@ function PLGuildBankClassic.Frame:Create(name, titleText, settings, guildSetting
 	-- components
 	frame.guildConfigFrame = PLGuildBankClassic.GuildConfigFrame:Create(frame.tabContentContainer)
 	frame.addEditBankAltChar = PLGuildBankClassic.CreateEditBankAltDialogFrame:Create(frame, settings)
+	frame.bankContents = PLGuildBankClassic.GuildBankContentFrame:Create(frame.tabContentContainer)
 	
 
     -- scripts
@@ -89,10 +90,10 @@ function Frame:AddEditBankCharDialogResult(initiator, tab, mode, characterData, 
 			--local tab = initiator.addEditBankAltChar.openedByTab
 			if createNew then
 				PLGuildBankClassic:debug("Creating new bank character config using char: " .. characterData.name)
-				PLGuildBankClassic:CreateBankChar(characterData.name, characterData.description, characterData.class, characterData.icon, characterData.iconTexture)
+				PLGuildBankClassic:CreateBankChar(characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture)
 			else
 				PLGuildBankClassic:debug("Updating new bank character config using char: " .. characterData.name)
-				changedName = PLGuildBankClassic:EditBankChar(tab:GetID(), characterData.name, characterData.description, characterData.class, characterData.icon, characterData.iconTexture)
+				changedName = PLGuildBankClassic:EditBankChar(tab:GetID(), characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture)
 			end
 
 			initiator:UpdateBankAltTabs()
@@ -395,6 +396,18 @@ function Frame:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED(event, index, characterData)
 	local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterData.name)
 
 	local cacheOwnerInfo = ItemCache:GetOwnerInfo(charServerName)
+
+	if characterData.acceptState ~= 1 then
+		if cacheOwnerInfo.class then
+			PLGuildBankClassic:debug("No cached data found")
+		else
+			PLGuildBankClassic:debug("Cached data found")
+		end
+
+		self:DisplayErrorMessage(L["The bank character must install this AddOn and accept the new state of being a guild bank character!\n \nThis is required because the character's inventory, bank \nand money will be synced with all guild-members which are using this AddOn!"])
+		return
+	end
+
 	if cacheOwnerInfo.class then
 		PLGuildBankClassic:debug("Found cached data!")
 		PLGuildBankClassic:debug(cacheOwnerInfo.name .. " (" .. cacheOwnerInfo.race .. " " .. cacheOwnerInfo.class .. ") Money: " .. tostring(cacheOwnerInfo.money))

@@ -181,43 +181,7 @@ function PLGuildBankClassic:RefreshPlayerSpellIconInfo()
 		return;
 	end
 	
-	-- We need to avoid adding duplicate spellIDs from the spellbook tabs for your other specs.
-	local activeIcons = {};
-	
-	for i = 1, GetNumSpellTabs() do
-		local tab, tabTex, offset, numSpells, _ = GetSpellTabInfo(i);
-		offset = offset + 1;
-		local tabEnd = offset + numSpells;
-		for j = offset, tabEnd - 1 do
-			--to get spell info by slot, you have to pass in a pet argument
-			local spellType, ID = GetSpellBookItemInfo(j, "player"); 
-			if (spellType ~= "FUTURESPELL") then
-				local fileID = GetSpellBookItemTexture(j, "player");
-				if (fileID) then
-					activeIcons[fileID] = true;
-				end
-			end
-			if (spellType == "FLYOUT") then
-				local _, _, numSlots, isKnown = GetFlyoutInfo(ID);
-				if (isKnown and numSlots > 0) then
-					for k = 1, numSlots do 
-						local spellID, overrideSpellID, isKnown = GetFlyoutSlotInfo(ID, k)
-						if (isKnown) then
-							local fileID = GetSpellTexture(spellID);
-							if (fileID) then
-								activeIcons[fileID] = true;
-							end
-						end
-					end
-				end
-			end
-		end
-	end
-
 	PLGuildBankClassic.iconFilenames = { "INV_MISC_QUESTIONMARK" };
-	for fileDataID in pairs(activeIcons) do
-		PLGuildBankClassic.iconFilenames[#PLGuildBankClassic.iconFilenames + 1] = fileDataID;
-	end
 
 	GetLooseMacroIcons( PLGuildBankClassic.iconFilenames );
 	GetLooseMacroItemIcons( PLGuildBankClassic.iconFilenames );
