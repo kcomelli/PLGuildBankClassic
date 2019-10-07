@@ -314,6 +314,10 @@ function Frame:SetTabContentVisibility(visible)
 	end
 end
 
+function Frame:OnSearchTextChanged()
+	self.bankContents:ApplySearch(self.searchEditBox:GetText())
+end
+
 -----------------------------------------------------------------------
 -- Bank character tab buttons
 

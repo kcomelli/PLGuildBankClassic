@@ -376,10 +376,21 @@ function Item:GetBag()
 end
 
 function Item:GetInfo()
-	local player = self.container:GetParent():GetPlayerName()
+	local player = self.container.ownerName
+
 	local icon, count, locked, quality, readable, lootable, link, _, noValue, itemID
 	if self:IsCached() then
-		icon, count, locked, quality, readable, lootable, link = ItemCache:GetItemInfo(player, self.bag, self.slot)
+		local cachedItemInfo = ItemCache:GetItemInfo(player, self.bag, self.slot)
+
+		icon = cachedItemInfo.icon
+		count = cachedItemInfo.count
+		locked = cachedItemInfo.locked
+		quality = cachedItemInfo.quality
+		readable = cachedItemInfo.readable
+		lootable = cachedItemInfo.lootable
+		link = cachedItemInfo.link
+		noValue = cachedItemInfo.worthless
+		itemID = cachedItemInfo.id
 	else
 		-- LibItemCache doesn't provide noValue or itemID, so fallback to base API
 		icon, count, locked, quality, readable, lootable, link, _, noValue, itemID = GetContainerItemInfo(self.bag, self.slot)

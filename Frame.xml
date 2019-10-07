@@ -268,14 +268,14 @@
 				<Texture name="$parentTopRightInner" file="Interface\GuildBankFrame\Corners"  >
 					<Size x="32" y="32"/>
 					<Anchors>
-						<Anchor point="TOPRIGHT" relativeTo="$parentTopRightOuter" x="-9" y="-35"/>
+						<Anchor point="TOPRIGHT" relativeTo="$parentTopRightOuter" x="-9" y="-50"/>
 					</Anchors>
 					<TexCoords left="0.01562500" right="0.51562500" top="0.26953125" bottom="0.39453125"/>	
 				</Texture>
 				<Texture name="$parentTopLeftInner" file="Interface\GuildBankFrame\Corners"  >
 					<Size x="32" y="32"/>	
 					<Anchors>
-						<Anchor point="TOPLEFT" relativeTo="$parentTopLeftOuter" x="14" y="-35"/>
+						<Anchor point="TOPLEFT" relativeTo="$parentTopLeftOuter" x="14" y="-50"/>
 					</Anchors>
 					<TexCoords left="0.01562500" right="0.51562500" top="0.40234375" bottom="0.52734375"/>	
 				</Texture>
@@ -684,7 +684,7 @@
 				</Size>
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="$parent">
-						<Offset x="20" y="-60"/>
+						<Offset x="20" y="-75"/>
 					</Anchor>
 					<Anchor point="BOTTOMRIGHT" relativeTo="$parent">
 						<Offset x="-20" y="60"/>
@@ -771,11 +771,17 @@
 					</ScrollFrame>
 				</Frames>
 			</Frame>
-			<EditBox name="PLGuildItemSearchBox" inherits="BagSearchBoxTemplate" letters="15">
+			<EditBox parentKey="searchEditBox" name="PLGuildItemSearchBox" inherits="BagSearchBoxTemplate" letters="15">
 				<Size x="130" y="20"/>
 				<Anchors>
-					<Anchor point="TOPRIGHT" x="-12" y="-36"/>
+					<Anchor point="TOPRIGHT" x="-12" y="-51"/>
 				</Anchors>
+				<Scripts>
+					<OnTextChanged>
+						SearchBoxTemplate_OnTextChanged(self)
+						self:GetParent():OnSearchTextChanged()
+					</OnTextChanged>
+				</Scripts>
 			</EditBox>
 
 			<Button name="$parentResize">

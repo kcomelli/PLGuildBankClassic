@@ -8,7 +8,7 @@ local ItemContainer_MT = {__index = ItemContainer}
 
 local Events = PLGuildBankClassic:GetModule("Events")
 
-local ITEMSPACING = 2;
+local ITEMSPACING = 5;
 local ITEMSIZE = 30;
 
 PLGuildBankClassic.ItemContainer = {}
@@ -50,18 +50,10 @@ function ItemContainer:OnShow()
 	Events.Register(self, "ITEM_SLOT_ADD", "ITEM_SLOT_UPDATE")
 	Events.Register(self, "ITEM_SLOT_UPDATE")
     Events.Register(self, "ITEM_SLOT_REMOVE")
-    
-    Events.Register(self, "PLGBC_EVENT_BANKCHAR_SLOT_SELECTED")
 end
 
 function ItemContainer:OnHide()
 	Events.UnregisterAll(self)
-end
-
-function ItemContainer:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED(event, index, characterData)
-    PLGuildBankClassic:debug("ItemContainer: Received PLGBC_EVENT_BANKCHAR_SLOT_SELECTED " .. tostring(index) .. " using char " .. characterData.name)
-    self.ownerName = characterData.name
-    self:UpdateBags()
 end
 
 function ItemContainer:ITEM_SLOT_UPDATE(event, bag, slot)
@@ -201,8 +193,12 @@ function ItemContainer:GenerateItemButtons()
 	for _, bag in ipairs(self.bags) do
 		local bagSize = self:GetBagSize(bag)
 
+		if not self.bagSizes[bag] then
+			self.bagSizes[bag] = 0
+		end
+
 		-- check if the size changed
-		if (self.bagSizes[bag] or 0) > bagSize then
+		if self.bagSizes[bag] > bagSize then
 			slotChanged = true
 			for slot = bagSize, self.bagSizes[bag] do
 				self:RemoveSlot(bag, slot)
@@ -229,15 +225,20 @@ end
 
 function ItemContainer:GetBagSize(bag)
     if self.ownerName ~= nil and self.ownerName ~= "" then
-        local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(self.ownerName)
+		local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(self.ownerName)
+		local cacheOwnerInfo = ItemCache:GetOwnerInfo(charServerName)
 
         PLGuildBankClassic:debug("Getting bag info for bag " .. tostring(bag) .. " using owner " .. charServerName)
 
-        local link, numFreeSlots, icon, slot, numSlots = ItemCache:GetBagInfo(charServerName, bag)
+        local info = ItemCache:GetBagInfo(cacheOwnerInfo.name, bag)
         
-        PLGuildBankClassic:debug("Received baginfo link: " .. (tostring(link) or "<na> ") .. " numFreeSlots: " .. tonumber(numFreeSlots or "-1") .. " slots: " .. (slots or "<na>") .. " numSlots: " .. tonumber(numSlots or "-1") .. " icon: " .. (icon or "<na>"))
+        --PLGuildBankClassic:debug("Received baginfo info.link: " .. (tostring(info.link) or "<na> ") .. " info.free: " .. tonumber(info.free or "-1") .. " info.slot: " .. (info.slot or "<na>") .. " info.count: " .. tonumber(info.count or "-1") .. " info.icon: " .. (info.icon or "<na>"))
 
-        return numSlots and numSlots >= 0 or 0
+		if info.count ~= nil and info.count >= 0 then
+			return info.count
+		end
+
+        return 0
     else
         PLGuildBankClassic:debug("No owner set to query cache!")
         return 0

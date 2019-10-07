@@ -77,8 +77,6 @@ end
 function Bag:Set(parent, id)
 	self:SetID(id)
     self:SetParent(parent)
-    
-    Events.Register(self, "PLGBC_EVENT_BANKCHAR_SLOT_SELECTED")
 
 	if self:IsBank() or self:IsBackpack() then
 		SetItemButtonTexture(self, [[Interface\Buttons\Button-Backpack-Up]])
@@ -105,11 +103,6 @@ function Bag:Set(parent, id)
             end
         end
 	end
-end
-
-function Bag:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED(event, index, characterData)
-    self.ownerName = characterData.name
-    self:UpdateBags()
 end
 
 function Bag:OnEvent(event, ...)
@@ -352,9 +345,10 @@ end
 function Bag:GetInfo()
     if self.ownerName then
         local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(self.ownerName)
-        
-        local link, freeSlots, icon, slot, numSlots = ItemCache:GetBagInfo(charServerName, self:GetID())
-        return link, 0, icon
+		local cacheOwnerInfo = ItemCache:GetOwnerInfo(charServerName)
+
+        local info = ItemCache:GetBagInfo(cacheOwnerInfo.name, self:GetID())
+        return info.link, 0, info.icon
     else
         return nil, 0, nil
     end
