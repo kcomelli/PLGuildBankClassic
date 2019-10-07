@@ -9,7 +9,7 @@ local ItemContainer_MT = {__index = ItemContainer}
 local Events = PLGuildBankClassic:GetModule("Events")
 
 local ITEMSPACING = 2;
-local ITEMSIZE = 36;
+local ITEMSIZE = 30;
 
 PLGuildBankClassic.ItemContainer = {}
 PLGuildBankClassic.ItemContainer.defaults = {}
@@ -49,9 +49,9 @@ function ItemContainer:OnShow()
 
 	Events.Register(self, "ITEM_SLOT_ADD", "ITEM_SLOT_UPDATE")
 	Events.Register(self, "ITEM_SLOT_UPDATE")
-	Events.Register(self, "ITEM_SLOT_REMOVE")
-
-	Events.Register(self, "PLGBC_EVENT_BANKCHAR_SLOT_SELECTED")
+    Events.Register(self, "ITEM_SLOT_REMOVE")
+    
+    Events.Register(self, "PLGBC_EVENT_BANKCHAR_SLOT_SELECTED")
 end
 
 function ItemContainer:OnHide()
@@ -59,6 +59,7 @@ function ItemContainer:OnHide()
 end
 
 function ItemContainer:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED(event, index, characterData)
+    PLGuildBankClassic:debug("ItemContainer: Received PLGBC_EVENT_BANKCHAR_SLOT_SELECTED " .. tostring(index) .. " using char " .. characterData.name)
     self.ownerName = characterData.name
     self:UpdateBags()
 end
@@ -227,11 +228,16 @@ end
 -- Various information getters
 
 function ItemContainer:GetBagSize(bag)
-    if self.ownerName then
+    if self.ownerName ~= nil and self.ownerName ~= "" then
         local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(self.ownerName)
 
-	    local link, numFreeSlots, icon, slot, numSlots = ItemCache:GetBagInfo(charServerName, bag)
-        return numSlots >= 0 and numSlots or 0
+        PLGuildBankClassic:debug("Getting bag info for bag " .. tostring(bag) .. " using owner " .. charServerName)
+
+        local link, numFreeSlots, icon, slot, numSlots = ItemCache:GetBagInfo(charServerName, bag)
+        
+        PLGuildBankClassic:debug("Received baginfo link: " .. (tostring(link) or "<na> ") .. " numFreeSlots: " .. tonumber(numFreeSlots or "-1") .. " slots: " .. (slots or "<na>") .. " numSlots: " .. tonumber(numSlots or "-1") .. " icon: " .. (icon or "<na>"))
+
+        return numSlots and numSlots >= 0 or 0
     else
         PLGuildBankClassic:debug("No owner set to query cache!")
         return 0

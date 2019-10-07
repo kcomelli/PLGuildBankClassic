@@ -34,6 +34,7 @@ local defaults = {
 
 PLGBC_BAG_CONFIG = { BACKPACK_CONTAINER, 1, 2, 3, 4 }
 PLGBC_BANK_CONFIG = { BANK_CONTAINER, 5, 6, 7, 8, 9, 10 }
+PLGBC_COMBINED_INVENTORY_CONFIG = { BANK_CONTAINER, 5, 6, 7, 8, 9, 10, BACKPACK_CONTAINER, 1, 2, 3, 4 }
 
 StaticPopupDialogs["PLGBC_POPUP_ACCEPT_BANKCHARSTATE"] = {
     text = L["%s has configured your char as guild-bank character!\nDo you accept this state of the character?\n \nNote: All your inventory, bank and money will be shared across the guild!"],

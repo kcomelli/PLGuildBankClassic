@@ -206,15 +206,18 @@ function Frame:CheckBankAlts()
 	if PLGuildBankClassic:NumberOfConfiguredAlts() <= 0 or PLGuildBankClassic:CanConfigureBankAlts() == false then
 		if PLGuildBankClassic:NumberOfConfiguredAlts() <= 0 then
 			self:DisplayErrorMessage(L["Currently there are no guild bank-alt's configured.\nPlease use the right + button to add a new character."])
+
+			return false
 		end
 
-		if PLGuildBankClassic:CanConfigureBankAlts() == false then
+		if PLGuildBankClassic:NumberOfConfiguredAlts() <= 0 and PLGuildBankClassic:CanConfigureBankAlts() == false then
 			local minRank = PLGuildBankClassic:GetGuildRankTable()[PLGuildBankClassic:GetMinRankForAlts()]
 
 			self:DisplayErrorMessage(string.format(L["Addon requires bank-character configuration\nwhich can only be done by rank '%s' or higher!"], minRank))
-		end
 
-		return false
+			return false
+		end
+	
 	end
 
 	return true

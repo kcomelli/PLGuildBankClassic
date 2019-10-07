@@ -8,6 +8,9 @@ local GuildBankContentFrame_MT = {__index = GuildBankContentFrame}
 
 local Events = PLGuildBankClassic:GetModule("Events")
 
+local ITEM_CONTAINER_OFFSET_W = -22
+local ITEM_CONTAINER_OFFSET_H = -95
+
 PLGuildBankClassic.GuildBankContentFrame = {}
 PLGuildBankClassic.GuildBankContentFrame.defaults = {}
 PLGuildBankClassic.GuildBankContentFrame.prototype = GuildBankContentFrame
@@ -15,10 +18,18 @@ function PLGuildBankClassic.GuildBankContentFrame:Create(parent)
 	local frame = setmetatable(CreateFrame("Frame", "PLGuildBankFrameTabContents", parent, "PLGuildBankFrameTabContents"), GuildBankContentFrame_MT)
 
     -- settings
- 
+	frame.bagButtons = {}
+
+	-- components
+	frame.itemContainer = PLGuildBankClassic.ItemContainer:Create(frame)
+	frame.itemContainer:SetPoint("TOPLEFT", 0, -2)
+	frame.itemContainer:SetBags(PLGBC_COMBINED_INVENTORY_CONFIG)
+	frame.itemContainer:Show()
+
     -- scripts
 	frame:SetScript("OnShow", frame.OnShow)
-    frame:SetScript("OnHide", frame.OnHide)
+	frame:SetScript("OnHide", frame.OnHide)
+	frame:SetScript("OnSizeChanged", frame.OnSizeChanged)
 
     tinsert(UISpecialFrames, "PLGuildBankFrameTabContents")
 
@@ -30,6 +41,61 @@ end
 
 function GuildBankContentFrame:OnHide()
     Events.UnregisterAll(self)
+end
+
+function GuildBankContentFrame:OnSizeChanged(width, height)
+	self:UpdateItemContainer()
+end
+
+function GuildBankContentFrame:ApplySearch(searchText)
+	self.itemContainer:Search(searchText)
+	self.bagContainer:Search(searchText)
+end
+
+function GuildBankContentFrame:UpdateBags()
+	for i, bag in pairs(self.bagButtons) do
+		self.bagButtons[i] = nil
+		bag:Free()
+	end
+
+	-- TODO sho inventory bags
+	for _, bagID in ipairs(PLGBC_COMBINED_INVENTORY_CONFIG) do
+		local bag = PLGuildBankClassic.Bag:Create()
+		bag:Set(self, bagID)
+		bag.bagID = bagID
+		tinsert(self.bagButtons, bag)
+	end
+
+	--for i, bag in ipairs(self.bagButtons) do
+	for i = #self.bagButtons, 1, -1 do
+		local bag = self.bagButtons[i]
+		bag:ClearAllPoints()
+		if i == #self.bagButtons then
+			bag:SetPoint("TOPRIGHT", 0, 0)
+		else
+			local space = -4
+			if bag.bagID == 10 then
+				space = -20
+			end
+			bag:SetPoint("RIGHT", self.bagButtons[i+1], "LEFT", space, 0)
+		end
+		bag:Show()
+	end
+	self:UpdateItemContainer()
+end
+
+function GuildBankContentFrame:UpdateItemContainer(force)
+	local width = self:GetWidth() + ITEM_CONTAINER_OFFSET_W
+	local height = self:GetHeight() + ITEM_CONTAINER_OFFSET_H
+	--if self.settings.showBags then
+	--	width = width - 36
+	--end
+
+	if width ~= self.itemContainer:GetWidth() or height ~= self.itemContainer:GetHeight() then
+		self.itemContainer:SetWidth(width)
+		self.itemContainer:SetHeight(height)
+		self.itemContainer:Layout()
+	end
 end
 
 function GuildBankContentFrame:Update(characterData)
@@ -47,30 +113,33 @@ function GuildBankContentFrame:Update(characterData)
 
         self.configDescriptionLabel:SetWidth(self.configDescriptionLabel.Text:GetWidth())
         self.configCharLabel:SetWidth(self.configCharLabel.Text:GetWidth())
-        
-        PLGuildBankClassic:debug("BAG DATA")
+		
+		self:UpdateBags()
+		self.itemContainer:UpdateBags()
+
+        --PLGuildBankClassic:debug("BAG DATA")
 		for _, bagId in pairs(PLGBC_BAG_CONFIG) do
 			local info = ItemCache:GetBagInfo(cacheOwnerInfo.name, bagId)
 			for slot = 1, (info.count or 0) do
 				local id = ItemCache:GetItemID(cacheOwnerInfo.name, bagId, slot)
 				local itemInfo = ItemCache:GetItemInfo(cacheOwnerInfo.name, bagId, slot)
 
-				PLGuildBankClassic:debug("   BAG#" .. tostring(bagId) .. " " .. tostring(itemInfo.count) .. "x " .. (itemInfo.link or itemInfo.readable or "EMPTY"))
+				--PLGuildBankClassic:debug("   BAG#" .. tostring(bagId) .. " " .. tostring(itemInfo.count) .. "x " .. (itemInfo.link or itemInfo.readable or "EMPTY"))
 			end
 		end
-		PLGuildBankClassic:debug("---")
-		PLGuildBankClassic:debug("BANK DATA")
+		--PLGuildBankClassic:debug("---")
+		--PLGuildBankClassic:debug("BANK DATA")
 		for _, bagId in pairs(PLGBC_BANK_CONFIG) do
 			local info = ItemCache:GetBagInfo(cacheOwnerInfo.name, bagId)
 			for slot = 1, (info.count or 0) do
 				local id = ItemCache:GetItemID(cacheOwnerInfo.name, bagId, slot)
 				local itemInfo = ItemCache:GetItemInfo(cacheOwnerInfo.name, bagId, slot)
 
-				PLGuildBankClassic:debug("   BAG#" .. tostring(bagId) .. " " .. tostring(itemInfo.count) .. "x " .. (itemInfo.link or itemInfo.readable or "EMPTY"))
+				--PLGuildBankClassic:debug("   BAG#" .. tostring(bagId) .. " " .. tostring(itemInfo.count) .. "x " .. (itemInfo.link or itemInfo.readable or "EMPTY"))
 			end
 		end
-		PLGuildBankClassic:debug("---")
-		PLGuildBankClassic:debug("End of cache info")
+		--PLGuildBankClassic:debug("---")
+		--PLGuildBankClassic:debug("End of cache info")
     else
         -- clear items
 

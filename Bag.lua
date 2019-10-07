@@ -1,10 +1,15 @@
 local _, PLGuildBankClassic = ...
 local L = LibStub("AceLocale-3.0"):GetLocale("PLGuildBankClassic")
 
-local ItemCache = LibStub("LibItemCache-1.1")
+local ItemCache = LibStub("LibItemCache-2.0")
 
 local Bag = CreateFrame("Button")
 local Bag_MT = {__index = Bag}
+
+local Events = PLGuildBankClassic:GetModule("Events")
+
+local BAG_SIZE = 22
+local TEXTURE_SIZE = 64 * (BAG_SIZE/36)
 
 PLGuildBankClassic.Bag = {}
 PLGuildBankClassic.Bag.pool = {}
@@ -20,7 +25,7 @@ function PLGuildBankClassic.Bag:Create()
 	local name = ("PLGuildBankClassicBag%d"):format(BagID)
 	local bag = setmetatable(CreateFrame("Button", name), Bag_MT)
 
-	bag:SetSize(30, 30)
+	bag:SetSize(BAG_SIZE, BAG_SIZE)
 
 	local icon = bag:CreateTexture(name .. "IconTexture", "BORDER")
 	icon:SetAllPoints(bag)
@@ -32,8 +37,8 @@ function PLGuildBankClassic.Bag:Create()
 
 	local nt = bag:CreateTexture(name .. "NormalTexture")
 	nt:SetTexture([[Interface\Buttons\UI-Quickslot2]])
-	nt:SetWidth(64 * (5/6))
-	nt:SetHeight(64 * (5/6))
+	nt:SetWidth(TEXTURE_SIZE)
+	nt:SetHeight(TEXTURE_SIZE)
 	nt:SetPoint("CENTER", 0, -1)
 	bag:SetNormalTexture(nt)
 
@@ -63,7 +68,7 @@ function PLGuildBankClassic.Bag:Create()
 end
 
 function Bag:Free()
-	Inventorian.Bag.pool[self] = true
+	PLGuildBankClassic.Bag.pool[self] = true
 	self:Hide()
 	self:SetParent(nil)
 	self:UnregisterAllEvents()

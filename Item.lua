@@ -1,7 +1,7 @@
 local _, PLGuildBankClassic = ...
 local L = LibStub("AceLocale-3.0"):GetLocale("PLGuildBankClassic")
 
-local ItemCache = LibStub("LibItemCache-1.1")
+local ItemCache = LibStub("LibItemCache-2.0")
 local ItemSearch = LibStub("LibItemSearch-1.2")
 
 local Item = CreateFrame("Button")

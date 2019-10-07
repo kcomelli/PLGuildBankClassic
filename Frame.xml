@@ -684,7 +684,7 @@
 				</Size>
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="$parent">
-						<Offset x="20" y="-80"/>
+						<Offset x="20" y="-60"/>
 					</Anchor>
 					<Anchor point="BOTTOMRIGHT" relativeTo="$parent">
 						<Offset x="-20" y="60"/>
