@@ -87,10 +87,10 @@ function Frame:AddEditBankCharDialogResult(initiator, tab, mode, characterData, 
 			--local tab = initiator.addEditBankAltChar.openedByTab
 			if createNew then
 				PLGuildBankClassic:debug("Creating new bank character config using char: " .. characterData.name)
-				PLGuildBankClassic:CreateBankChar(characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture)
+				PLGuildBankClassic:CreateBankChar(characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture, characterData.acceptState)
 			else
 				PLGuildBankClassic:debug("Updating new bank character config using char: " .. characterData.name)
-				changedName = PLGuildBankClassic:EditBankChar(tab:GetID(), characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture)
+				changedName = PLGuildBankClassic:EditBankChar(tab:GetID(), characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture, characterData.acceptState)
 			end
 
 			initiator:UpdateBankAltTabs()
@@ -99,6 +99,12 @@ function Frame:AddEditBankCharDialogResult(initiator, tab, mode, characterData, 
 				Events:GenericEvent("PLGBC_EVENT_BANKCHAR_ADDED", tab:GetID(), characterData)
 			else
 				Events:GenericEvent("PLGBC_EVENT_BANKCHAR_UPDATED", tab:GetID(), characterData, changedName)
+			end
+
+			initiator:UpdateCurrentTab()
+
+			if initiator.currentTab == 1 then
+				initiator:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", tab:GetID(), characterData)
 			end
 	end
 end
@@ -223,6 +229,10 @@ function Frame:PLGuildBankFrameTab_OnClick(tabButton, id)
 		parent.currentTab = id
 		parent:DisplayTab(parent.currentTab)
 	end
+end
+
+function Frame:UpdateCurrentTab()
+	self:DisplayTab(self.currentTab)
 end
 
 function Frame:DisplayTab(id)

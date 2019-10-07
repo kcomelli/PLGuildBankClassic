@@ -188,7 +188,7 @@ function PLGuildBankClassic:NumberOfConfiguredAlts()
     return 0
 end
 
-function PLGuildBankClassic:CreateBankChar(name, description, realm, class, icon, texture)
+function PLGuildBankClassic:CreateBankChar(name, realm, description, class, icon, texture, acceptState)
     local guildConfig = PLGuildBankClassic:GetGuildConfig() 
 
     if guildConfig ~= nil and guildConfig.bankChars == nil then
@@ -209,13 +209,14 @@ function PLGuildBankClassic:CreateBankChar(name, description, realm, class, icon
     charData.modifiedAt = timestamp
     charData.createdBy = myServerName
     charData.modifiedBy = myServerName
+    charData.acceptState = acceptState or 0
     charData.log = {}
     charData.items = {}
     
     guildConfig.bankChars[getn(guildConfig.bankChars)+1] = charData
 end
 
-function PLGuildBankClassic:EditBankChar(index, name, realm, description, class, icon, texture)
+function PLGuildBankClassic:EditBankChar(index, name, realm, description, class, icon, texture, acceptState)
     local guildConfig = PLGuildBankClassic:GetGuildConfig() 
 
     if guildConfig ~= nil and guildConfig.bankChars == nil then
@@ -239,6 +240,7 @@ function PLGuildBankClassic:EditBankChar(index, name, realm, description, class,
     charData.iconTexture = texture
     charData.modifiedAt = timestamp
     charData.modifiedBy = myServerName
+    charData.acceptState = acceptState
     if charChanged then
         -- may save log somewhere else
         -- only retained in the addon

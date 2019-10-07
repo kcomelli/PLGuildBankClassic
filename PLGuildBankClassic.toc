@@ -43,3 +43,6 @@ TabGuildConfigFrame.lua
 CreateEditBankAltDialogFrame.lua
 TabGuildBankContentFrame.lua
 
+ItemContainer.lua
+Item.lua
+Bag.lua

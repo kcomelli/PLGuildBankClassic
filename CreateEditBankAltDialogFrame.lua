@@ -104,7 +104,7 @@ function CreateEditBankAltDialogFrame:InitEditExisting(charaterInfo)
     if(self.characterData.icon > 0) then
         self:PopupButton_SelectTexture(self.characterData.icon, false)
     else
-        self:PopupButton_SelectTexture("INV_MISC_QUESTIONMARK", false)
+        self:PopupButton_SelectTexture(0, false)
     end
     self:EnsureIcons()
     self:CanUseCharacter(self.configCharacterEditBox)
@@ -179,7 +179,13 @@ end
 function CreateEditBankAltDialogFrame:PopupButton_SelectTexture(selectedIcon, doUpdateIconFrame)
     local texnum = tonumber(selectedIcon)
 
+    PLGuildBankClassic:debug("PopupButton_SelectTexture: " .. tostring(selectedIcom or "-1"))
     if (texnum ~= nil) then
+        -- use questionmark as icon number 0
+        if selectedIcon == 0 then
+            selectedIcon = 1
+        end
+
         self.characterData.icon = selectedIcon
         self.characterData.iconTexture = nil
     else
