@@ -8,7 +8,7 @@ local Bag_MT = {__index = Bag}
 
 local Events = PLGuildBankClassic:GetModule("Events")
 
-local BAG_SIZE = 22
+local BAG_SIZE = 24
 local TEXTURE_SIZE = 64 * (BAG_SIZE/36)
 
 PLGuildBankClassic.Bag = {}

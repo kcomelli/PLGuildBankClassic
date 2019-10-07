@@ -64,8 +64,13 @@ function GuildBankContentFrame:UpdateBags(characterData)
 		bag.bagID = bagID
 		tinsert(self.bagButtons, bag)
 	end
+	
+    self:LeftAlignBags()
+	self:UpdateItemContainer()
+end
 
-	--for i, bag in ipairs(self.bagButtons) do
+function GuildBankContentFrame:RightAlignBags()
+    -- right align bags
 	for i = #self.bagButtons, 1, -1 do
         local bag = self.bagButtons[i]
 		bag:ClearAllPoints()
@@ -81,8 +86,26 @@ function GuildBankContentFrame:UpdateBags(characterData)
         bag.ownerName = characterData.name .. "-" .. characterData.realm
         bag:Show()
         bag:Update()
-	end
-	self:UpdateItemContainer()
+    end
+end
+
+function GuildBankContentFrame:LeftAlignBags()
+     -- left align bags
+     for i, bag in ipairs(self.bagButtons) do
+        bag:ClearAllPoints()
+        if i == 1 then
+            bag:SetPoint("TOPLEFT", 5, 0)
+        else
+            local space = 4
+            if bag.bagID == BACKPACK_CONTAINER then
+                space = 20
+            end
+            bag:SetPoint("LEFT", self.bagButtons[i-1], "RIGHT", space, 0)
+        end
+        bag.ownerName = characterData.name .. "-" .. characterData.realm
+        bag:Show()
+        bag:Update()
+    end
 end
 
 function GuildBankContentFrame:UpdateItemContainer(force)
