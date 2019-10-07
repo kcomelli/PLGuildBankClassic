@@ -65,11 +65,11 @@ function GuildBankContentFrame:UpdateBags(characterData)
 		tinsert(self.bagButtons, bag)
 	end
 	
-    self:LeftAlignBags()
+    self:LeftAlignBags(characterData)
 	self:UpdateItemContainer()
 end
 
-function GuildBankContentFrame:RightAlignBags()
+function GuildBankContentFrame:RightAlignBags(characterData)
     -- right align bags
 	for i = #self.bagButtons, 1, -1 do
         local bag = self.bagButtons[i]
@@ -89,7 +89,7 @@ function GuildBankContentFrame:RightAlignBags()
     end
 end
 
-function GuildBankContentFrame:LeftAlignBags()
+function GuildBankContentFrame:LeftAlignBags(characterData)
      -- left align bags
      for i, bag in ipairs(self.bagButtons) do
         bag:ClearAllPoints()

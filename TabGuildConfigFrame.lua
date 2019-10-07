@@ -67,14 +67,14 @@ local function PLGuildRanksDropDown_Initialize(dropDown)
             end
             info.arg1 = i
             info.checked = false
-            if PLGuildBankClassic:IsInGuild() and PLGuildBankClassic.guildVault.guildSettings.minGuildRank == i then
+            if PLGuildBankClassic:IsInGuild() and PLGuildBankClassic.guildVault.guildSettings.config.minGuildRank == i then
                 info.checked = true
             end
             UIDropDownMenu_AddButton(info);	
         end
 
-        if PLGuildBankClassic:IsInGuild() and PLGuildBankClassic.guildVault.guildSettings.minGuildRank > 0 then
-            UIDropDownMenu_SetSelectedValue(dropDown, PLGuildBankClassic.guildVault.guildSettings.minGuildRank)
+        if PLGuildBankClassic:IsInGuild() and PLGuildBankClassic.guildVault.guildSettings.config.minGuildRank > 0 then
+            UIDropDownMenu_SetSelectedValue(dropDown, PLGuildBankClassic.guildVault.guildSettings.config.minGuildRank)
         end
     else
         self:Hide()
@@ -85,8 +85,8 @@ function GuildConfigFrame:PLGuildRanksDropDown_OnClick(dropDown, selId)
     if PLGuildBankClassic:IsInGuild() then
         UIDropDownMenu_SetSelectedValue(dropDown,selId)
 
-        if(PLGuildBankClassic.guildVault.guildSettings.minGuildRank ~= selId) then
-            PLGuildBankClassic.guildVault.guildSettings.minGuildRank = selId
+        if(PLGuildBankClassic.guildVault.guildSettings.config.minGuildRank ~= selId) then
+            PLGuildBankClassic.guildVault.guildSettings.config.minGuildRank = selId
         end
     end
 end

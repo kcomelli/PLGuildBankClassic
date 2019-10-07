@@ -28,7 +28,8 @@ local defaults = {
         }
     },
     factionrealm  = {
-        minGuildRank = 1
+        minGuildRank = 1,
+        configTimestamp = 0
     }
 }
 
@@ -167,7 +168,9 @@ end
 function PLGuildBankClassic:PrepareGuildConfig() 
     if dbFactionRealm.guildConfig == nil or dbFactionRealm.guildConfig[self:GuildName()] == nil then
         dbFactionRealm.guildConfig = {}
-        dbFactionRealm.guildConfig[self:GuildName()] = defaults.factionrealm
+        dbFactionRealm.guildConfig[self:GuildName()] = {}
+        dbFactionRealm.guildConfig[self:GuildName()].config = {}
+        dbFactionRealm.guildConfig[self:GuildName()].config = defaults.factionrealm
     end
 end
 
@@ -211,8 +214,9 @@ function PLGuildBankClassic:CreateBankChar(name, realm, description, class, icon
     charData.createdBy = myServerName
     charData.modifiedBy = myServerName
     charData.acceptState = acceptState or 0
-    charData.log = {}
-    charData.items = {}
+    charData.inventoryVersion = 0
+    charData.moneyVersion = 0
+    charData.money = 0
     
     guildConfig.bankChars[getn(guildConfig.bankChars)+1] = charData
 end
@@ -242,14 +246,13 @@ function PLGuildBankClassic:EditBankChar(index, name, realm, description, class,
     charData.modifiedAt = timestamp
     charData.modifiedBy = myServerName
     charData.acceptState = acceptState
+ 
     if charChanged then
-        -- may save log somewhere else
-        -- only retained in the addon
-        -- or global log not char based
-        charData.log = {}
-        charData.items = {}
+        charData.inventoryVersion = 0
+        charData.moneyVersion = 0
+        charData.money = 0
     end
-
+    
     return charChanged
 end
 
@@ -305,7 +308,7 @@ end
 
 function PLGuildBankClassic:CanConfigureBankAlts()
     if self:IsInGuild() then
-        return self.guildRank <= dbFactionRealm.guildConfig[self:GuildName()].minGuildRank
+        return self.guildRank <= dbFactionRealm.guildConfig[self:GuildName()].config.minGuildRank
     else
         return false
     end
@@ -346,13 +349,13 @@ end
 
 function PLGuildBankClassic:UpdateMinRankForAlts(newRank)
     if self:IsInGuild() then
-        dbFactionRealm.guildConfig[self:GuildName()].minGuildRank = newRank
+        dbFactionRealm.guildConfig[self:GuildName()].config.minGuildRank = newRank
     end
 end
 
 function PLGuildBankClassic:GetMinRankForAlts()
     if self:IsInGuild() then
-        return dbFactionRealm.guildConfig[self:GuildName()].minGuildRank
+        return dbFactionRealm.guildConfig[self:GuildName()].config.minGuildRank
     end
 
     return minGuildRankForRankConfig

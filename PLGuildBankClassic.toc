@@ -20,6 +20,7 @@ libs\AceHook-3.0\AceHook-3.0.xml
 libs\AceDB-3.0\AceDB-3.0.xml
 libs\AceLocale-3.0\AceLocale-3.0.xml
 libs\AceComm-3.0\AceComm-3.0.xml
+libs\AceSerializer-3.0\AceSerializer-3.0.xml
 
 libs\LibWindow-1.1\LibWindow-1.1.lua
 
@@ -36,6 +37,7 @@ TabGuildBankContentFrame.xml
 Localization.lua
 PLGuildBankClassic.lua
 Events.lua 
+Comms.lua
 
 Utility.lua
 Frame.lua
