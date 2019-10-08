@@ -52,7 +52,8 @@ function PLGuildBankClassic.Frame:Create(name, titleText, settings, guildSetting
 	frame.guildConfigFrame = PLGuildBankClassic.GuildConfigFrame:Create(frame.tabContentContainer)
 	frame.addEditBankAltChar = PLGuildBankClassic.CreateEditBankAltDialogFrame:Create(frame, settings)
 	frame.bankContents = PLGuildBankClassic.GuildBankContentFrame:Create(frame.tabContentContainer)
-	
+	frame.bankLog = PLGuildBankClassic.GuildBankLogFrame:Create(frame.tabContentContainer)
+	frame.bankInfo = PLGuildBankClassic.GuildBankInfoFrame:Create(frame.tabContentContainer)
 
     -- scripts
     frame:SetScript("OnLoad", frame.OnLoad)
@@ -288,6 +289,10 @@ function Frame:ShowBankLog()
 
 	self:HideFrames()
 	self:SetTabContentVisibility(true)
+	if self:CheckBankAlts() then
+		-- fill bank log
+		self.bankLog:Show()
+	end
 end
 
 function Frame:ShowGuildInfo()
@@ -297,6 +302,10 @@ function Frame:ShowGuildInfo()
 
 	self:HideFrames()
 	self:SetTabContentVisibility(true)
+	if self:CheckBankAlts() then
+		-- fill bank info
+		self.bankInfo:Show()
+	end
 end
 
 function Frame:ShowConfig()
@@ -305,8 +314,6 @@ function Frame:ShowConfig()
 	end
 
 	self:HideFrames()
-	--self.configFrame:Show()
-	--self:GuildRanksDropDown_DoLoad(self.configRankDropDown, self)
 	self:SetTabContentVisibility(true)
 	self.guildConfigFrame:Show()
 end
@@ -316,6 +323,8 @@ function Frame:HideFrames()
 	self.logFrame:Hide()
 	self.guildConfigFrame:Hide()
 	self.bankContents:Hide()
+	self.bankLog:Hide()
+	self.bankInfo:Hide()
 end
 
 function Frame:SetTabContentVisibility(visible)
@@ -451,6 +460,8 @@ function Frame:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED(event, index, characterData)
 		PLGuildBankClassic:debug(cacheOwnerInfo.name .. " (" .. cacheOwnerInfo.race .. " " .. cacheOwnerInfo.class .. ") Money: " .. tostring(cacheOwnerInfo.money))
 
 		self.bankContents:Update(characterData)
+		self.bankLog:Update(characterData)
+		self.bankInfo:Update(characterData)
 	else
 		PLGuildBankClassic:debug("No cached data found")
 

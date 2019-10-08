@@ -59,8 +59,6 @@ function PLGuildBankClassic.Bag:Create()
 	bag:SetScript("OnShow", bag.OnShow)
 	bag:SetScript("OnLeave", bag.OnLeave)
 	bag:SetScript("OnClick", bag.OnClick)
-	--bag:SetScript("OnDragStart", bag.OnDrag)
-	--bag:SetScript("OnReceiveDrag", bag.OnClick)
 	bag:SetScript("OnEvent", bag.OnEvent)
 
 	BagID = BagID + 1
@@ -132,23 +130,7 @@ function Bag:OnClick(button)
 	if self:IsCached() then
 		return
 	end
-
-	--if self:IsPurchasable() then
-	--	self:PurchaseSlot()
-	--elseif CursorHasItem() then
-	--	if self:IsBackpack() then
-	--		PutItemInBackpack()
-	--	else
-	--		PutItemInBag(self:GetInventorySlot())
-	--	end
-	--elseif not(self:IsBackpack() or self:IsBank()) then
-	--	self:Pickup()
-	--end
 end
-
---function Bag:OnDrag()
---	self:Pickup()
---end
 
 function Bag:OnEnter()
 	if self:GetRight() > (GetScreenWidth() / 2) then
@@ -246,34 +228,6 @@ end
 function Bag:ClearHighlightItems()
 	self:GetParent().itemContainer:HighlightBag(nil)
 end
-
---show the purchase slot dialog
---function Bag:PurchaseSlot()
---	if not StaticPopupDialogs["CONFIRM_BUY_BANK_SLOT_INVENTORIAN"] then
---		StaticPopupDialogs["CONFIRM_BUY_BANK_SLOT_INVENTORIAN"] = {
---			text = CONFIRM_BUY_BANK_SLOT,
---			button1 = YES,
---			button2 = NO,
-
---			OnAccept = function(f)
---				PurchaseSlot()
---			end,
-
---			OnShow = function(f)
---				MoneyFrame_Update(f:GetName().. "MoneyFrame", GetBankSlotCost(GetNumBankSlots()))
---			end,
-
---			hasMoneyFrame = 1,
---			timeout = 0,
---			hideOnEscape = 1,
---			preferredIndex = STATICPOPUP_NUMDIALOGS,
---		}
---	end
-
---	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION)
---	StaticPopup_Show("CONFIRM_BUY_BANK_SLOT_INVENTORIAN")
---end
-
 function Bag:UpdateTooltip()
 	GameTooltip:ClearLines()
 

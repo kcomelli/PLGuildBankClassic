@@ -1,0 +1,133 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\..\FrameXML\UI.xsd">
+
+    <Frame name="PLGuildBankFrameTabLog" inherits="ItemButtonTemplate" virtual="true">
+        <Size>
+            <AbsDimension x="200" y="200"/>
+        </Size>
+        <Anchors>
+            <Anchor point="TOPLEFT" relativeTo="$parent">
+                <Offset x="5" y="-5"/>
+            </Anchor>
+            <Anchor point="BOTTOMRIGHT" relativeTo="$parent">
+                <Offset x="-5" y="5"/>
+            </Anchor>
+        </Anchors>
+         <Frames>
+            <Frame parentKey="configDescriptionLabel" name="$parentDescriptionLabel">
+                <Size>
+                    <AbsDimension x="170" y="15" />
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent">
+                        <Offset>
+                            <AbsDimension x="5" y="23" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer>
+                        <FontString parentKey="Text" name="$parentText" inherits="GameFontNormal" text="PLGuild_BANK_CONFIG_RANK" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="TOPLEFT">
+                                    <Offset x="0" y="0"/>
+                                </Anchor>
+                            </Anchors>
+                            <FontHeight>
+                                <AbsValue val="10" />
+                            </FontHeight>
+                            <Color r="1" g="0.8196079" b="0" />
+                            <Shadow>
+                                <Color r="0" g="0" b="0" />
+                                <Offset>
+                                    <AbsDimension x="1" y="-1" />
+                                </Offset>
+                            </Shadow>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
+            <Frame parentKey="configCharLabel" name="$parentCharLabel">
+                <Size>
+                    <AbsDimension x="170" y="15" />
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parentDescriptionLabel" relativePoint="TOPRIGHT">
+                        <Offset>
+                            <AbsDimension x="2" y="0" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer>
+                        <FontString parentKey="Text" name="$parentText" inherits="GameFontNormal" text="PLGuild_BANK_CONFIG_RANK" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="TOPLEFT">
+                                    <Offset x="0" y="0"/>
+                                </Anchor>
+                            </Anchors>
+                            <FontHeight>
+                                <AbsValue val="10" />
+                            </FontHeight>
+                            <Color r="1" g="0.8196079" b="0" />
+                            <Shadow>
+                                <Color r="0" g="0" b="0" />
+                                <Offset>
+                                    <AbsDimension x="1" y="-1" />
+                                </Offset>
+                            </Shadow>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
+
+            <ScrollingMessageFrame  parentKey="messagesFrame" name="$parentScrollFrame" inherits="InlineHyperlinkFrameTemplate">
+                <Size>
+                    <AbsDimension x="200" y="200" />
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="0" />
+                        </Offset>
+                    </Anchor>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
+                        <Offset>
+                            <AbsDimension x="0" y="0" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </ScrollingMessageFrame>
+            <ScrollFrame parentKey="scrollFrame" name="$parentGuildBankTransactionsScrollFrame" inherits="FauxScrollFrameTemplate" hidden="true">
+                <Size x="688" y="304"/>
+                <Anchors>
+                    <Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPRIGHT" x="-43" y="0"/>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT" x="0" y="0"/>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
+                            <Size x="31" y="256"/>
+                            <Anchors>
+                                <Anchor point="TOPLEFT" relativePoint="TOPRIGHT" x="-2" y="5"/>
+                            </Anchors>
+                            <TexCoords left="0" right="0.484375" top="0" bottom="1.0"/>
+                        </Texture>
+                        <Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
+                            <Size x="31" y="106"/>
+                            <Anchors>
+                                <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" x="-2" y="-2"/>
+                            </Anchors>
+                            <TexCoords left="0.515625" right="1.0" top="0" bottom="0.4140625"/>
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnVerticalScroll>
+                        local parentFrame = self:GetParent()
+                        FauxScrollFrame_OnVerticalScroll(self, offset, parentFrame.GUILDBANK_TRANSACTION_HEIGHT, parentFrame.DoLogScroll)
+                    </OnVerticalScroll>
+                </Scripts>
+            </ScrollFrame>
+        </Frames>
+    </Frame> 
+</Ui>

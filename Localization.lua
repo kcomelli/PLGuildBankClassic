@@ -51,3 +51,16 @@ L["Decline"] = true
 L["Decide later"] = true
 L["%s has configured your char as guild-bank character!\nDo you accept this state of the character?\n \nNote: All your inventory, bank and money will be shared across the guild!"] = true
 L["Purchaseable"] = true
+
+L["via direct trade"] = true
+
+L["( %s ago )"] = true
+L[" x %d"] = true
+L["%s deposited %s"] = true
+L["%s |cffff2020withdrew|r %s"] = true
+L["via mail"] = true
+L["via COD"] = true
+L["via auction"] = true
+L["via loot"] = true
+L["via (unkown)"] = true
+L["(est. value: %s)"] = true

@@ -12,6 +12,7 @@ PLGBC_EVENT_BANKCHAR_REMOVED = "PLGBC_EVENT_BANKCHAR_REMOVED"
 
 PLGBC_EVENT_BANKCHAR_SLOT_SELECTED = "PLGBC_EVENT_BANKCHAR_SLOT_SELECTED"
 PLGBC_EVENT_BANKCHAR_MONEYCHANGED = "PLGBC_EVENT_BANKCHAR_MONEYCHANGED"
+PLGBC_EVENT_BANKCHAR_INVENTORYCHANGED = "PLGBC_EVENT_BANKCHAR_INVENTORYCHANGED"
 
 -- data storage
 local slots = {}
@@ -20,7 +21,6 @@ function Events:OnEnable()
 	self.atBank = false
 
 	self:RegisterEvent("BAG_UPDATE")
-	self:RegisterEvent("BAG_UPDATE_COOLDOWN")
 	self:RegisterEvent("BAG_NEW_ITEMS_UPDATED")
 	self:RegisterEvent("PLAYERBANKSLOTS_CHANGED")
 	self:RegisterEvent("BANKFRAME_OPENED")
@@ -33,9 +33,6 @@ function Events:OnEnable()
     self:RegisterEvent("SEND_MAIL_MONEY_CHANGED", "PLAYER_MONEY")
     self:RegisterEvent("SEND_MAIL_COD_CHANGED", "PLAYER_MONEY")
     self:RegisterEvent("TRIAL_STATUS_UPDATE", "PLAYER_MONEY")
-
-	--self:UpdateBagSize(BACKPACK_CONTAINER)
-	--self:UpdateItems(BACKPACK_CONTAINER)
 end
 
 function Events:GenericEvent(event, ...)
@@ -45,23 +42,19 @@ end
 -- events
 function Events:BAG_UPDATE(event, bag)
     if PLGuildBankClassic:IsGuildBankChar() then
-	    --self:UpdateBagSizes()
-        --self:UpdateItems(bag)
+	    PLGuildBankClassic:UpdateInventoryVersion()
     end
 end
 
 function Events:BAG_NEW_ITEMS_UPDATED(event)
     if PLGuildBankClassic:IsGuildBankChar() then
-        --for bag = 0, NUM_BAG_SLOTS do
-        --	self:UpdateItems(bag)
-        --end
+        PLGuildBankClassic:UpdateInventoryVersion()
     end
 end
 
 function Events:PLAYERBANKSLOTS_CHANGED()
     if PLGuildBankClassic:IsGuildBankChar() then
-        --self:UpdateBagSizes()
-        --self:UpdateItems(BANK_CONTAINER)
+        PLGuildBankClassic:UpdateInventoryVersion()
     end
 end
 
@@ -78,18 +71,9 @@ function Events:BANKFRAME_CLOSED()
     if PLGuildBankClassic:IsGuildBankChar() then
         self.atBank = false
         ItemCache.AtBank = false
-        
         self:Fire("BANK_CLOSED")
-    end
-end
 
-function Events:BAG_UPDATE_COOLDOWN()
-    if PLGuildBankClassic:IsGuildBankChar() then
-        --self:UpdateCooldowns(BACKPACK_CONTAINER)
-
-        --for bag = 1, NUM_BAG_SLOTS do
-        --	self:UpdateCooldowns(bag)
-        --end
+        PLGuildBankClassic:UpdateInventoryVersion()
     end
 end
 

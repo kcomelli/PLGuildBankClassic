@@ -33,6 +33,8 @@ Frame.xml
 TabGuildConfigFrame.xml
 CreateEditBankAltDialogFrame.xml
 TabGuildBankContentFrame.xml
+TabGuildBankLogFrame.xml
+TabGuildBankInfoFrame.xml
 
 Localization.lua
 PLGuildBankClassic.lua
@@ -44,6 +46,8 @@ Frame.lua
 TabGuildConfigFrame.lua
 CreateEditBankAltDialogFrame.lua
 TabGuildBankContentFrame.lua
+TabGuildBankLogFrame.lua
+TabGuildBankInfoFrame.lua
 
 ItemContainer.lua
 Item.lua

@@ -228,7 +228,7 @@ function ItemContainer:GetBagSize(bag)
 		local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(self.ownerName)
 		local cacheOwnerInfo = ItemCache:GetOwnerInfo(charServerName)
 
-        PLGuildBankClassic:debug("Getting bag info for bag " .. tostring(bag) .. " using owner " .. charServerName)
+        --PLGuildBankClassic:debug("Getting bag info for bag " .. tostring(bag) .. " using owner " .. charServerName)
 
         local info = ItemCache:GetBagInfo(cacheOwnerInfo.name, bag)
         

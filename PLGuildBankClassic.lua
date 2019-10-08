@@ -33,6 +33,24 @@ local defaults = {
     }
 }
 
+PLGuildBankClassic.transactionModes = {
+    deposit = 0,
+    withdraw = 1
+}
+
+PLGuildBankClassic.transactionTypes = {
+    money = 0,
+    item = 1
+}
+
+PLGuildBankClassic.transactionSource = {
+    directTrade = 0,
+    mail = 1,
+    cod = 2,
+    auction = 3,
+    loot = 10
+}
+
 PLGBC_BAG_CONFIG = { BACKPACK_CONTAINER, 1, 2, 3, 4 }
 PLGBC_BANK_CONFIG = { BANK_CONTAINER, 5, 6, 7, 8, 9, 10 }
 PLGBC_COMBINED_INVENTORY_CONFIG = { BANK_CONTAINER, 5, 6, 7, 8, 9, 10, BACKPACK_CONTAINER, 1, 2, 3, 4 }
@@ -95,7 +113,7 @@ function PLGuildBankClassic:HandleSlash(cmd)
 end
 
 function PLGuildBankClassic:UpdatePlayerMoney()
-    PLGuildBankClassic:debug("PLAYER_MONEY: updating player money")
+    PLGuildBankClassic:debug("UpdatePlayerMoney: updating player money")
     if PLGuildBankClassic:IsGuildBankChar() then
         local curMoney = GetMoney()
 
@@ -106,6 +124,18 @@ function PLGuildBankClassic:UpdatePlayerMoney()
 
             PLGuildBankClassic.Events:Fire("PLGBC_EVENT_BANKCHAR_MONEYCHANGED", charServerName, GetMoney(), PLGuildBankClassic.atBankChar.moneyVersion)
         end
+    end
+end
+
+function PLGuildBankClassic:UpdateInventoryVersion()
+    PLGuildBankClassic:debug("UpdateInventoryVersion: updating player inventory version info")
+    if PLGuildBankClassic:IsGuildBankChar() then
+        local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
+        local cacheOwnerInfo = ItemCache:GetOwnerInfo(charServerName)
+        local hasCachedData = cacheOwnerInfo.class ~= nil
+
+        PLGuildBankClassic.atBankChar.inventoryVersion = PLGuildBankClassic:GetTimestamp()
+        PLGuildBankClassic.Events:Fire("PLGBC_EVENT_BANKCHAR_INVENTORYCHANGED", charServerName, hasCachedData, PLGuildBankClassic.atBankChar.inventoryVersion)
     end
 end
 
@@ -191,6 +221,8 @@ function PLGuildBankClassic:PrepareGuildConfig()
         dbFactionRealm.guildConfig = {}
         dbFactionRealm.guildConfig[self:GuildName()] = {}
         dbFactionRealm.guildConfig[self:GuildName()].config = {}
+        dbFactionRealm.guildConfig[self:GuildName()].bankChars = {}
+        dbFactionRealm.guildConfig[self:GuildName()].logs = {}
         dbFactionRealm.guildConfig[self:GuildName()].config = defaults.factionrealm
     end
 end
@@ -304,6 +336,32 @@ function PLGuildBankClassic:GetBankCharDataByName(characterName)
     end
 
     return nil
+end
+
+function PLGuildBankClassic:GetLogByIndex(index)
+    local bankCharData = self:GetBankCharDataByIndex(index)
+
+    if bankCharData then
+        return self:GetLogByName(bankCharData.name .. "-" .. charData.realm)
+    end
+
+    return nil
+end
+
+function PLGuildBankClassic:GetLogByName(characterName)
+    local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterName)
+
+    local guildConfig = PLGuildBankClassic:GetGuildConfig() 
+
+    if guildConfig == nil or guildConfig.logs == nil then
+        return nil
+    end
+
+    if guildConfig.logs[charServerName] == nil then
+        guildConfig.logs[charServerName] = {}
+    end
+
+    return guildConfig.logs[charServerName]
 end
 
 function PLGuildBankClassic:SumBankCharMoney()

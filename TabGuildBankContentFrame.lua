@@ -123,10 +123,12 @@ end
 function GuildBankContentFrame:Update(characterData)
     local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterData.name)
 
+	PLGuildBankClassic:debug("GuildBankContentFrame:Update: character: " .. charServerName)
+	
     local cacheOwnerInfo = ItemCache:GetOwnerInfo(charServerName)
     if cacheOwnerInfo.class then
 		self.displayingCharacterData = characterData
-		
+
         local class = characterData.class
         if not RAID_CLASS_COLORS[class] or not RAID_CLASS_COLORS[class].colorStr then class = nil end
         local player = characterData.name
