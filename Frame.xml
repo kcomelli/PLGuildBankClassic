@@ -535,19 +535,86 @@
 					<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" x="1" y="25"/>
 					<Anchor point="BOTTOMRIGHT" x="-4" y="2"/>
 				</Anchors>
-				<Layers>
-					<Layer level="OVERLAY">
-						<FontString parentKey="availableMoneyLabel" name="PLGuildBankMoneyLimitLabel" inherits="GameFontNormalSmall" text="GUILDBANK_AVAILABLE_MONEY">
-							<Size x="0" y="13"/>
-							<Anchors>
-								<Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT" x="8" y="6"/>
-							</Anchors>
-						</FontString>
-					</Layer>
-				</Layers>
 			</Frame>
 
-			<Frame name="PLGuildBankMoneyFrame" inherits="SmallMoneyFrameTemplate">
+			<Frame parentKey="availableMoneyLabel" name="PLGuildBankMoneyFrameAvailableMoney">
+                <Size>
+                    <AbsDimension x="80" y="13" />
+                </Size>
+                <Anchors>
+					<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" x="10" y="18"/>
+                </Anchors>
+                <Layers>
+                    <Layer>
+                        <FontString parentKey="Text" name="$parentText" inherits="GameFontNormalSmall" text="GUILDBANK_AVAILABLE_MONEY" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="TOPLEFT" />
+                                
+                            </Anchors>
+                            <FontHeight>
+                                <AbsValue val="10" />
+                            </FontHeight>
+                            <Color r="1" g="0.8196079" b="0" />
+                            <Shadow>
+                                <Color r="0" g="0" b="0" />
+                                <Offset>
+                                    <AbsDimension x="1" y="-1" />
+                                </Offset>
+                            </Shadow>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
+
+			<Frame parentKey="availableMoneyBankCharLabel" name="PLGuildBankMoneyFrameAvailableMoneyChar">
+                <Size>
+                    <AbsDimension x="80" y="13" />
+                </Size>
+                <Anchors>
+					<Anchor point="TOPLEFT" relativeTo="PLGuildBankMoneyFrameAvailableMoney" relativePoint="TOPRIGHT" x="10" y="0"/>
+                </Anchors>
+                <Layers>
+                    <Layer>
+                        <FontString parentKey="Text" name="$parentText" inherits="GameFontNormalSmall" text="GUILDBANK_AVAILABLE_MONEY_CHAR" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="TOPLEFT" />
+                            </Anchors>
+                            <FontHeight>
+                                <AbsValue val="10" />
+                            </FontHeight>
+                            <Color r="1" g="0.8196079" b="0" />
+                            <Shadow>
+                                <Color r="0" g="0" b="0" />
+                                <Offset>
+                                    <AbsDimension x="1" y="-1" />
+                                </Offset>
+                            </Shadow>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
+
+			<Frame parentKey="moneyFrameBankChar" name="PLGuildBankCharMoneyFrame" inherits="SmallMoneyFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="PLGuildBankMoneyFrameAvailableMoneyChar" relativePoint="TOPRIGHT">
+						<Offset x="10" y="2"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						MoneyFrame_SetType(self, "STATIC");
+					</OnLoad>
+					<OnEnter>
+						GameTooltip:SetOwner(self, "ANCHOR_CURSOR");
+						GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, 1);
+					</OnEnter>
+					<OnLeave>
+						GameTooltip:Hide();
+					</OnLeave>
+				</Scripts>
+			</Frame>
+
+			<Frame parentKey="moneyFrameGuild" name="PLGuildBankMoneyFrame" inherits="SmallMoneyFrameTemplate">
 				<Anchors>
 					<Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
 						<Offset x="-4" y="8"/>
@@ -555,10 +622,45 @@
 				</Anchors>
 				<Scripts>
 					<OnLoad>
-						SmallMoneyFrame_OnLoad(self, "PLAYER");
+						MoneyFrame_SetType(self, "STATIC");
 					</OnLoad>
+					<OnEnter>
+						GameTooltip:SetOwner(self, "ANCHOR_CURSOR");
+						GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, 1);
+					</OnEnter>
+					<OnLeave>
+						GameTooltip:Hide();
+					</OnLeave>
 				</Scripts>
 			</Frame>
+
+			<Frame parentKey="availableMoneyGuildLabel" name="PLGuildBankMoneyFrameAvailableMoneyGuild">
+                <Size>
+                    <AbsDimension x="80" y="13" />
+                </Size>
+                <Anchors>
+					<Anchor point="TOPRIGHT" relativeTo="PLGuildBankMoneyFrame" relativePoint="TOPLEFT" x="-10" y="-2"/>
+                </Anchors>
+                <Layers>
+                    <Layer>
+                        <FontString parentKey="Text" name="$parentText" inherits="GameFontNormalSmall" text="GUILDBANK_AVAILABLE_MONEY_GUILD" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="TOPLEFT" />
+                            </Anchors>
+                            <FontHeight>
+                                <AbsValue val="10" />
+                            </FontHeight>
+                            <Color r="1" g="0.8196079" b="0" />
+                            <Shadow>
+                                <Color r="0" g="0" b="0" />
+                                <Offset>
+                                    <AbsDimension x="1" y="-1" />
+                                </Offset>
+                            </Shadow>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
 
 			<!--<Button inherits="UIPanelCloseButton">
 				<Anchors>

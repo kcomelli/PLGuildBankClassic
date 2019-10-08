@@ -73,14 +73,16 @@ function PLGuildBankClassic:OnInitialize()
 
     self:RegisterEvent("PLAYER_ENTERING_WORLD", "PlayerEnteringWorld")
     self:RegisterEvent("PLAYER_GUILD_UPDATE", "InitializePlayerStatus")
-    
 end
 
 function PLGuildBankClassic:OnEnable()
     local guildSettings = PLGuildBankClassic:GetGuildConfig()
 	self.guildVault = PLGuildBankClassic.Frame:Create("PLGuildBankClassicFrame", "PLGuildBankClassicFrame", dbProfile, guildSettings)
 
-	self:RegisterChatCommand("plgb", "HandleSlash")
+    self:RegisterChatCommand("plgb", "HandleSlash")
+    
+    self.Events = self:GetModule("Events")
+    self.Events.Register(self, "PLGBC_EVENT_BANKCHAR_ENTERED_WORLD", "UpdatePlayerMoney")
 end
 
 function PLGuildBankClassic:HandleSlash(cmd)
@@ -90,6 +92,21 @@ function PLGuildBankClassic:HandleSlash(cmd)
 		self:Print("Available Commands:")
 		self:Print(" /plgb show: Show the guild bank")
 	end
+end
+
+function PLGuildBankClassic:UpdatePlayerMoney()
+    PLGuildBankClassic:debug("PLAYER_MONEY: updating player money")
+    if PLGuildBankClassic:IsGuildBankChar() then
+        local curMoney = GetMoney()
+
+        if PLGuildBankClassic.atBankChar.money ~= curMoney then
+            local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
+            PLGuildBankClassic.atBankChar.money = GetMoney()
+            PLGuildBankClassic.atBankChar.moneyVersion = PLGuildBankClassic:GetTimestamp()
+
+            PLGuildBankClassic.Events:Fire("PLGBC_EVENT_BANKCHAR_MONEYCHANGED", charServerName, GetMoney(), PLGuildBankClassic.atBankChar.moneyVersion)
+        end
+    end
 end
 
 function PLGuildBankClassic:InitializePlayerStatus()
@@ -125,6 +142,11 @@ end
 function PLGuildBankClassic:UpdateAtBankCharState()
     self.atBankChar = self:GetBankCharDataByName(UnitName("player"))
     self.atBankCharIndex = self:IndexOfBankCharData(self.atBankChar)
+
+    if self.atBankChar ~= nil then
+        PLGuildBankClassic:debug("UpdateAtBankCharState: Logged in with bank char")
+        self.Events:Fire("PLGBC_EVENT_BANKCHAR_ENTERED_WORLD")
+    end
 end
 
 function PLGuildBankClassic:AcceptOrDeclineState(state)
@@ -135,8 +157,7 @@ function PLGuildBankClassic:AcceptOrDeclineState(state)
             PLGuildBankClassic.atBankChar.acceptState = -1
         end
 
-        local Events = self:GetModule("Events")
-        Events:GenericEvent("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", PLGuildBankClassic.atBankCharIndex, PLGuildBankClassic.atBankChar)
+        self.Events:Fire("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", PLGuildBankClassic.atBankCharIndex, PLGuildBankClassic.atBankChar)
     end
 end
 
@@ -200,7 +221,7 @@ function PLGuildBankClassic:CreateBankChar(name, realm, description, class, icon
     end
 
     local charData = {}
-    local timestamp = time()
+    local timestamp = PLGuildBankClassic:GetTimestamp()
     local myName, myRealm, myServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
 
     charData.name = name
@@ -233,7 +254,7 @@ function PLGuildBankClassic:EditBankChar(index, name, realm, description, class,
     end
 
     local charData = guildConfig.bankChars[index]
-    local timestamp = time()
+    local timestamp = PLGuildBankClassic:GetTimestamp()
     local myName, myRealm, myServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
     local charChanged = charData.name ~= name
 
@@ -283,6 +304,25 @@ function PLGuildBankClassic:GetBankCharDataByName(characterName)
     end
 
     return nil
+end
+
+function PLGuildBankClassic:SumBankCharMoney()
+    local capital = 0
+
+    local guildConfig = PLGuildBankClassic:GetGuildConfig() 
+
+    if guildConfig == nil or guildConfig.bankChars == nil then
+        return capital
+    end
+
+    for i=1, getn(guildConfig.bankChars) do
+        local checkData = guildConfig.bankChars[i]
+        if checkData.money then
+            capital = capital + checkData.money or 0
+        end
+    end
+
+    return capital
 end
 
 function PLGuildBankClassic:IndexOfBankCharData(characterData)

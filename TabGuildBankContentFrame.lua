@@ -19,6 +19,7 @@ function PLGuildBankClassic.GuildBankContentFrame:Create(parent)
 
     -- settings
 	frame.bagButtons = {}
+	frame.displayingCharacterData = nil
 
 	-- components
 	frame.itemContainer = PLGuildBankClassic.ItemContainer:Create(frame)
@@ -124,7 +125,8 @@ function GuildBankContentFrame:Update(characterData)
 
     local cacheOwnerInfo = ItemCache:GetOwnerInfo(charServerName)
     if cacheOwnerInfo.class then
-
+		self.displayingCharacterData = characterData
+		
         local class = characterData.class
         if not RAID_CLASS_COLORS[class] or not RAID_CLASS_COLORS[class].colorStr then class = nil end
         local player = characterData.name

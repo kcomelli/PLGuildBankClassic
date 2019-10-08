@@ -5,11 +5,13 @@ Events.Fire = LibStub("CallbackHandler-1.0"):New(Events, "Register", "Unregister
 
 local ItemCache = LibStub("LibItemCache-2.0")
 
+PLGBC_EVENT_BANKCHAR_ENTERED_WORLD = "PLGBC_EVENT_BANKCHAR_ENTERED_WORLD"
 PLGBC_EVENT_BANKCHAR_ADDED = "PLGBC_EVENT_BANKCHAR_ADDED"
 PLGBC_EVENT_BANKCHAR_UPDATED = "PLGBC_EVENT_BANKCHAR_UPDATED"
 PLGBC_EVENT_BANKCHAR_REMOVED = "PLGBC_EVENT_BANKCHAR_REMOVED"
 
 PLGBC_EVENT_BANKCHAR_SLOT_SELECTED = "PLGBC_EVENT_BANKCHAR_SLOT_SELECTED"
+PLGBC_EVENT_BANKCHAR_MONEYCHANGED = "PLGBC_EVENT_BANKCHAR_MONEYCHANGED"
 
 -- data storage
 local slots = {}
@@ -24,7 +26,14 @@ function Events:OnEnable()
 	self:RegisterEvent("BANKFRAME_OPENED")
 	self:RegisterEvent("BANKFRAME_CLOSED")
     self:RegisterEvent("ITEM_LOCK_CHANGED", "GenericEvent")
-    
+
+    self:RegisterEvent("PLAYER_MONEY")
+    self:RegisterEvent("PLAYER_TRADE_MONEY", "PLAYER_MONEY");
+    self:RegisterEvent("TRADE_MONEY_CHANGED", "PLAYER_MONEY")
+    self:RegisterEvent("SEND_MAIL_MONEY_CHANGED", "PLAYER_MONEY")
+    self:RegisterEvent("SEND_MAIL_COD_CHANGED", "PLAYER_MONEY")
+    self:RegisterEvent("TRIAL_STATUS_UPDATE", "PLAYER_MONEY")
+
 	--self:UpdateBagSize(BACKPACK_CONTAINER)
 	--self:UpdateItems(BACKPACK_CONTAINER)
 end
@@ -60,14 +69,7 @@ function Events:BANKFRAME_OPENED()
     if PLGuildBankClassic:IsGuildBankChar() then
         self.atBank = true
         ItemCache.AtBank = true
-
-        --if self.firstVisit then
-        --	self.firstVisit = nil
-
-        --	self:UpdateBagSize(BANK_CONTAINER)
-        --	self:UpdateBagSizes()
-        --end
-
+        
         self:Fire("BANK_OPENED")
     end
 end
@@ -76,6 +78,7 @@ function Events:BANKFRAME_CLOSED()
     if PLGuildBankClassic:IsGuildBankChar() then
         self.atBank = false
         ItemCache.AtBank = false
+        
         self:Fire("BANK_CLOSED")
     end
 end
@@ -89,3 +92,8 @@ function Events:BAG_UPDATE_COOLDOWN()
         --end
     end
 end
+
+function Events:PLAYER_MONEY()
+    PLGuildBankClassic:UpdatePlayerMoney()
+end
+

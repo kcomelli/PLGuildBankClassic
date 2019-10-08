@@ -171,6 +171,9 @@ function PLGuildBankClassic:GuildName()
     return PLGuildBankClassic.guildName
 end
 
+function PLGuildBankClassic:GetTimestamp()
+	return time()
+end
 
 -------------------------------------------------------------------------------
 -- icon and texture functions
@@ -213,7 +216,7 @@ end
 -------------------------------------------------------------------------------
 function PLGuildBankClassic:debug(message)
 	if (PLGuildBankClassic.db.profile.config.debug) then
-		DEFAULT_CHAT_FRAME:AddMessage(PLGBCLASSIC_CHAT_WHITE .. message .. PLGBCLASSIC_CHAT_END, 0.1, 0.1, 1);
+		DEFAULT_CHAT_FRAME:AddMessage(PLGBCLASSIC_CHAT_WHITE .. "PLGBC-DBG: " .. message .. PLGBCLASSIC_CHAT_END, 0.1, 0.1, 1);
 	end
 end
 

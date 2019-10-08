@@ -93,12 +93,12 @@ function Frame:AddEditBankCharDialogResult(initiator, tab, mode, characterData, 
 				changedName = PLGuildBankClassic:EditBankChar(tab:GetID(), characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture, characterData.acceptState)
 			end
 
-			initiator:UpdateBankAltTabs()
+			initiator:UpdateBankAltTabs(false)
 
 			if createNew then
-				Events:GenericEvent("PLGBC_EVENT_BANKCHAR_ADDED", tab:GetID(), characterData)
+				Events:Fire("PLGBC_EVENT_BANKCHAR_ADDED", tab:GetID(), characterData)
 			else
-				Events:GenericEvent("PLGBC_EVENT_BANKCHAR_UPDATED", tab:GetID(), characterData, changedName)
+				Events:Fire("PLGBC_EVENT_BANKCHAR_UPDATED", tab:GetID(), characterData, changedName)
 			end
 
 			initiator:UpdateCurrentTab()
@@ -110,11 +110,20 @@ function Frame:AddEditBankCharDialogResult(initiator, tab, mode, characterData, 
 end
 
 function Frame:ApplyLocalization()
-	self.moneyFrameBackground.availableMoneyLabel:SetText(L["Available money"])
+	self.moneyFrameBankChar.tooltip = L["Money available on the selected bank character."]
+	self.moneyFrameGuild.tooltip = L["Cumulated capital of all configured bank characters."]
+
+	self.availableMoneyLabel.Text:SetText(L["Available money"])
+	self.availableMoneyLabel:SetWidth(self.availableMoneyLabel.Text:GetWidth() + 2)
+
 	self.tabBankItems:SetText(L["Bank items"])
 	self.tabBankLog:SetText(L["Bank logs"])
 	self.tabBankInfo:SetText(L["Guild info"])
 	self.tabBankConfig:SetText(L["Configuration"])
+	self.availableMoneyBankCharLabel.Text:SetFormattedText(L["Character %s:"], "")
+	self.availableMoneyBankCharLabel:SetWidth(self.availableMoneyBankCharLabel.Text:GetWidth() + 2)
+	self.availableMoneyGuildLabel.Text:SetText(L["Guild capital:"])
+	self.availableMoneyGuildLabel:SetWidth(self.availableMoneyGuildLabel.Text:GetWidth() + 2)
 
     if PLGuildBankClassic:IsInGuild() == false then
         self.guildBankTitleLabel:SetText("")
@@ -153,17 +162,20 @@ end
 
 function Frame:OnShow()
 	PlaySound(SOUNDKIT.IG_BACKPACK_OPEN)
-	self.addEditBankAltChar.callback = self.AddEditBankCharDialogResult
-    self:ApplyLocalization()
-	self:UpdateTabard()
-	
-	self:PLGuildBankFrameTab_OnClick(self.tabBankItems, 1)
-	self:UpdateBankAltTabs()
-
 	Events.Register(self, "PLGBC_EVENT_BANKCHAR_ADDED")
 	Events.Register(self, "PLGBC_EVENT_BANKCHAR_UPDATED")
 	Events.Register(self, "PLGBC_EVENT_BANKCHAR_REMOVED")
 	Events.Register(self, "PLGBC_EVENT_BANKCHAR_SLOT_SELECTED")
+	Events.Register(self, "PLGBC_EVENT_BANKCHAR_MONEYCHANGED")
+	Events.Register(self, "PLGBC_EVENT_BANKCHAR_ENTERED_WORLD")
+
+	self.addEditBankAltChar.callback = self.AddEditBankCharDialogResult
+    self:ApplyLocalization()
+	self:UpdateTabard()
+	MoneyFrame_Update(self.moneyFrameBankChar:GetName(), 0)
+	self:PLGuildBankFrameTab_OnClick(self.tabBankItems, 1)
+	self:UpdateBankAltTabs(true)
+	self:SetSumGuildMoney()
 end
 
 function Frame:OnHide()
@@ -321,7 +333,7 @@ end
 -----------------------------------------------------------------------
 -- Bank character tab buttons
 
-function Frame:UpdateBankAltTabs()
+function Frame:UpdateBankAltTabs(initializing)
 	local disableAll = false
 	local numberOfBankAlts = PLGuildBankClassic:NumberOfConfiguredAlts()
 	for i = 1, 8 do
@@ -355,6 +367,9 @@ function Frame:UpdateBankAltTabs()
 		end
 	end
 
+	if initializing == true and numberOfBankAlts > 0 then
+		self:PLGuildBankTab_OnClick(self.CharTabs[1].checkButton, "LeftButton", 1)
+	end
 end
 
 function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTabId)
@@ -369,6 +384,8 @@ function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTabId)
 		checkButton.checked = false
 	else
 		self.currentAltTab = currentTabId
+		-- clear character money info - will be set later if data is available
+		MoneyFrame_Update(self.moneyFrameBankChar:GetName(), 0)
 		local charData = PLGuildBankClassic:GetBankCharDataByIndex(currentTabId)
 
 		if mouseButton == "RightButton" then
@@ -384,7 +401,7 @@ function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTabId)
 			end
 			checkButton.checked = false
 		else
-			Events:GenericEvent("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", currentTabId, charData)
+			Events:Fire("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", currentTabId, charData)
 		end
 	end
 end
@@ -413,6 +430,9 @@ function Frame:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED(event, index, characterData)
 	PLGuildBankClassic:debug("Bankchar selected at index " .. tostring(index) .. " using name " .. characterData.name)
 	local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterData.name)
 
+	self.availableMoneyBankCharLabel.Text:SetFormattedText(L["Character %s:"], "")
+	self.availableMoneyBankCharLabel:SetWidth(self.availableMoneyBankCharLabel.Text:GetWidth() + 2)
+
 	local cacheOwnerInfo = ItemCache:GetOwnerInfo(charServerName)
 
 	if characterData.acceptState ~= 1 then
@@ -435,7 +455,30 @@ function Frame:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED(event, index, characterData)
 		PLGuildBankClassic:debug("No cached data found")
 
 		self:DisplayErrorMessage(L["No cached or received data found for this character.\nIf you are the owner of the character, log on and visit the bank!\nIf not, then you will receive bank information as soon as the ownser visited the bank!"])
+		return
 	end
+
+	MoneyFrame_Update(self.moneyFrameBankChar:GetName(), characterData.money)
+end
+
+function Frame:PLGBC_EVENT_BANKCHAR_MONEYCHANGED(event, characterName, value, valueVersion)
+	PLGuildBankClassic:debug("PLGBC_EVENT_BANKCHAR_MONEYCHANGED: character: " .. characterName .. " new amount: " .. tostring(value))
+	self:SetSumGuildMoney()
+	local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterName)
+	if self.bankContents.displayingCharacterData and self.bankContents.displayingCharacterData.name == charName and self.bankContents.displayingCharacterData.realm then
+		MoneyFrame_Update(self.moneyFrameBankChar:GetName(), value)
+	end
+end
+
+function Frame:PLGBC_EVENT_BANKCHAR_ENTERED_WORLD(event)
+	PLGuildBankClassic:debug("PLGBC_EVENT_BANKCHAR_ENTERED_WORLD recevied")
+	MoneyFrame_UpdateMoney(self.moneyFrameBankChar)
+end
+
+function Frame:SetSumGuildMoney()
+	local capital = PLGuildBankClassic:SumBankCharMoney()
+	PLGuildBankClassic:debug("SetSumGuildMoney: Calculated guild capital: " .. tostring(capital))
+	MoneyFrame_Update(self.moneyFrameGuild:GetName(), capital)
 end
 
 -----------------------------------------------------------------------
