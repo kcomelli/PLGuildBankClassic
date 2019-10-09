@@ -6,8 +6,8 @@ local GuildBankLogFrame_MT = {__index = GuildBankLogFrame}
 
 local Events = PLGuildBankClassic:GetModule("Events")
 
-local MAX_SHOWN_TRANSACTIONS = 200
-local GUILDBANK_TRANSACTION_HEIGHT = 10
+local MAX_SHOWN_TRANSACTIONS = 2000
+local GUILDBANK_TRANSACTION_HEIGHT = 10.2
 local GUILD_BANK_LOG_TIME_PREPEND = "|cff009999   "
 
 PLGuildBankClassic.GuildBankLogFrame = {}
@@ -19,12 +19,14 @@ function PLGuildBankClassic.GuildBankLogFrame:Create(parent)
     -- settings
     frame.displayingCharacterData = nil
     frame.displayingLog = nil
+    frame.itemHeight = GUILDBANK_TRANSACTION_HEIGHT
 
 	-- components
 
     -- scripts
 	frame:SetScript("OnShow", frame.OnShow)
-	frame:SetScript("OnHide", frame.OnHide)
+    frame:SetScript("OnHide", frame.OnHide)
+    frame:SetScript("OnSizeChanged", frame.OnSizeChanged)
 
     tinsert(UISpecialFrames, "PLGuildBankFrameTabLog")
 
@@ -37,6 +39,10 @@ end
 
 function GuildBankLogFrame:OnHide()
     Events.UnregisterAll(self)
+end
+
+function GuildBankLogFrame:OnSizeChanged()
+    self:DoLogScroll()
 end
 
 function GuildBankLogFrame:Update(characterData)
@@ -63,23 +69,40 @@ end
 
 function GuildBankLogFrame:MessageFrame_OnLoad(messageframe)
     messageframe:SetInsertMode(SCROLLING_MESSAGE_FRAME_INSERT_MODE_TOP);
-    messageframe:SetMaxLines(MAX_SHOWN_TRANSACTIONS);
     messageframe:SetFading(false);
     --messageframe:SetFontObject(ChatFontNormal);
     messageframe:SetFontObject(GameFontNormalSmall);
     messageframe:SetJustifyH("LEFT");
+    messageframe:SetMaxLines(MAX_SHOWN_TRANSACTIONS);
+end
+
+function GuildBankLogFrame:GetMaxShownLogsForFrameSize()
+    local newHeight = ceil( self.messagesFrame:GetHeight() / GUILDBANK_TRANSACTION_HEIGHT)
+    PLGuildBankClassic:debug("GetMaxShownLogsForFrameSize: Height " .. tostring(newHeight))
+
+    return newHeight
 end
 
 function GuildBankLogFrame:DoLogScroll()
-    local offset = FauxScrollFrame_GetOffset(GuildBankLogFrame.scrollFrame);
-	local numTransactions = 0;
-    
-    if GuildBankLogFrame.displayingLog then
-        numTransactions = getn(GuildBankLogFrame.displayingLog)
+
+    local parentFrame = self
+
+    if not parentFrame.scrollFrame then
+        parentFrame = self:GetParent()
     end
-    
-	GuildBankLogFrame.scrollFrame:SetScrollOffset(offset);
-	FauxScrollFrame_Update(GuildBankLogFrame.scrollFrame, numTransactions, MAX_SHOWN_TRANSACTIONS, GUILDBANK_TRANSACTION_HEIGHT );
+
+    if parentFrame.scrollFrame then
+        local offset = FauxScrollFrame_GetOffset(parentFrame.scrollFrame);
+        local numTransactions = 0;
+        
+        if parentFrame.displayingLog then
+            numTransactions = getn(parentFrame.displayingLog)
+        end
+        
+        PLGuildBankClassic:debug("DoLogScroll: num transactions " .. tostring(numTransactions) .. " new offset " .. tostring(offset))
+        parentFrame.messagesFrame:SetScrollOffset(offset);
+        FauxScrollFrame_Update(parentFrame.scrollFrame, numTransactions, parentFrame:GetMaxShownLogsForFrameSize(), GUILDBANK_TRANSACTION_HEIGHT );
+    end
 end
 
 function GuildBankLogFrame:PrintTransactions()
@@ -88,7 +111,6 @@ function GuildBankLogFrame:PrintTransactions()
     if self.displayingLog then
         numTransactions = getn(self.displayingLog)
     end
-
     PLGuildBankClassic:debug("PrintTransactions: num transactions " .. tostring(numTransactions))
 
     local i = 1
@@ -119,7 +141,9 @@ function GuildBankLogFrame:PrintTransactions()
 
         if record.type == PLGuildBankClassic.transactionTypes.money then
 
-            money = GetDenominationsFromCopper((record.goldPerItem or 0) * (record.quantity or 1))
+            moneyValue = (record.goldPerItem or 0) * (record.quantity or 1)
+            --money = GetDenominationsFromCopper(moneyValue)
+            money = PLGuildBankClassic:PriceToMoneyString(moneyValue, true)
 
             if record.mode == PLGuildBankClassic.transactionModes.deposit then
                 msg = format(L["%s deposited %s"], name, money)
@@ -141,7 +165,8 @@ function GuildBankLogFrame:PrintTransactions()
             self:TestAcutionAndVendorPricing(record.itemId)
 
             moneyValue = (record.goldPerItem or 0) * (record.quantity or 1)
-            money = GetDenominationsFromCopper(moneyValue)
+            --money = GetDenominationsFromCopper(moneyValue)
+            money = PLGuildBankClassic:PriceToMoneyString(moneyValue, true)
 
             if record.mode == PLGuildBankClassic.transactionModes.deposit then
    
@@ -171,20 +196,20 @@ function GuildBankLogFrame:PrintTransactions()
         end
     end
 
-    FauxScrollFrame_Update(self.scrollFrame, numTransactions, MAX_SHOWN_TRANSACTIONS, GUILDBANK_TRANSACTION_HEIGHT );
+    FauxScrollFrame_Update(self.scrollFrame, numTransactions, self:GetMaxShownLogsForFrameSize(), GUILDBANK_TRANSACTION_HEIGHT );
 end
 
 function GuildBankLogFrame:TestAcutionAndVendorPricing(itemId)
     local itemName, itemLink, itemRarity, _, itemMinLevel, itemType, _, _, _, _, itemVendorPrice, classID = GetItemInfo (itemId);
    
-    PLGuildBankClassic:debug("Item: " .. (itemName or itemLink))
-    PLGuildBankClassic:debug("  Vendors for: " .. itemVendorPrice)
+    PLGuildBankClassic:debug("Item: " .. (itemName or itemLink or "na"))
+    PLGuildBankClassic:debug("  Vendors for: " .. (itemVendorPrice or "na"))
 
     if Atr_STWP_GetPrices then
         local vendorPrice, auctionPrice, dePrice = Atr_STWP_GetPrices (link, num, showStackPrices, itemVendorPrice, itemName, classID, itemRarity, itemLevel);
 
-        PLGuildBankClassic:debug("  Vendors for (Auctionator): " .. vendorPrice)
-        PLGuildBankClassic:debug("  Auction for (Auctionator): " .. auctionPrice)
+        PLGuildBankClassic:debug("  Vendors for (Auctionator): " .. (vendorPrice or "na"))
+        PLGuildBankClassic:debug("  Auction for (Auctionator): " .. (auctionPrice or "na"))
         PLGuildBankClassic:debug("  DE for (Auctionator): " .. (dePrice or "na"))
     end
 end

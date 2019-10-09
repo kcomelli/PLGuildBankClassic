@@ -2,6 +2,10 @@ local _, PLGuildBankClassic = ...
 local L = LibStub("AceLocale-3.0"):GetLocale("PLGuildBankClassic")
 local Cache = LibStub('LibItemCache-2.0')
 
+local goldicon    = "|TInterface\\MoneyFrame\\UI-GoldIcon:12:12:4:0|t"
+local silvericon  = "|TInterface\\MoneyFrame\\UI-SilverIcon:12:12:4:0|t"
+local coppericon  = "|TInterface\\MoneyFrame\\UI-CopperIcon:12:12:4:0|t"
+
 --[[ Slot Type ]]--
 
 function PLGuildBankClassic:IsBasicBag(bag)
@@ -277,6 +281,56 @@ function PLGuildBankClassic:SecondsToTimeTable(seconds, noSeconds, roundUp)
 		seconds = retSeconds
 	};
 end
+
+function PLGuildBankClassic:PriceToMoneyString (val, noZeroCoppers)
+	local gold, silver, copper  = PLGuildBankClassic:val2gsc(val);
+  
+	local st = "";
+  
+	if (gold ~= 0) then
+	  st = gold..goldicon.."  ";
+	end
+  
+  
+	if (st ~= "") then
+	  st = st..format("%02i%s  ", silver, silvericon);
+	elseif (silver ~= 0) then
+	  st = st..silver..silvericon.."  ";
+	end
+  
+	if (noZeroCoppers and copper == 0) then
+	  return st;
+	end
+  
+	if (st ~= "") then
+	  st = st..format("%02i%s", copper, coppericon);
+	elseif (copper ~= 0) then
+	  st = st..copper..coppericon;
+	end
+  
+	return st;
+  
+  end
+
+function PLGuildBankClassic:val2gsc (v)
+  local rv = PLGuildBankClassic:round(v)
+
+  local g = math.floor (rv/10000);
+
+  rv = rv - g*10000;
+
+  local s = math.floor (rv/100);
+
+  rv = rv - s*100;
+
+  local c = rv;
+
+  return g, s, c
+end
+
+function PLGuildBankClassic:round (v)
+	return math.floor (v + 0.5);
+  end
 
 -------------------------------------------------------------------------------
 -- printing functions

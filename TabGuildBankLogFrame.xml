@@ -80,6 +80,8 @@
                 </Layers>
             </Frame>
 
+            
+
             <ScrollingMessageFrame  parentKey="messagesFrame" name="$parentScrollFrame" inherits="InlineHyperlinkFrameTemplate">
                 <Size>
                     <AbsDimension x="200" y="200" />
@@ -92,15 +94,15 @@
                     </Anchor>
                     <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
                         <Offset>
-                            <AbsDimension x="0" y="0" />
+                            <AbsDimension x="-20" y="0" />
                         </Offset>
                     </Anchor>
                 </Anchors>
             </ScrollingMessageFrame>
-            <ScrollFrame parentKey="scrollFrame" name="$parentGuildBankTransactionsScrollFrame" inherits="FauxScrollFrameTemplate" hidden="true">
-                <Size x="688" y="304"/>
+            <ScrollFrame parentKey="scrollFrame" name="$parentGuildBankTransactionsScrollFrame" inherits="FauxScrollFrameTemplate">
+                <Size x="400" y="304"/>
                 <Anchors>
-                    <Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPRIGHT" x="-43" y="0"/>
+                    <Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPRIGHT" x="-20" y="0"/>
                     <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT" x="0" y="0"/>
                 </Anchors>
                 <Layers>
@@ -124,7 +126,7 @@
                 <Scripts>
                     <OnVerticalScroll>
                         local parentFrame = self:GetParent()
-                        FauxScrollFrame_OnVerticalScroll(self, offset, parentFrame.GUILDBANK_TRANSACTION_HEIGHT, parentFrame.DoLogScroll)
+                        FauxScrollFrame_OnVerticalScroll(self, offset, parentFrame.itemHeight, parentFrame.DoLogScroll)
                     </OnVerticalScroll>
                 </Scripts>
             </ScrollFrame>
