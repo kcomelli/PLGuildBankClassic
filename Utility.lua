@@ -205,6 +205,79 @@ function PLGuildBankClassic:GetSpellorMacroIconInfo(index)
 	end
 end
 
+function PLGuildBankClassic:SecondsToTimeTable(seconds, noSeconds, roundUp)
+	local tempTime;
+	seconds = roundUp and ceil(seconds) or floor(seconds);
+	local retYears = 0
+	local retMonths = 0
+	local retDays = 0
+	local retHours = 0
+	local retMinutes = 0
+	local retSeconds = 0
+
+	maxCount = maxCount or 6;
+	if ( seconds >= 86400  ) then
+		if ( roundUp ) then
+			tempTime = ceil(seconds / 86400);
+		else
+			tempTime = floor(seconds / 86400);
+		end
+		retDays = tempTime
+		seconds = mod(seconds, 86400);
+	end
+
+	if ( retDays > 30  ) then
+		if ( roundUp ) then
+			tempTime = ceil(retDays / 30);
+		else
+			tempTime = floor(retDays / 30);
+		end
+		retMonths = tempTime
+		retDays = mod(retDays, 30);
+	end
+
+	if ( retMonths >= 12  ) then
+		if ( roundUp ) then
+			tempTime = ceil(retMonths / 30);
+		else
+			tempTime = floor(retMonths / 30);
+		end
+		retYears = tempTime
+		retMonths = mod(retMonths, 12);
+	end
+
+	if ( seconds >= 3600  ) then
+		if (roundUp ) then
+			tempTime = ceil(seconds / 3600);
+		else
+			tempTime = floor(seconds / 3600);
+		end
+		retHours = tempTime;
+		seconds = mod(seconds, 3600);
+	end
+
+	if ( seconds >= 60  ) then
+		if ( roundUp ) then
+			tempTime = ceil(seconds / 60);
+		else
+			tempTime = floor(seconds / 60);
+		end
+		retMinutes = tempTime
+		seconds = mod(seconds, 60);
+	end
+	if ( seconds > 0 and not noSeconds ) then
+		retSeconds = seconds
+	end
+	return {
+		years = retYears,
+		months = retMonts,
+		days = retDays,
+		hours = retHours,
+		minutes = retMinutes,
+		seconds = retSeconds
+	};
+end
+
 -------------------------------------------------------------------------------
 -- printing functions
 -------------------------------------------------------------------------------

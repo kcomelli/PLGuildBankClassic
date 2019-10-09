@@ -2,6 +2,8 @@ local _, PLGuildBankClassic = ...
 PLGuildBankClassic = LibStub("AceAddon-3.0"):NewAddon(PLGuildBankClassic, "PLGuildBankClassic", "AceEvent-3.0", "AceHook-3.0", "AceConsole-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("PLGuildBankClassic")
 
+local ItemCache = LibStub("LibItemCache-2.0")
+
 local dbProfile
 local dbFactionRealm
 local defaults = {
@@ -29,7 +31,8 @@ local defaults = {
     },
     factionrealm  = {
         minGuildRank = 1,
-        configTimestamp = 0
+        configTimestamp = 0,
+        showValueEstimationInLogs = true
     }
 }
 
@@ -453,7 +456,21 @@ end
 
 function PLGuildBankClassic:GetMinRankForAlts()
     if self:IsInGuild() then
-        return dbFactionRealm.guildConfig[self:GuildName()].config.minGuildRank
+        return (dbFactionRealm.guildConfig[self:GuildName()].config.minGuildRank or minGuildRankForRankConfig)
+    end
+
+    return minGuildRankForRankConfig
+end
+
+function PLGuildBankClassic:UpdateShowEstimatedValueForItemLogs(showValue)
+    if self:IsInGuild() then
+        dbFactionRealm.guildConfig[self:GuildName()].config.showValueEstimationInLogs = showValue
+    end
+end
+
+function PLGuildBankClassic:ShowEstimatedValueForItemLogs()
+    if self:IsInGuild() then
+        return (dbFactionRealm.guildConfig[self:GuildName()].config.showValueEstimationInLogs or true)
     end
 
     return minGuildRankForRankConfig
