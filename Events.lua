@@ -33,6 +33,8 @@ function Events:OnEnable()
     self:RegisterEvent("SEND_MAIL_MONEY_CHANGED", "PLAYER_MONEY")
     self:RegisterEvent("SEND_MAIL_COD_CHANGED", "PLAYER_MONEY")
     self:RegisterEvent("TRIAL_STATUS_UPDATE", "PLAYER_MONEY")
+
+    self:RegisterEvent("MAIL_SHOW")
 end
 
 function Events:GenericEvent(event, ...)

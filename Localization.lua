@@ -54,7 +54,8 @@ L["Purchaseable"] = true
 L["unknown"] = true
 
 L["via direct trade"] = true
-
+L["as %s"] = true
+L["for %s"] = true
 L["( %s ago )"] = true 
 L[" x %d"] = true
 L["%s deposited %s"] = true

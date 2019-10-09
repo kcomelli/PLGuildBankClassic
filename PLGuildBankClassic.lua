@@ -37,21 +37,30 @@ local defaults = {
 }
 
 PLGuildBankClassic.transactionModes = {
-    deposit = 0,
-    withdraw = 1
+    deposit = 0,        -- something was put into the bank
+    withdraw = 1        -- something was taken out of the bank
 }
 
 PLGuildBankClassic.transactionTypes = {
-    money = 0,
-    item = 1
+    money = 0,          -- log entry describes a money transaction
+    item = 1            -- log entry describes an item transaction
 }
 
 PLGuildBankClassic.transactionSource = {
-    directTrade = 0,
-    mail = 1,
-    cod = 2,
-    auction = 3,
-    loot = 10
+    directTrade = 0,    -- item or money was player-traded
+    mail = 1,           -- item or money was sent/received via mail
+    cod = 2,            -- money sent because of a COD
+    auction = 3,        -- money item spend/received because of an auction
+    vendor = 4,         -- money spent, item looted at the vendor
+    enchanting = 5,     -- item was withdrawn (destroyed) because of disentchanting. materials gained through disentchanting, materials withdrawn because of enchanting an item
+    loot = 10,          -- money or item looted
+    destroy = 98,       -- item has been destroyed
+    other = 99          -- other sources (e.g. mail sending costs)
+}
+
+PLGuildBankClassic.moneyValueSource {
+    vendor = 0,         -- calculated per item value represents vendor price
+    auction = 1         -- calculated per item value represents current auction price (at time of transaction)
 }
 
 PLGBC_BAG_CONFIG = { BACKPACK_CONTAINER, 1, 2, 3, 4 }

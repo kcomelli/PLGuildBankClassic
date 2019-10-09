@@ -147,8 +147,16 @@ function GuildBankLogFrame:PrintTransactions()
 
             if record.mode == PLGuildBankClassic.transactionModes.deposit then
                 msg = format(L["%s deposited %s"], name, money)
+
+                if record.title then
+                    msg = msg .. " " .. ORANGE_FONT_COLOR_CODE .. format(L["as %s"], record.title) .. " " .. FONT_COLOR_CODE_CLOSE
+                end
             else
                 msg = format(L["%s |cffff2020withdrew|r %s"], (name or L["unknown"]), (money or L["unknown"]))
+
+                if record.title then
+                    msg = msg .. " " .. ORANGE_FONT_COLOR_CODE .. format(L["for %s"], record.title) .. " " .. FONT_COLOR_CODE_CLOSE
+                end
             end
 
             if record.source then
