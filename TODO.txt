@@ -33,6 +33,7 @@ Transaction Log
 
     - mail: wenn item looted und kein text im mail steht geht der frame sofort zu
       und InboxFrame.opemMailID hat keinen wert mehr (zwecks namensermittlung)
+    - bei OPENALL funzt es nicht!
 
 
 - Player trade interaction  

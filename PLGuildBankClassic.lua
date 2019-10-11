@@ -121,6 +121,7 @@ function PLGuildBankClassic:OnEnable()
     self.Events.Register(self, "PLGBC_EVENT_BANKCHAR_ENTERED_WORLD", "UpdatePlayerMoney")
     self.Events.Register(self, "PLGBC_MAILBOX_OPENED", "MailboxOpened")
     self.Events.Register(self, "PLGBC_MAILBOX_CLOSED", "MailboxClosed")
+    self.Events.Register(self, "PLGBC_MAILBOX_ITEM_CLOSED", "MailboxItemClosed")
     self.Events.Register(self, "PLGBC_EVENT_BANKCHAR_MONEYCHANGED", "LogPlayerMoneyGainOrLoss")
     self.Events.Register(self, "PLGBC_RECEVIED_ITEM", "LogPlayerGotItem")
 end
@@ -538,6 +539,10 @@ function PLGuildBankClassic:MailboxClosed()
                     else
                         alreadyAdded[logKey].goldPerItem = alreadyAdded[logKey].goldPerItem + logEntry.goldPerItem
                     end
+
+                    if alreadyAdded[logKey].player == charName and charName ~= logEntry.player then
+                        alreadyAdded[logKey].player = logEntry.player
+                    end
                 else
                     -- create a new log entry
                     if #playerLog > 0 then
@@ -560,6 +565,12 @@ function PLGuildBankClassic:MailboxClosed()
     self.mailTransactionLog = {}
 end
 
+function PLGuildBankClassic:MailboxItemClosed(event, itemIndex)
+    if self.mailData and self.mailData[itemIndex] then
+        self.lastClosedMailData = self.mailData[itemIndex]
+    end
+end
+
 function PLGuildBankClassic:ScanMailbox()
     if self.scannngMails then
         return
@@ -575,7 +586,6 @@ function PLGuildBankClassic:ScanMailbox()
     local numItems = GetInboxNumItems()
 
     PLGuildBankClassic:debug("ScanMailbox: nr of items: " .. (numItems or 0))
-    PLGuildBankClassic:debug("Current open mail: " .. (PLGuildBankClassic:TryGetOpenMailIndex() or "none"))
     for i=1, numItems do
         local packageIcon, stationeryIcon, sender, subject, money, CODAmount, daysLeft, hasItem, wasRead, wasReturned, 
             textCreated, canReply, isGM = GetInboxHeaderInfo(i);
@@ -681,11 +691,11 @@ function PLGuildBankClassic:LogPlayerGotItem(event, characterName, itemId, itemQ
                 logEntry.source = PLGuildBankClassic.transactionSource.mail
 
                  -- todo check cod or auction
-                 local mailIndex = PLGuildBankClassic:TryGetOpenMailIndex()
+                 local openMailData = PLGuildBankClassic:TryGetOpenMailData()
  
-                 if mailIndex > 0 and self.mailData[mailIndex] then
-                    logEntry.name = self.mailData[mailIndex].sender or charName
-                    logEntry.title = self.mailData[mailIndex].subject or nil
+                 if openMailData then
+                    logEntry.name = openMailData.sender or charName
+                    logEntry.title = openMailData.subject or nil
                  else
                      PLGuildBankClassic:debug("Mail " .. tostring(mailIndex) .. " not found")
                  end
@@ -755,15 +765,15 @@ function PLGuildBankClassic:LogPlayerMoneyGainOrLoss(event, characterName, value
                 logEntry.source = PLGuildBankClassic.transactionSource.mail
 
                 -- todo check cod or auction
-                local mailIndex = PLGuildBankClassic:TryGetOpenMailIndex()
+                local openMailData = PLGuildBankClassic:TryGetOpenMailData()
 
-                if mailIndex > 0 and self.mailData[mailIndex] then
-                    logEntry.name = self.mailData[mailIndex].sender or charName
-                    logEntry.title = self.mailData[mailIndex].subject or nil
+                if openMailData then
+                    logEntry.name = openMailData.sender or charName
+                    logEntry.title = openMailData.subject or nil
 
-                    if gainedOrLost < 0 and self.mailData[mailIndex].cod then
+                    if gainedOrLost < 0 and openMailData.cod then
                         logEntry.source = PLGuildBankClassic.transactionSource.cod
-                    elseif string.match(self.mailData[mailIndex].sender, L["[Horde*][Alliance*] Auction House"]) then
+                    elseif string.match(openMailData.sender, L["(Horde|Alliance)+ Auction House"]) then
                         logEntry.source = PLGuildBankClassic.transactionSource.auction
                         logEntry.name = charName
                     end

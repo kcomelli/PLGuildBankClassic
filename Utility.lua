@@ -25,9 +25,8 @@ function PLGuildBankClassic:GetItemPrice(itemId, forceVendorPrice)
 	return priceInfo
 end
 
-function PLGuildBankClassic:TryGetOpenMailIndex()
+function PLGuildBankClassic:TryGetOpenMailData()
 	local mailIndex = 0
-
 	
 	if (InboxFrame and InboxFrame.openMailID) then
 		-- player has an inbox item frame open
@@ -35,12 +34,16 @@ function PLGuildBankClassic:TryGetOpenMailIndex()
 	elseif OpenAllMail and OpenAllMail.mailIndex and not OpenAllMail:IsEnabled() then
 		-- player currently opening all mails
 		mailIndex = OpenAllMail.mailIndex
-	elseif PLGuildBankClassic.Events.lastMailIndexClosed then
+	elseif self.lastClosedMailData then
 		-- player recently closed a mail frame - use last saved index
-		mailIndex = PLGuildBankClassic.Events.lastMailIndexClosed
+		return self.lastClosedMailData
 	end
 
-	return mailIndex
+	if mailIndex > 0 then
+		return self.mailData[mailIndex]
+	end
+
+	return nil
 end
 
 --[[ Slot Type ]]--

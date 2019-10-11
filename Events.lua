@@ -138,14 +138,12 @@ function Events:CLOSE_INBOX_ITEM(event, mailIndex)
     if PLGuildBankClassic:IsGuildBankChar() then
         PLGuildBankClassic:debug("CLOSE_INBOX_ITEM: index " .. tostring(mailIndex))
         self.lastMailIndexClosed = mailIndex
+        self:Fire("PLGBC_MAILBOX_ITEM_CLOSED", mailIndex)
     end
 end
 
 function Events:CHAT_MSG_LOOT(event, lootstring, arg2, arg3, arg4, player)
-    PLGuildBankClassic:debug("CHAT_MSG_LOOT: lootstring: " .. (lootstring or "na"))
-    PLGuildBankClassic:debug("CHAT_MSG_LOOT: arg2: " .. (tostring(arg2) or "na"))
-    PLGuildBankClassic:debug("CHAT_MSG_LOOT: arg3: " .. (tostring(arg3) or "na"))
-    PLGuildBankClassic:debug("CHAT_MSG_LOOT: arg4: " .. (tostring(arg4) or "na"))
+    --PLGuildBankClassic:debug("CHAT_MSG_LOOT: lootstring: " .. (lootstring or "na"))
     PLGuildBankClassic:debug("CHAT_MSG_LOOT: player: " .. (player or "na"))
 
     local itemLink = string.match(lootstring,"|%x+|Hitem:.-|h.-|h|r")

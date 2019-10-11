@@ -67,4 +67,4 @@ L["via loot"] = true
 L["via (unkown)"] = true
 L["( est. value: %s )"] = true
 
-L["[Horde*][Alliance*] Auction House"] = true
+L["(Horde|Alliance)+ Auction House"] = true
