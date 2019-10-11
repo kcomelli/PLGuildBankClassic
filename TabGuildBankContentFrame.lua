@@ -38,6 +38,7 @@ function PLGuildBankClassic.GuildBankContentFrame:Create(parent)
 end 
 
 function GuildBankContentFrame:OnShow()
+    Events.Register(self, "PLGBC_GUILD_LOG_UPDATED")
 end
 
 function GuildBankContentFrame:OnHide()
@@ -145,5 +146,13 @@ function GuildBankContentFrame:Update(characterData)
     else
         -- clear items
 
+    end
+end
+
+function GuildBankContentFrame:PLGBC_GUILD_LOG_UPDATED(event, chacaterName)
+    local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(chacaterName)
+
+    if self.displayingCharacterData and self.displayingCharacterData.name == charName and self.displayingCharacterData.realm == charRealm then
+        self:Update(self.displayingCharacterData)
     end
 end

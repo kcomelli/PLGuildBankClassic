@@ -54,8 +54,8 @@ L["Purchaseable"] = true
 L["unknown"] = true
 
 L["via direct trade"] = true
-L["as %s"] = true
-L["for %s"] = true
+L[" as %s"] = true
+L[" for %s"] = true
 L["( %s ago )"] = true 
 L[" x %d"] = true
 L["%s deposited %s"] = true
@@ -65,4 +65,6 @@ L["via COD"] = true
 L["via auction"] = true
 L["via loot"] = true
 L["via (unkown)"] = true
-L["(est. value: %s)"] = true
+L["( est. value: %s )"] = true
+
+L["[Horde*][Alliance*] Auction House"] = true

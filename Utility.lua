@@ -6,6 +6,43 @@ local goldicon    = "|TInterface\\MoneyFrame\\UI-GoldIcon:12:12:4:0|t"
 local silvericon  = "|TInterface\\MoneyFrame\\UI-SilverIcon:12:12:4:0|t"
 local coppericon  = "|TInterface\\MoneyFrame\\UI-CopperIcon:12:12:4:0|t"
 
+
+function PLGuildBankClassic:GetItemPrice(itemId, forceVendorPrice)
+	local itemName, itemLink, itemRarity, _, itemMinLevel, itemType, _, _, _, _, itemVendorPrice, classID = GetItemInfo (itemId);
+	local priceInfo = 0
+
+	priceInfo = itemVendorPrice
+
+	if not forceVendorPrice then
+		-- Auctionator support
+		if Atr_STWP_GetPrices then
+			local vendorPrice, auctionPrice, dePrice = Atr_STWP_GetPrices (itemLink, 1, false, itemVendorPrice, itemName, classID, itemRarity, itemLevel);
+
+			priceInfo = (auctionPrice or 0)
+		end
+	end
+
+	return priceInfo
+end
+
+function PLGuildBankClassic:TryGetOpenMailIndex()
+	local mailIndex = 0
+
+	
+	if (InboxFrame and InboxFrame.openMailID) then
+		-- player has an inbox item frame open
+		mailIndex = InboxFrame.openMailID
+	elseif OpenAllMail and OpenAllMail.mailIndex and not OpenAllMail:IsEnabled() then
+		-- player currently opening all mails
+		mailIndex = OpenAllMail.mailIndex
+	elseif PLGuildBankClassic.Events.lastMailIndexClosed then
+		-- player recently closed a mail frame - use last saved index
+		mailIndex = PLGuildBankClassic.Events.lastMailIndexClosed
+	end
+
+	return mailIndex
+end
+
 --[[ Slot Type ]]--
 
 function PLGuildBankClassic:IsBasicBag(bag)

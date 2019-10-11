@@ -35,6 +35,7 @@ end
 
 function GuildBankLogFrame:OnShow()
     self:MessageFrame_OnLoad(self.messagesFrame)
+    Events.Register(self, "PLGBC_GUILD_LOG_UPDATED")
 end
 
 function GuildBankLogFrame:OnHide()
@@ -43,6 +44,14 @@ end
 
 function GuildBankLogFrame:OnSizeChanged()
     self:DoLogScroll()
+end
+
+function GuildBankLogFrame:PLGBC_GUILD_LOG_UPDATED(event, chacaterName)
+    local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(chacaterName)
+
+    if self.displayingCharacterData and self.displayingCharacterData.name == charName and self.displayingCharacterData.realm == charRealm then
+        self:Update(self.displayingCharacterData)
+    end
 end
 
 function GuildBankLogFrame:Update(characterData)
@@ -108,11 +117,17 @@ end
 function GuildBankLogFrame:PrintTransactions()
     local numTransactions = 0;
     
-    if self.displayingLog then
-        numTransactions = getn(self.displayingLog)
-    end
     PLGuildBankClassic:debug("PrintTransactions: num transactions " .. tostring(numTransactions))
 
+    if self.displayingLog then
+        numTransactions = getn(self.displayingLog)
+        if numTransactions > MAX_SHOWN_TRANSACTIONS then
+            -- only log the last MAX_SHOWN_TRANSACTIONS number of transactions even if the log has more
+            numTransactions = MAX_SHOWN_TRANSACTIONS
+            PLGuildBankClassic:debug("PrintTransactions: cut due to MAX_TRANSACTIONS")
+        end
+    end
+    
     local i = 1
     local money
     local msg
@@ -149,18 +164,18 @@ function GuildBankLogFrame:PrintTransactions()
                 msg = format(L["%s deposited %s"], name, money)
 
                 if record.title then
-                    msg = msg .. " " .. ORANGE_FONT_COLOR_CODE .. format(L["as %s"], record.title) .. " " .. FONT_COLOR_CODE_CLOSE
+                    msg = msg .. " " .. ORANGE_FONT_COLOR_CODE .. format(L[" as %s"], record.title) .. " " .. FONT_COLOR_CODE_CLOSE
                 end
             else
                 msg = format(L["%s |cffff2020withdrew|r %s"], (name or L["unknown"]), (money or L["unknown"]))
 
                 if record.title then
-                    msg = msg .. " " .. ORANGE_FONT_COLOR_CODE .. format(L["for %s"], record.title) .. " " .. FONT_COLOR_CODE_CLOSE
+                    msg = msg .. " " .. ORANGE_FONT_COLOR_CODE .. format(L[" for %s"], record.title) .. " " .. FONT_COLOR_CODE_CLOSE
                 end
             end
 
             if record.source then
-                msg = msg .. " " .. NORMAL_FONT_COLOR_CODE .. self:ConvertSourceToExt(record.source) .. FONT_COLOR_CODE_CLOSE
+                msg = msg .. "  " .. NORMAL_FONT_COLOR_CODE .. self:ConvertSourceToExt(record.source) .. FONT_COLOR_CODE_CLOSE
             end
 
             if msg then
@@ -170,7 +185,6 @@ function GuildBankLogFrame:PrintTransactions()
         elseif record.type == PLGuildBankClassic.transactionTypes.item then
 
             local sName, sLink, iRarity, iLevel, iMinLevel, sType, sSubType, iStackCount = GetItemInfo(record.itemId);
-            self:TestAcutionAndVendorPricing(record.itemId)
 
             moneyValue = (record.goldPerItem or 0) * (record.quantity or 1)
             --money = GetDenominationsFromCopper(moneyValue)
@@ -190,7 +204,7 @@ function GuildBankLogFrame:PrintTransactions()
             end
 
             if moneyValue > 0 and PLGuildBankClassic:ShowEstimatedValueForItemLogs() then
-                msg = msg .. " " .. GRAY_FONT_COLOR_CODE  .. format(L["(est. value: %s)"], money) .. FONT_COLOR_CODE_CLOSE
+                msg = msg .. " " .. GRAY_FONT_COLOR_CODE  .. format(L["( est. value: %s )"], money) .. FONT_COLOR_CODE_CLOSE
             end
 
             if record.source then
@@ -207,20 +221,6 @@ function GuildBankLogFrame:PrintTransactions()
     FauxScrollFrame_Update(self.scrollFrame, numTransactions, self:GetMaxShownLogsForFrameSize(), GUILDBANK_TRANSACTION_HEIGHT );
 end
 
-function GuildBankLogFrame:TestAcutionAndVendorPricing(itemId)
-    local itemName, itemLink, itemRarity, _, itemMinLevel, itemType, _, _, _, _, itemVendorPrice, classID = GetItemInfo (itemId);
-   
-    PLGuildBankClassic:debug("Item: " .. (itemName or itemLink or "na"))
-    PLGuildBankClassic:debug("  Vendors for: " .. (itemVendorPrice or "na"))
-
-    if Atr_STWP_GetPrices then
-        local vendorPrice, auctionPrice, dePrice = Atr_STWP_GetPrices (link, num, showStackPrices, itemVendorPrice, itemName, classID, itemRarity, itemLevel);
-
-        PLGuildBankClassic:debug("  Vendors for (Auctionator): " .. (vendorPrice or "na"))
-        PLGuildBankClassic:debug("  Auction for (Auctionator): " .. (auctionPrice or "na"))
-        PLGuildBankClassic:debug("  DE for (Auctionator): " .. (dePrice or "na"))
-    end
-end
 
 function GuildBankLogFrame:ConvertSourceToExt(source)
     if source == PLGuildBankClassic.transactionSource.directTrade then

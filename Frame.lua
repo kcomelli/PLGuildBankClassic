@@ -472,7 +472,7 @@ function Frame:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED(event, index, characterData)
 	MoneyFrame_Update(self.moneyFrameBankChar:GetName(), characterData.money)
 end
 
-function Frame:PLGBC_EVENT_BANKCHAR_MONEYCHANGED(event, characterName, value, valueVersion)
+function Frame:PLGBC_EVENT_BANKCHAR_MONEYCHANGED(event, characterName, value, gainedOrLost, valueVersion)
 	PLGuildBankClassic:debug("PLGBC_EVENT_BANKCHAR_MONEYCHANGED: character: " .. characterName .. " new amount: " .. tostring(value))
 	self:SetSumGuildMoney()
 	local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterName)
