@@ -36,19 +36,24 @@ MoneyTypeInfo["PLGUILDBANKCLASSIC"] = {
 PLGuildBankClassic.Frame = {}
 PLGuildBankClassic.Frame.defaults = {}
 PLGuildBankClassic.Frame.prototype = Frame
-function PLGuildBankClassic.Frame:Create(name, titleText, settings)
+function PLGuildBankClassic.Frame:Create(name, titleText, settings, guildSettings)
 	local frame = setmetatable(CreateFrame("Frame", name, UIParent, "PLGuildBankFrame"), Frame_MT)
 
 	-- settings
-	frame.settings = settings
+	frame.settings = settings.vault
+	frame.guildSettings = guildSettings
 	frame.titleText = titleText
 	frame.bagButtons = {}
 
+	frame.currentTab = 0
+	frame.currentAltTab = 0
+
 	-- components
-	--frame.itemContainer = PLGuildBankClassic.ItemContainer:Create(frame)
-	--frame.itemContainer:SetPoint("TOPLEFT", 10, -64)
-	--frame.itemContainer:SetBags(config[1].bags)
-	--frame.itemContainer:Show()
+	frame.guildConfigFrame = PLGuildBankClassic.GuildConfigFrame:Create(frame.tabContentContainer)
+	frame.addEditBankAltChar = PLGuildBankClassic.CreateEditBankAltDialogFrame:Create(frame, settings)
+	frame.bankContents = PLGuildBankClassic.GuildBankContentFrame:Create(frame.tabContentContainer)
+	frame.bankLog = PLGuildBankClassic.GuildBankLogFrame:Create(frame.tabContentContainer)
+	frame.bankInfo = PLGuildBankClassic.GuildBankInfoFrame:Create(frame.tabContentContainer)
 
     -- scripts
     frame:SetScript("OnLoad", frame.OnLoad)
@@ -61,13 +66,15 @@ function PLGuildBankClassic.Frame:Create(name, titleText, settings)
 	frame:RegisterUnitEvent("UNIT_PORTRAIT_UPDATE", "player")
 
 	-- load and apply config
-	frame:SetWidth(settings.width)
-	frame:SetHeight(settings.height)
+	frame:SetWidth(frame.settings.width)
+	frame:SetHeight(frame.settings.height)
 
-	LibWindow.RegisterConfig(frame, settings)
+	frame:ConfigureTabs(frame)
+
+	LibWindow.RegisterConfig(frame, frame.settings)
 	LibWindow.RestorePosition(frame)
 
-	--frame:UpdateTitleText()
+    --frame:UpdateTitleText()
 	--frame:UpdateBags()
 
 	tinsert(UISpecialFrames, name)
@@ -75,26 +82,106 @@ function PLGuildBankClassic.Frame:Create(name, titleText, settings)
 	return frame
 end
 
+function Frame:AddEditBankCharDialogResult(initiator, tab, mode, characterData, createNew)
+	if mode == "save" then
+			local changedName = false
+			--local tab = initiator.addEditBankAltChar.openedByTab
+			if createNew then
+				PLGuildBankClassic:debug("Creating new bank character config using char: " .. characterData.name)
+				PLGuildBankClassic:CreateBankChar(characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture, characterData.acceptState)
+			else
+				PLGuildBankClassic:debug("Updating new bank character config using char: " .. characterData.name)
+				changedName = PLGuildBankClassic:EditBankChar(tab:GetID(), characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture, characterData.acceptState)
+			end
+
+			initiator:UpdateBankAltTabs(false)
+
+			if createNew then
+				Events:Fire("PLGBC_EVENT_BANKCHAR_ADDED", tab:GetID(), characterData)
+			else
+				Events:Fire("PLGBC_EVENT_BANKCHAR_UPDATED", tab:GetID(), characterData, changedName)
+			end
+
+			initiator:UpdateCurrentTab()
+
+			if initiator.currentTab == 1 then
+				initiator:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", tab:GetID(), characterData)
+			end
+	end
+end
+
+function Frame:ApplyLocalization()
+	self.moneyFrameBankChar.tooltip = L["Money available on the selected bank character."]
+	self.moneyFrameGuild.tooltip = L["Cumulated capital of all configured bank characters."]
+
+	self.availableMoneyLabel.Text:SetText(L["Available money"])
+	self.availableMoneyLabel:SetWidth(self.availableMoneyLabel.Text:GetWidth() + 2)
+
+	self.tabBankItems:SetText(L["Bank items"])
+	self.tabBankLog:SetText(L["Bank logs"])
+	self.tabBankInfo:SetText(L["Guild info"])
+	self.tabBankConfig:SetText(L["Configuration"])
+	self.availableMoneyBankCharLabel.Text:SetFormattedText(L["Character %s:"], "")
+	self.availableMoneyBankCharLabel:SetWidth(self.availableMoneyBankCharLabel.Text:GetWidth() + 2)
+	self.availableMoneyGuildLabel.Text:SetText(L["Guild capital:"])
+	self.availableMoneyGuildLabel:SetWidth(self.availableMoneyGuildLabel.Text:GetWidth() + 2)
+
+    if PLGuildBankClassic:IsInGuild() == false then
+        self.guildBankTitleLabel:SetText("")
+        self.errorMessage:SetText(L["You are not in a guild!"])
+		self.errorMessage:Show()
+		self:HideFrames()
+    else
+		self.guildBankTitleLabel:SetFormattedText(L["%s's Guild Bank"], PLGuildBankClassic:GuildName())
+		self.guildBankTitleBackground:SetWidth(self.guildBankTitleLabel:GetWidth() + 20)
+    end
+end
+
+function Frame:ConfigureTabs(frame)
+	frame.numTabs = 4
+	frame.maxTabWidth = 110
+	frame.Tabs = {}
+	frame.Tabs[1] = frame.tabBankItems
+	frame.Tabs[2] = frame.tabBankLog
+	frame.Tabs[3] = frame.tabBankInfo
+	frame.Tabs[4] = frame.tabBankConfig
+
+	frame.CharTabs = {}
+	frame.CharTabs[1] = frame.tabBankAlt1
+	frame.CharTabs[2] = frame.tabBankAlt2
+	frame.CharTabs[3] = frame.tabBankAlt3
+	frame.CharTabs[4] = frame.tabBankAlt4
+	frame.CharTabs[5] = frame.tabBankAlt5
+	frame.CharTabs[6] = frame.tabBankAlt6
+	frame.CharTabs[7] = frame.tabBankAlt7
+	frame.CharTabs[8] = frame.tabBankAlt8
+end
+
 function Frame:OnLoad()
-    Frame:UpdateTabard()
+    self:UpdateTabard()
 end
 
 function Frame:OnShow()
-    PlaySound(SOUNDKIT.IG_BACKPACK_OPEN)
+	PlaySound(SOUNDKIT.IG_BACKPACK_OPEN)
+	Events.Register(self, "PLGBC_EVENT_BANKCHAR_ADDED")
+	Events.Register(self, "PLGBC_EVENT_BANKCHAR_UPDATED")
+	Events.Register(self, "PLGBC_EVENT_BANKCHAR_REMOVED")
+	Events.Register(self, "PLGBC_EVENT_BANKCHAR_SLOT_SELECTED")
+	Events.Register(self, "PLGBC_EVENT_BANKCHAR_MONEYCHANGED")
+	Events.Register(self, "PLGBC_EVENT_BANKCHAR_ENTERED_WORLD")
 
-    for key,value in pairs(self) do
-        print("found member " .. key);
-    end
-
-    for key,value in pairs(self.EmblemFrame) do
-        print("2found member " .. key);
-    end
-    Frame:UpdateTabard()
+	self.addEditBankAltChar.callback = self.AddEditBankCharDialogResult
+    self:ApplyLocalization()
+	self:UpdateTabard()
+	MoneyFrame_Update(self.moneyFrameBankChar:GetName(), 0)
+	self:PLGuildBankFrameTab_OnClick(self.tabBankItems, 1)
+	self:UpdateBankAltTabs(true)
+	self:SetSumGuildMoney()
 end
 
 function Frame:OnHide()
 	PlaySound(SOUNDKIT.IG_BACKPACK_CLOSE)
-
+	Events.UnregisterAll(self)
 	-- clear search on hide
 	--self.SearchBox.clearButton:Click()
 end
@@ -113,8 +200,301 @@ function Frame:OnSizeChanged(width, height)
 	--self:UpdateItemContainer()
 end
 
+function Frame:UpdateGuildSettings(guildSettings)
+	self.guildSettings = guildSettings
+end
+
+function Frame:DisplayErrorMessage(message)
+	self.errorMessage:SetText(message)
+	self.errorMessage:Show()
+	self:HideFrames();
+end
+
+function Frame:HideError()
+	self.errorMessage:Hide()
+	self:DisplayTab(self.currentTab)
+end
+
+function Frame:CheckBankAlts()
+	if PLGuildBankClassic:NumberOfConfiguredAlts() <= 0 or PLGuildBankClassic:CanConfigureBankAlts() == false then
+		if PLGuildBankClassic:NumberOfConfiguredAlts() <= 0 then
+			self:DisplayErrorMessage(L["Currently there are no guild bank-alt's configured.\nPlease use the right + button to add a new character."])
+
+			return false
+		end
+
+		if PLGuildBankClassic:NumberOfConfiguredAlts() <= 0 and PLGuildBankClassic:CanConfigureBankAlts() == false then
+			local minRank = PLGuildBankClassic:GetGuildRankTable()[PLGuildBankClassic:GetMinRankForAlts()]
+
+			self:DisplayErrorMessage(string.format(L["Addon requires bank-character configuration\nwhich can only be done by rank '%s' or higher!"], minRank))
+
+			return false
+		end
+	
+	end
+
+	return true
+end
+
+function Frame:PLGuildBankFrameTab_OnClick(tabButton, id)
+	local parent = tabButton:GetParent()
+
+	PanelTemplates_SetTab(self, id);
+
+	if PLGuildBankClassic:IsInGuild() then
+		parent.currentTab = id
+		parent:DisplayTab(parent.currentTab)
+	end
+end
+
+function Frame:UpdateCurrentTab()
+	self:DisplayTab(self.currentTab)
+end
+
+function Frame:DisplayTab(id)
+	if self.currentTab == 0 then
+		self:HideFrames()
+	end
+	if self.currentTab == 1 then
+		self:ShowBankItems()
+	end
+	if self.currentTab == 2 then
+		self:ShowBankLog()
+	end
+	if self.currentTab == 3 then
+		self:ShowGuildInfo()
+	end
+	if self.currentTab == 4 then
+		self:ShowConfig()
+	end
+end
+
+function Frame:ShowBankItems()
+	if(self.currentTab ~= 1) then
+		return
+	end
+
+	self:HideFrames()
+	self:SetTabContentVisibility(true)
+	if self:CheckBankAlts() then
+		-- fill bank items
+		self.bankContents:Show()
+	end
+end
+
+function Frame:ShowBankLog()
+	if(self.currentTab ~= 2) then
+		return
+	end
+
+	self:HideFrames()
+	self:SetTabContentVisibility(true)
+	if self:CheckBankAlts() then
+		-- fill bank log
+		self.bankLog:Show()
+	end
+end
+
+function Frame:ShowGuildInfo()
+	if(self.currentTab ~= 3) then
+		return
+	end
+
+	self:HideFrames()
+	self:SetTabContentVisibility(true)
+	if self:CheckBankAlts() then
+		-- fill bank info
+		self.bankInfo:Show()
+	end
+end
+
+function Frame:ShowConfig()
+	if(self.currentTab ~= 4) then
+		return
+	end
+
+	self:HideFrames()
+	self:SetTabContentVisibility(true)
+	self.guildConfigFrame:Show()
+end
+
+function Frame:HideFrames()
+	self:SetTabContentVisibility(false)
+	self.logFrame:Hide()
+	self.guildConfigFrame:Hide()
+	self.bankContents:Hide()
+	self.bankLog:Hide()
+	self.bankInfo:Hide()
+end
+
+function Frame:SetTabContentVisibility(visible)
+	if visible then
+		self.tabContentContainer:Show()
+	else
+		self.tabContentContainer:Hide()
+	end
+end
+
+function Frame:OnSearchTextChanged()
+	self.bankContents:ApplySearch(self.searchEditBox:GetText())
+end
+
+-----------------------------------------------------------------------
+-- Bank character tab buttons
+
+function Frame:UpdateBankAltTabs(initializing)
+	local disableAll = false
+	local numberOfBankAlts = PLGuildBankClassic:NumberOfConfiguredAlts()
+	for i = 1, 8 do
+		self.CharTabs[i].addMode = false
+
+		if i > numberOfBankAlts then
+			if i == numberOfBankAlts + 1 and PLGuildBankClassic:CanConfigureBankAlts() then
+				self.CharTabs[i]:Show()
+				self.CharTabs[i].checkButton.iconTexture:SetTexture("Interface\\GuildBankFrame\\UI-GuildBankFrame-NewTab");
+				self.CharTabs[i].checkButton.tooltip = L["Add a new bank character"]
+				self.CharTabs[i].addMode = true
+			else
+				self.CharTabs[i].checkButton.tooltip = ""
+				self.CharTabs[i]:Hide()
+			end
+		else
+			local charData = PLGuildBankClassic:GetBankCharDataByIndex(i)
+			local class = charData.class
+			if not RAID_CLASS_COLORS[class] or not RAID_CLASS_COLORS[class].colorStr then class = nil end
+			local player = charData.name
+
+			-- todo configure tab button icon, text etc
+			self.CharTabs[i].checkButton.iconTexture:SetTexture(PLGuildBankClassic:GetSpellorMacroIconInfo(charData.icon));
+			self.CharTabs[i].checkButton.tooltip = string.format(L["Bank: %s\nChar: %s"], charData.description or L["Common"], class and ("|c%s%s|r"):format(RAID_CLASS_COLORS[class].colorStr, player) or player)
+			self.CharTabs[i].addMode = false
+			self.CharTabs[i]:Show()
+		end
+
+		if disableAll then
+			self.CharTabs[i].checkButton:Disable()
+		end
+	end
+
+	if initializing == true and numberOfBankAlts > 0 then
+		self:PLGuildBankTab_OnClick(self.CharTabs[1].checkButton, "LeftButton", 1)
+	end
+end
+
+function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTabId)
+	local tab = checkButton:GetParent()
+
+	if tab.addMode then
+		-- this tab is currently displaying the + symbol allowing the
+		-- player to add a new bank character
+		self.addEditBankAltChar:InitCreateNew()
+		self.addEditBankAltChar:Show()
+		self.addEditBankAltChar.openedByTab = tab
+		checkButton.checked = false
+	else
+		self.currentAltTab = currentTabId
+		-- clear character money info - will be set later if data is available
+		MoneyFrame_Update(self.moneyFrameBankChar:GetName(), 0)
+		local charData = PLGuildBankClassic:GetBankCharDataByIndex(currentTabId)
+
+		if mouseButton == "RightButton" then
+			PLGuildBankClassic:debug("Changeing character info by index: " .. currentTabId)
+
+			if charData then
+				PLGuildBankClassic:debug("Changeing character name: " .. charData.name)
+				self.addEditBankAltChar:InitEditExisting(charData)
+				self.addEditBankAltChar:Show()
+				self.addEditBankAltChar.openedByTab = tab
+			else
+				PLGuildBankClassic:debug("Could not load bank character data by index: " .. currentTabId)
+			end
+			checkButton.checked = false
+		else
+			Events:Fire("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", currentTabId, charData)
+		end
+	end
+end
+
+-----------------------------------------------------------------------
+-- event handlers
+
+function Frame:PLGBC_EVENT_BANKCHAR_ADDED(event, index, characterData)
+	PLGuildBankClassic:debug("Bankchar added at index " .. tostring(index) .. " using name " .. characterData.name)
+	PLGuildBankClassic:UpdateAtBankCharState()
+end
+
+function Frame:PLGBC_EVENT_BANKCHAR_UPDATED(event, index, characterData, nameChanged)
+	PLGuildBankClassic:debug("Bankchar updated at index " .. tostring(index) .. " using name " .. characterData.name .. " (Name changed: " ..  tostring(nameChanged) .. ")")
+	PLGuildBankClassic:UpdateAtBankCharState()
+end
+
+function Frame:PLGBC_EVENT_BANKCHAR_REMOVED(event, index, characterData)
+	PLGuildBankClassic:debug("Bankchar removed at index " .. tostring(index) .. " using name " .. characterData.name)
+	PLGuildBankClassic:UpdateAtBankCharState()
+end
+
+function Frame:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED(event, index, characterData)
+	self:HideError()
+
+	PLGuildBankClassic:debug("Bankchar selected at index " .. tostring(index) .. " using name " .. characterData.name)
+	local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterData.name)
+
+	self.availableMoneyBankCharLabel.Text:SetFormattedText(L["Character %s:"], "")
+	self.availableMoneyBankCharLabel:SetWidth(self.availableMoneyBankCharLabel.Text:GetWidth() + 2)
+
+	local cacheOwnerInfo = ItemCache:GetOwnerInfo(charServerName)
+
+	if characterData.acceptState ~= 1 then
+		if cacheOwnerInfo.class then
+			PLGuildBankClassic:debug("Cached data found")
+		else
+			PLGuildBankClassic:debug("No cached data found")
+		end
+
+		self:DisplayErrorMessage(L["The bank character must install this AddOn and accept the state of being a guild-bank character!\n \nThis is required because the character's inventory, bank \nand money will be synced with all guild-members which are using this AddOn!"])
+		return
+	end
+
+	if cacheOwnerInfo.class then
+		PLGuildBankClassic:debug("Found cached data!")
+		PLGuildBankClassic:debug(cacheOwnerInfo.name .. " (" .. cacheOwnerInfo.race .. " " .. cacheOwnerInfo.class .. ") Money: " .. tostring(cacheOwnerInfo.money))
+
+		self.bankContents:Update(characterData)
+		self.bankLog:Update(characterData)
+		self.bankInfo:Update(characterData)
+	else
+		PLGuildBankClassic:debug("No cached data found")
+
+		self:DisplayErrorMessage(L["No cached or received data found for this character.\nIf you are the owner of the character, log on and visit the bank!\nIf not, then you will receive bank information as soon as the ownser visited the bank!"])
+		return
+	end
+
+	MoneyFrame_Update(self.moneyFrameBankChar:GetName(), characterData.money)
+end
+
+function Frame:PLGBC_EVENT_BANKCHAR_MONEYCHANGED(event, characterName, value, gainedOrLost, valueVersion)
+	PLGuildBankClassic:debug("PLGBC_EVENT_BANKCHAR_MONEYCHANGED: character: " .. characterName .. " new amount: " .. tostring(value))
+	self:SetSumGuildMoney()
+	local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterName)
+	if self.bankContents.displayingCharacterData and self.bankContents.displayingCharacterData.name == charName and self.bankContents.displayingCharacterData.realm then
+		MoneyFrame_Update(self.moneyFrameBankChar:GetName(), value)
+	end
+end
+
+function Frame:PLGBC_EVENT_BANKCHAR_ENTERED_WORLD(event)
+	PLGuildBankClassic:debug("PLGBC_EVENT_BANKCHAR_ENTERED_WORLD recevied")
+	MoneyFrame_UpdateMoney(self.moneyFrameBankChar)
+end
+
+function Frame:SetSumGuildMoney()
+	local capital = PLGuildBankClassic:SumBankCharMoney()
+	PLGuildBankClassic:debug("SetSumGuildMoney: Calculated guild capital: " .. tostring(capital))
+	MoneyFrame_Update(self.moneyFrameGuild:GetName(), capital)
+end
+
 -----------------------------------------------------------------------
 -- Guild emblem and tabard functions
+
 function Frame:ChangeBackground(id)
 	if ( id > 50 ) then
 		id = 1;
@@ -122,7 +502,7 @@ function Frame:ChangeBackground(id)
 		id = 50;
 	end
 	TABARDBACKGROUNDID = id;
-	Frame:UpdateEmblem();
+	self:UpdateEmblem();
 end
 function Frame:ChangeEmblem(id)
 	if ( id > 169 ) then
@@ -131,7 +511,7 @@ function Frame:ChangeEmblem(id)
 		id = 169;
 	end
 	TABARDEMBLEMID = id;
-	Frame:UpdateEmblem();
+	self:UpdateEmblem();
 end
 function Frame:ChangeBorder(id)
 	if ( id > 9 ) then
@@ -140,7 +520,7 @@ function Frame:ChangeBorder(id)
 		id = 9;
 	end
 	TABARDBORDERID = id;
-	Frame:UpdateEmblem();
+	self:UpdateEmblem();
 end
 
 function Frame:UpdateEmblem()
@@ -157,22 +537,23 @@ function Frame:UpdateEmblem()
 		tabardBorderID = "0"..tabardBorderID;
 	end
 	self.EmblemFrame.BackgroundUL:SetTexture(format(TABARDBACKGROUNDUPPER, tabardBGID));
-	GuildBankEmblemBackgroundUR:SetTexture(format(TABARDBACKGROUNDUPPER, tabardBGID));
-	GuildBankEmblemBackgroundBL:SetTexture(format(TABARDBACKGROUNDLOWER, tabardBGID));
-	GuildBankEmblemBackgroundBR:SetTexture(format(TABARDBACKGROUNDLOWER, tabardBGID));
+	self.EmblemFrame.BackgroundUR:SetTexture(format(TABARDBACKGROUNDUPPER, tabardBGID));
+	self.EmblemFrame.BackgroundBL:SetTexture(format(TABARDBACKGROUNDLOWER, tabardBGID));
+	self.EmblemFrame.BackgroundBR:SetTexture(format(TABARDBACKGROUNDLOWER, tabardBGID));
 
-	GuildBankEmblemUL:SetTexture(format(TABARDEMBLEMUPPER, tabardEmblemID));
-	GuildBankEmblemUR:SetTexture(format(TABARDEMBLEMUPPER, tabardEmblemID));
-	GuildBankEmblemBL:SetTexture(format(TABARDEMBLEMLOWER, tabardEmblemID));
-	GuildBankEmblemBR:SetTexture(format(TABARDEMBLEMLOWER, tabardEmblemID));
+	self.EmblemFrame.UL:SetTexture(format(TABARDEMBLEMUPPER, tabardEmblemID));
+	self.EmblemFrame.UR:SetTexture(format(TABARDEMBLEMUPPER, tabardEmblemID));
+	self.EmblemFrame.BL:SetTexture(format(TABARDEMBLEMLOWER, tabardEmblemID));
+	self.EmblemFrame.BR:SetTexture(format(TABARDEMBLEMLOWER, tabardEmblemID));
 
-	GuildBankEmblemBorderUL:SetTexture(format(TABARDBORDERUPPER, tabardBorderID));
-	GuildBankEmblemBorderUR:SetTexture(format(TABARDBORDERUPPER, tabardBorderID));
-	GuildBankEmblemBorderBL:SetTexture(format(TABARDBORDERLOWER, tabardBorderID));
-	GuildBankEmblemBorderBR:SetTexture(format(TABARDBORDERLOWER, tabardBorderID));
+	self.EmblemFrame.BorderUL:SetTexture(format(TABARDBORDERUPPER, tabardBorderID));
+	self.EmblemFrame.BorderUR:SetTexture(format(TABARDBORDERUPPER, tabardBorderID));
+	self.EmblemFrame.BorderBL:SetTexture(format(TABARDBORDERLOWER, tabardBorderID));
+	self.EmblemFrame.BorderBR:SetTexture(format(TABARDBORDERLOWER, tabardBorderID));
 end
 
 function Frame:UpdateTabard()
+
 	--Set the tabard images
 	local tabardBackgroundUpper, tabardBackgroundLower, tabardEmblemUpper, tabardEmblemLower, tabardBorderUpper, tabardBorderLower = GetGuildTabardFileNames();
 	if ( not tabardEmblemUpper ) then
@@ -180,19 +561,19 @@ function Frame:UpdateTabard()
 		tabardBackgroundLower = "Textures\\GuildEmblems\\Background_49_TL_U";
 	end
 	self.EmblemFrame.BackgroundUL:SetTexture(tabardBackgroundUpper);
-	GuildBankEmblemBackgroundUR:SetTexture(tabardBackgroundUpper);
-	GuildBankEmblemBackgroundBL:SetTexture(tabardBackgroundLower);
-	GuildBankEmblemBackgroundBR:SetTexture(tabardBackgroundLower);
+	self.EmblemFrame.BackgroundUR:SetTexture(tabardBackgroundUpper);
+	self.EmblemFrame.BackgroundBL:SetTexture(tabardBackgroundLower);
+	self.EmblemFrame.BackgroundBR:SetTexture(tabardBackgroundLower);
 
-	GuildBankEmblemUL:SetTexture(tabardEmblemUpper);
-	GuildBankEmblemUR:SetTexture(tabardEmblemUpper);
-	GuildBankEmblemBL:SetTexture(tabardEmblemLower);
-	GuildBankEmblemBR:SetTexture(tabardEmblemLower);
+	self.EmblemFrame.UL:SetTexture(tabardEmblemUpper);
+	self.EmblemFrame.UR:SetTexture(tabardEmblemUpper);
+	self.EmblemFrame.BL:SetTexture(tabardEmblemLower);
+	self.EmblemFrame.BR:SetTexture(tabardEmblemLower);
 
-	GuildBankEmblemBorderUL:SetTexture(tabardBorderUpper);
-	GuildBankEmblemBorderUR:SetTexture(tabardBorderUpper);
-	GuildBankEmblemBorderBL:SetTexture(tabardBorderLower);
-	GuildBankEmblemBorderBR:SetTexture(tabardBorderLower);
+	self.EmblemFrame.BorderUL:SetTexture(tabardBorderUpper);
+	self.EmblemFrame.BorderUR:SetTexture(tabardBorderUpper);
+	self.EmblemFrame.BorderBL:SetTexture(tabardBorderLower);
+	self.EmblemFrame.BorderBR:SetTexture(tabardBorderLower);
 end
 
 -----------------------------------------------------------------------

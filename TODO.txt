@@ -1,0 +1,54 @@
+
+Allgemein
+- Wenn bank char nicht angenommen hat - Accept/reject button unterhalb der Fehlermeldung anzeigen
+- Toggle accept/reject auf der config seite anzeigen
+- Info text wenn rejected wurde
+- Log und info frame nur dann daten anzeigen wenn state = accepted
+
+Add-Edit BankChar screen
+- TAB funktioniert nicht
+- Im Edit modus auch einen Delete button anzeigen
+    - beim löschen fragen ob log und cache gelöscht werden soll
+
+Transaction Log
+- general loot events
+    x DONE CHAT_MSG_LOOT  someone looted an item (must be filtered for the current bank char)
+    x DONTNEED CHAT_MSG_MONEY someone looted money
+    - DELETE_ITEM_CONFIRM item has been destroyed
+    - Looting mails - do not log items instantly - collect them per user and item id and update the 
+
+- Mail interaction
+    x DONE use MAIL_INBOX_UPDATE to fetch mails in mailbox, read their text and get num items, cod etc.
+
+    - go to "mail state" on MAIL_SHOW
+    - check if mail is from player or auction house for source recognition
+    - watch playerlooting items or money
+    - go to transaction end on MAIL_CLOSED
+    - create log with source mail
+
+    - watch MAIL_SEND_INFO_UPDATE (item dragged into outgoing mail), MAIL_UNLOCK_SEND_ITEMS (item removed from outgoing mail)
+      MAIL_SEND_SUCCESS (mail sent successfully - items sent), MAIL_FAILED (mail failed)
+      SEND_MAIL_MONEY_CHANGED (money amount of outgoing mail changed)
+      SEND_MAIL_COD_CHANGED (cod requirement of outgoing mail changed)
+
+    - mail: wenn item looted und kein text im mail steht geht der frame sofort zu
+      und InboxFrame.opemMailID hat keinen wert mehr (zwecks namensermittlung)
+    - bei OPENALL funzt es nicht!
+
+
+- Player trade interaction  
+    - TRADE_MONEY_CHANGED money in tradewindow changes
+    - TRADE_PLAYER_ITEM_CHANGED item in the trade window changes
+    - PLAYER_TRADE_MONEY player trades money
+    - TRADE_ACCEPT_UPDATE acceptance state update
+    - TRADE_CLOSED windows closed, aborted or accepted (see above event)
+    - TRADE_REPLACE_ENCHANT  enchanting was done
+    - TRADE_SHOW trande starting
+    - TRADE_TARGET_ITEM_CHANGED  target adds an item (will be received by you)
+    - TRADE_UPDATE trade window changes
+
+- Auction house
+    - muss ich schaun - eventuell Auctioneer
+
+Comms
+- 

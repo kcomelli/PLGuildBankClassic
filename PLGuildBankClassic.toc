@@ -1,10 +1,14 @@
 ## Interface: 11302
 ## Title: PL GuildBank Classic
 ## Author: Klaus Comelli
+## Version: 0.1
 ## Notes: Synchronized, multi character based guild bank interface
+## URL: https://www.primal-legion.net
 ## OptionalDeps: Ace3, LibWindow-1.1
+## Dependencies: BagBrother
 ## SavedVariables:  PLGuildBankClassicDB
 ## Version: 8.2.14
+## LoadOnDemand: 0
 
 libs\LibStub\LibStub.lua
 libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
@@ -16,6 +20,7 @@ libs\AceHook-3.0\AceHook-3.0.xml
 libs\AceDB-3.0\AceDB-3.0.xml
 libs\AceLocale-3.0\AceLocale-3.0.xml
 libs\AceComm-3.0\AceComm-3.0.xml
+libs\AceSerializer-3.0\AceSerializer-3.0.xml
 
 libs\LibWindow-1.1\LibWindow-1.1.lua
 
@@ -25,9 +30,25 @@ libs\CustomSearch-1.0\CustomSearch-1.0.lua
 libs\LibItemSearch-1.2\LibItemSearch-1.2.lua
 
 Frame.xml
+TabGuildConfigFrame.xml
+CreateEditBankAltDialogFrame.xml
+TabGuildBankContentFrame.xml
+TabGuildBankLogFrame.xml
+TabGuildBankInfoFrame.xml
 
 Localization.lua
 PLGuildBankClassic.lua
 Events.lua 
+Comms.lua
 
+Utility.lua
 Frame.lua
+TabGuildConfigFrame.lua
+CreateEditBankAltDialogFrame.lua
+TabGuildBankContentFrame.lua
+TabGuildBankLogFrame.lua
+TabGuildBankInfoFrame.lua
+
+ItemContainer.lua
+Item.lua
+Bag.lua
