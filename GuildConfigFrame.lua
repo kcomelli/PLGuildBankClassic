@@ -18,7 +18,7 @@ function PLGuildBankClassic.GuildConfigFrame:Create(mainFrame, parent)
 
 	-- scripts
 	frame:SetScript("OnShow", frame.OnShow)
-    frame:SetScript("OnHide", frame.OnHide)
+    frame:SetScript("OnHide", frame.OnHide) 
     
     --local container = AceGUI:Create("Frame")
     --container:SetPoint("TOPLEFT", parent, "TOPLEFT", 10 ,10)

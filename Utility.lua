@@ -49,7 +49,7 @@ function PLGuildBankClassic:TryGetOpenMailData()
 	if mailIndex > 0 then
 		return self.mailData[mailIndex]
 	end
-
+ 
 	return nil
 end
 

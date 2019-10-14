@@ -20,7 +20,7 @@ function PLGuildBankClassic.GuildBankContentFrame:Create(parent)
     -- settings
 	frame.bagButtons = {}
 	frame.displayingCharacterData = nil
-
+ 
 	-- components
 	frame.itemContainer = PLGuildBankClassic.ItemContainer:Create(frame)
 	frame.itemContainer:SetPoint("TOPLEFT", 0, ITEM_CONTAINER_OFFSET_H)

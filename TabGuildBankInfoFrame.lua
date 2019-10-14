@@ -26,7 +26,7 @@ function PLGuildBankClassic.GuildBankInfoFrame:Create(parent)
     return frame
 end 
 
-function GuildBankInfoFrame:OnShow()
+function GuildBankInfoFrame:OnShow() 
 end
 
 function GuildBankInfoFrame:OnHide()

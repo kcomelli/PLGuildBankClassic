@@ -161,7 +161,7 @@ function GuildBankLogFrame:PrintTransactions()
             money = PLGuildBankClassic:PriceToMoneyString(moneyValue, true)
 
             if record.mode == PLGuildBankClassic.transactionModes.deposit then
-                msg = format(L["%s deposited %s"], name, money)
+                msg = format(L["%s deposited %s"], name, money) 
 
                 if record.title then
                     msg = msg .. " " .. ORANGE_FONT_COLOR_CODE .. format(L[" as %s"], record.title) .. " " .. FONT_COLOR_CODE_CLOSE

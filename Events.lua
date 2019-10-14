@@ -149,7 +149,7 @@ function Events:CHAT_MSG_LOOT(event, lootstring, arg2, arg3, arg4, player)
     local itemLink = string.match(lootstring,"|%x+|Hitem:.-|h.-|h|r")
     local itemId, itemQuantity
     if itemLink then
-        itemId = string.match(itemLink, "Hitem:(%d+):") 
+        itemId = string.match(itemLink, "Hitem:(%d+):")  
         itemQuantity = tonumber(string.match(lootstring, "x(%d+).") or "1")
 
         PLGuildBankClassic:debug("CHAT_MSG_LOOT: looted itemId " .. itemId .. " with quantity " .. tostring(itemQuantity))

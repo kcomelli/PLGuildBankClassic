@@ -804,7 +804,7 @@ function PLGuildBankClassic:LogPlayerMoneyGainOrLoss(event, characterName, value
             if logEntry.goldPerItem < 0 then
                 logEntry.goldPerItem = logEntry.goldPerItem * -1
             end
-            logEntry.quantity = 1
+            logEntry.quantity = 1 
 
 
             --PLGuildBankClassic.transactionSource = {
