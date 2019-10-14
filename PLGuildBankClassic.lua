@@ -33,7 +33,7 @@ local defaults = {
         minGuildRank = 1,
         configTimestamp = 0,
         showValueEstimationInLogs = true,
-        accountChars = {}
+        accountChars = nil
     }
 }
 

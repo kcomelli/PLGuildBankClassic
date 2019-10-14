@@ -320,7 +320,6 @@ end
 
 function Frame:HideFrames()
 	self:SetTabContentVisibility(false)
-	self.logFrame:Hide()
 	self.guildConfigFrame:Hide()
 	self.bankContents:Hide()
 	self.bankLog:Hide()
