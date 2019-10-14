@@ -26,7 +26,7 @@ Bank-inventory
 - 
 
 Guild into
-- allow text set per char
+x DONE allow text set per char
 - v2
     - add item requests incl. item name/id/link, max amount, free text info, accepted cod per item
     - remove, edit requests
