@@ -137,7 +137,7 @@ function GuildBankInfoFrame:PrintGuildInfo()
 
     -- TODO: render item requests
 
-    local maxShown = self:GetMaxShownLogsForFrameSize()
+    local maxShown = self:GetMaxShownLogsForFrameSize()-2
     if numLines < maxShown then
         -- append empty lines in order to align the text at the top of the frame
         for i=numLines+1, maxShown do

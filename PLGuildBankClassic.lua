@@ -593,10 +593,12 @@ function PLGuildBankClassic:SendMailOverride(recipient, subject, body)
                 self.sendMailData.attachments[i].count = count
                 self.sendMailData.attachments[i].itemLink = GetSendMailItemLink(i)
 
-                if string.find(self.sendMailData.subject, name) or string.find(self.sendMailData.subject, "(" .. tostring(count or 1) .. ")") then
+                if self.sendMailData.subject and name then
+                    if string.find(self.sendMailData.subject, name) or string.find(self.sendMailData.subject, "(" .. tostring(count or 1) .. ")") then
                     -- override standard item-name-based subject info
                     -- in order to not add this to the logs
                     self.sendMailData.subject = nil
+                    end
                 end
             end
         end
@@ -950,10 +952,12 @@ function PLGuildBankClassic:ScanMailbox()
                     --self.mailData[i].attachments[a].quality = quality
                     self.mailData[i].attachments[a].itemLink = GetInboxItemLink(i,a)
 
-                    if self.mailData[i].subject and name and (string.find(self.mailData[i].subject, name) or string.find(self.mailData[i].subject, "(" .. tostring(count or 1) .. ")"))then
-                        -- override standard item-name-based subject info
-                        -- in order to not add this to the logs
-                        self.mailData[i].subject = nil
+                    if self.mailData[i].subject and name then
+                        if (string.find(self.mailData[i].subject, name) or string.find(self.mailData[i].subject, "(" .. tostring(count or 1) .. ")"))then
+                            -- override standard item-name-based subject info
+                            -- in order to not add this to the logs
+                            self.mailData[i].subject = nil
+                        end
                     end
                 else
                     self.mailData[i].attachments[a] = nil
@@ -1147,7 +1151,7 @@ function PLGuildBankClassic:LogPlayerGotItem(event, characterName, itemId, itemQ
 end
 
 function PLGuildBankClassic:LogPlayerMoneyGainOrLoss(event, characterName, value, gainedOrLost, valueVersion)
-    PLGuildBankClassic:debug("LogPlayerMoneyGainOrLoss: " .. characterName .. " value: " .. tostring(value) .. " gl: " .. tostring(gainedOrLost))
+    PLGuildBankClassic:debug("LogPlayerMoneyGainOrLoss: " .. (characterName or "na") .. " value: " .. tostring(value or 0) .. " gl: " .. tostring(gainedOrLost or 0))
 
     if PLGuildBankClassic:IsGuildBankChar() then
         local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterName)

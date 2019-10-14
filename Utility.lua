@@ -61,14 +61,14 @@ function PLGuildBankClassic:TryGetOpenMailData()
 	if (InboxFrame and InboxFrame.openMailID) then
 		-- player has an inbox item frame open
 		mailIndex = InboxFrame.openMailID
-		PLGuildBankClassic:debug("TryGetOpenMailData: using mailIndex " .. tostring(mailIndex) .. " from open InboxFrame")
+		PLGuildBankClassic:debug("TryGetOpenMailData: using mailIndex " .. tostring(mailIndex or 0) .. " from open InboxFrame")
 	elseif OpenAllMail and OpenAllMail.mailIndex and not OpenAllMail:IsEnabled() then
 		-- player currently opening all mails
 		mailIndex = OpenAllMail.mailIndex
-		PLGuildBankClassic:debug("TryGetOpenMailData: using mailIndex " .. tostring(mailIndex) .. " from OpenAllMailMixin")
+		PLGuildBankClassic:debug("TryGetOpenMailData: using mailIndex " .. tostring(mailIndex or 0) .. " from OpenAllMailMixin")
 	elseif self.lastClosedMailData then
 		-- player recently closed a mail frame - use last saved index
-		PLGuildBankClassic:debug("TryGetOpenMailData: using mail " .. tostring(self.lastClosedMailData.title) .. " from open lastClosedMailData")
+		PLGuildBankClassic:debug("TryGetOpenMailData: using mail " .. (self.lastClosedMailData.subject or "na") .. " from open lastClosedMailData")
 		return self.lastClosedMailData
 	end
 
