@@ -29,6 +29,32 @@ function PLGuildBankClassic:GetItemPrice(itemId, forceVendorPrice)
 	return priceInfo
 end
 
+function PLGuildBankClassic:GetItemIdFromName(itemName)
+	if itemName then
+		local itemName, itemLink, itemRarity, _, itemMinLevel, itemType, _, _, _, _, itemVendorPrice, classID = GetItemInfo (itemName);
+
+		local itemId = string.match(itemLink, "Hitem:(%d+):")
+
+		if itemId then
+			return tonumber(itemId)
+		end
+	end
+
+	return nil
+end
+
+function PLGuildBankClassic:GetItemIdFromLink(itemLink)
+	if itemLink then
+		local itemId = string.match(itemLink, "Hitem:(%d+):")
+
+		if itemId then
+			return tonumber(itemId)
+		end
+	end
+
+	return nil
+end
+
 function PLGuildBankClassic:TryGetOpenMailData()
 	local mailIndex = 0
 	
@@ -53,6 +79,10 @@ function PLGuildBankClassic:TryGetOpenMailData()
 	return nil
 end
 
+function PLGuildBankClassic:GetNormalizedLogTitleFromSubject(subject)
+	return subject
+end
+
 function PLGuildBankClassic:IsAuctionHouseSender(sender)
 	if not sender then
 		return false
@@ -70,6 +100,34 @@ function PLGuildBankClassic:IsAuctionSuccessful(subject)
 
 	local pos = string.find(subject, L["Auction successful:"])
 	PLGuildBankClassic:debug("Finding " .. L["Auction successful:"] .. " in string " .. subject .. " - pos: " .. (tostring(pos) or "na"))
+	return pos ~= nil and pos > 0
+end
+function PLGuildBankClassic:IsAuctionCancelled(subject)
+	if not subject then
+		return false
+	end
+
+	local pos = string.find(subject, L["Auction cancelled:"])
+	PLGuildBankClassic:debug("Finding " .. L["Auction cancelled:"] .. " in string " .. subject .. " - pos: " .. (tostring(pos) or "na"))
+	return pos ~= nil and pos > 0
+end
+function PLGuildBankClassic:IsAuctionExpired(subject)
+	if not subject then
+		return false
+	end
+
+	local pos = string.find(subject, L["Auction expired:"])
+	PLGuildBankClassic:debug("Finding " .. L["Auction expired:"] .. " in string " .. subject .. " - pos: " .. (tostring(pos) or "na"))
+	return pos ~= nil and pos > 0
+end
+
+function PLGuildBankClassic:IsAuctionOutbid(subject)
+	if not subject then
+		return false
+	end
+
+	local pos = string.find(subject, L["Outbid on "])
+	PLGuildBankClassic:debug("Finding " .. L["Outbid on "] .. " in string " .. subject .. " - pos: " .. (tostring(pos) or "na"))
 	return pos ~= nil and pos > 0
 end
 

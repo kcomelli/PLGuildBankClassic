@@ -16,6 +16,12 @@ PLGBC_EVENT_BANKCHAR_INVENTORYCHANGED = "PLGBC_EVENT_BANKCHAR_INVENTORYCHANGED"
 
 PLGBC_MAILBOX_OPENED = "PLGBC_MAILBOX_OPENED"
 PLGBC_MAILBOX_CLOSED = "PLGBC_MAILBOX_CLOSED"
+PLGBC_AUCTION_HOUSE_OPENED = "PLGBC_AUCTION_HOUSE_OPENED"
+PLGBC_AUCTION_HOUSE_CLOSED = "PLGBC_AUCTION_HOUSE_CLOSED"
+PLGBC_TRADE_OPENED = "PLGBC_TRADE_OPENED"
+PLGBC_TRADE_CLOSED = "PLGBC_TRADE_CLOSED"
+
+PLGBC_MAIL_SUCCESS = "PLGBC_MAIL_SUCCESS"
 
 PLGBC_RECEVIED_ITEM = "PLGBC_RECEVIED_ITEM"
 PLGBC_GUILD_LOG_UPDATED = "PLGBC_GUILD_LOG_UPDATED"
@@ -46,6 +52,7 @@ function Events:OnEnable()
 
     self:RegisterEvent("MAIL_SHOW")
     self:RegisterEvent("MAIL_CLOSED")
+    self:RegisterEvent("MAIL_SUCCESS")
     self:RegisterEvent("PLAYER_LEAVING_WORLD")
     self:RegisterEvent("MAIL_INBOX_UPDATE")
     self:RegisterEvent("CLOSE_INBOX_ITEM")
@@ -55,6 +62,11 @@ function Events:OnEnable()
     self:RegisterEvent("AUCTION_HOUSE_SHOW")
     self:RegisterEvent("AUCTION_HOUSE_CLOSED")
     
+    self:RegisterEvent("MERCHANT_SHOW")
+    self:RegisterEvent("MERCHANT_CLOSED")
+
+    self:RegisterEvent("TRADE_SHOW")
+    self:RegisterEvent("TRADE_CLOSED")
 end
 
 function Events:GenericEvent(event, ...)
@@ -120,10 +132,19 @@ function Events:MAIL_CLOSED()
     end
 end
 
+function Events:MAIL_SUCCESS()
+    if PLGuildBankClassic:IsGuildBankChar() then
+        PLGuildBankClassic:debug("MAIL_SUCCESS: fireing mail sent successfully")
+        self:Fire("PLGBC_MAIL_SUCCESS")
+    end
+end
+
 function Events:PLAYER_LEAVING_WORLD()
     if PLGuildBankClassic:IsGuildBankChar() and self.atMailbox then
         PLGuildBankClassic:debug("PLAYER_LEAVING_WORLD: fireing mailbox closed event")
         self.atMailbox = false
+        self.atVendor=false
+        self.atAuction=false
         self:Fire("PLGBC_MAILBOX_CLOSED")
     end
 end
@@ -175,5 +196,38 @@ function Events:AUCTION_HOUSE_CLOSED()
         PLGuildBankClassic:debug("AUCTION_HOUSE_CLOSED: ah closed event")
         self.atAuctionHouse = false
         self:Fire("PLGBC_AUCTION_HOUSE_CLOSED")
+    end
+end
+
+function Events:MERCHANT_SHOW()
+    if PLGuildBankClassic:IsGuildBankChar() then
+        PLGuildBankClassic:debug("MERCHANT_SHOW: ah show event")
+        self.atVendor = true
+        self:Fire("PLGBC_MERCHANT_SHOW")
+    end
+end
+
+
+function Events:MERCHANT_CLOSED()
+    if PLGuildBankClassic:IsGuildBankChar() then
+        PLGuildBankClassic:debug("MERCHANT_CLOSED: ah closed event")
+        self.atVendor = false
+        self:Fire("PLGBC_MERCHANT_CLOSED")
+    end
+end
+
+function Events:TRADE_SHOW()
+    if PLGuildBankClassic:IsGuildBankChar() then
+        PLGuildBankClassic:debug("TRADE_SHOW: ah show event")
+        self.atTrade = true
+        self:Fire("PLGBC_TRADE_SHOW")
+    end
+end
+
+function Events:TRADE_CLOSED()
+    if PLGuildBankClassic:IsGuildBankChar() then
+        PLGuildBankClassic:debug("TRADE_CLOSED: ah closed event")
+        self.atTrade = false
+        self:Fire("PLGBC_TRADE_CLOSED")
     end
 end

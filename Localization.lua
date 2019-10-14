@@ -64,9 +64,25 @@ L["via mail"] = true
 L["via COD"] = true
 L["via auction"] = true
 L["via loot"] = true
+L["via vendor"] = true
+L["via enchanting"] = true
+L["via destruction"] = true
+L["via other"] = true
 L["via (unkown)"] = true
 L["( est. value: %s )"] = true
 
+-- auction house mail patterns
 L["Auction House"] = true
 L["Auction successful:"] = true
+L["Auction cancelled:"] = true
+L["Auction expired:"] = true
+L["Outbid on "] = true
+
+-- auction based logging titles
 L["Auction income"] = true
+L["Auction expense"] = true
+L["Auction expired"] = true
+L["Auction won"] = true
+L["Auction aborted"] = true
+L["Auction creation"] = true
+L["Auction outbid return"] = true

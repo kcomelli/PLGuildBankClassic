@@ -106,10 +106,14 @@ function PLGuildBankClassic:OnInitialize()
     self.mailTransactionLog = {}
     self.mailItemLootStack = {}
     self.mailMoneyLootStack = {}
+    self.sendMailData = nil
+    self.tradeData = nil
+    self.ignoreLootItemMessage = false
 
     self:RefreshPlayerSpellIconInfo()
 
     self:RegisterEvent("PLAYER_ENTERING_WORLD", "PlayerEnteringWorld")
+    self:RegisterEvent("PLAYER_LEAVING_WORLD", "PlayerLeavingWorld")
     self:RegisterEvent("PLAYER_GUILD_UPDATE", "InitializePlayerStatus")
 end
 
@@ -126,9 +130,17 @@ function PLGuildBankClassic:OnEnable()
     self.Events.Register(self, "PLGBC_MAILBOX_ITEM_CLOSED", "MailboxItemClosed")
     self.Events.Register(self, "PLGBC_EVENT_BANKCHAR_MONEYCHANGED", "LogPlayerMoneyGainOrLoss")
     self.Events.Register(self, "PLGBC_RECEVIED_ITEM", "LogPlayerGotItem")
+    self.Events.Register(self, "PLGBC_MAIL_SUCCESS", "MailSuccessfullySent")
+    self.Events.Register(self, "PLGBC_TRADE_CLOSED", "TradeFinished")
 
     self:Hook("TakeInboxItem", "TakeInboxItemOverride", true)
     self:Hook("TakeInboxMoney", "TakeInboxMoneyOverride", true)
+    self:Hook("SendMail", "SendMailOverride", true)
+
+    self:Hook("PostAuction", "PostAuctionOverride", true)
+
+    self:Hook("AcceptTrade", "AcceptTradeOverride", true)
+    self:Hook("InitiateTrade", "InitiateTradeOverride", true)
 end
 
 function PLGuildBankClassic:HandleSlash(cmd)
@@ -180,6 +192,11 @@ function PLGuildBankClassic:PlayerEnteringWorld()
     self:ScanGuildStatus()
     self:UpdateAtBankCharState()
     self:CheckIfAcceptenceIsPending()
+end
+
+function PLGuildBankClassic:PlayerLeavingWorld()
+    --Mailboix closed will be sent from events.luad
+    --self:MailboxClosed()    
 end
 
 function PLGuildBankClassic:CheckIfAcceptenceIsPending()
@@ -525,8 +542,262 @@ function PLGuildBankClassic:TakeInboxMoneyOverride(mailIndex)
     end
 end
 
+function PLGuildBankClassic:SendMailOverride(recipient, subject, body)
+    PLGuildBankClassic:debug("SendMailOverride subject: " .. subject or "na")
+    if PLGuildBankClassic:IsGuildBankChar() then
+        local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
+        -- use recipient
+        self.sendMailData = {}
+        self.sendMailData.sender = charName
+        self.sendMailData.recipient = recipient
+        self.sendMailData.subject = subject
+        self.sendMailData.body = body
+        
+
+        
+        self.sendMailData.money = GetSendMailMoney()
+        self.sendMailData.cod = GetSendMailCOD()
+        self.sendMailData.cost = GetSendMailPrice()
+        self.sendMailData.hasItems = false
+        self.sendMailData.attachments = nil
+
+        if self.sendMailData.money > 0 then
+            -- money sent is included in costs ? 
+            self.sendMailData.cost = self.sendMailData.cost - self.sendMailData.money
+        end
+
+        PLGuildBankClassic:debug("SendMailOverride: money: " .. (self.sendMailData.money or "na") .. " cod: " ..  (self.sendMailData.cod or "na") .. " cost: " .. (self.sendMailData.cost or "na"))
+
+        for i=1, 12 do
+            local name, texture, quality, count = GetSendMailItem(i)
+            if name then
+                PLGuildBankClassic:debug("SendMailOverride name: " .. (name or "na") .. " count: " .. (tostring(count) or "-1") .. " quality: " .. (tostring(quality) or "na"))
+                self.sendMailData.hasItems = true
+                if not self.sendMailData.attachments then
+                    self.sendMailData.attachments = {}
+                end
+
+                self.sendMailData.attachments[i] = {}
+                self.sendMailData.attachments[i].name = name
+                self.sendMailData.attachments[i].count = count
+                self.sendMailData.attachments[i].itemLink = GetSendMailItemLink(i)
+
+                if string.find(self.sendMailData.subject, name) or string.find(self.sendMailData.subject, "(" .. tostring(count or 1) .. ")") then
+                    -- override standard item-name-based subject info
+                    -- in order to not add this to the logs
+                    self.sendMailData.subject = nil
+                end
+            end
+        end
+    end
+end
+
+function PLGuildBankClassic:PostAuctionOverride(minBid, buyoutPrice, runTime, count)
+    PLGuildBankClassic:debug("PostAuctionOverride starting auction")
+    if PLGuildBankClassic:IsGuildBankChar() then
+        -- log withdraw
+        local name, texture, count, quality, canUse, price, pricePerUnit, stackCount, totalCount = GetAuctionSellItemInfo()
+        local itemId = self:GetItemIdFromName(name)
+
+        if itemId then
+            local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
+            local playerLog = PLGuildBankClassic:GetLogByName(charServerName)
+            
+            if playerLog then
+                local added = false
+                local logEntry = {}
+
+                logEntry.name = charName
+                logEntry.timestamp = PLGuildBankClassic:GetTimestamp()
+                logEntry.source = PLGuildBankClassic.transactionSource.auction
+                logEntry.type = PLGuildBankClassic.transactionTypes.item
+                logEntry.itemId = itemId
+                logEntry.quantity = totalCount
+                logEntry.goldPerItem = PLGuildBankClassic:GetItemPrice(itemId, false)
+                logEntry.mode = PLGuildBankClassic.transactionModes.withdraw
+                logEntry.title = L["Auction creation"]
+
+                if #playerLog > 0 then
+                    table.insert(playerLog, 1, logEntry)
+                else
+                    playerLog[1] = logEntry
+                end
+
+                PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
+                PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName)
+            end
+        else
+            PLGuildBankClassic:debug("StartAuctionOverride: could not get itemId of item " .. name)
+        end
+    end
+end
+
+function PLGuildBankClassic:AcceptTradeOverride()
+    PLGuildBankClassic:debug("AcceptTradeOverride trading")
+    if PLGuildBankClassic:IsGuildBankChar() then
+        self.ignoreLootItemMessage = true
+        if not self.tradeData then
+            self.tradeData = {}
+        end
+        local receive_money = GetTargetTradeMoney()
+        local send_money = GetPlayerTradeMoney()
+
+        self.tradeData.moneyOut = send_money
+        self.tradeData.moneyIn = receive_money
+
+        --self.tradeData.recipient = 
+        for i=1, 7 do
+            self.tradeData.send = {}
+            self.tradeData.receive = {}
+
+            -- i=7 ... will-not-be-traded-slot
+            local receive_name, receive_texture, receive_quantity, receive_quality, receive_isUsable, receive_enchant = GetTradeTargetItemInfo(i)
+            local receive_itemLink = GetTradeTargetItemLink(i)
+            
+            local send_name, send_texture, send_quantity, send_quality, send_isUsable, send_enchant = GetTradePlayerItemInfo(i)
+            local send_itemLink = GetTradePlayerItemLink(i)
+
+            if receive_name then
+                local idx = #self.tradeData.receive + 1
+                self.tradeData.receive[idx] = {}
+                self.tradeData.receive[idx].name = receive_name
+                self.tradeData.receive[idx].quantity = receive_quantity
+                self.tradeData.receive[idx].itemId = PLGuildBankClassic:GetItemIdFromLink(receive_itemLink)
+                self.tradeData.receive[idx].notTradeAction = receive_enchant
+            end
+            if send_name then
+                local idx = #self.tradeData.send + 1
+                self.tradeData.send[idx] = {}
+                self.tradeData.send[idx].name = send_name
+                self.tradeData.send[idx].quantity = send_quantity
+                self.tradeData.send[idx].itemId = PLGuildBankClassic:GetItemIdFromLink(send_itemLink)
+                self.tradeData.send[idx].notTradeAction = send_enchant
+            end
+        end
+    end
+end
+
+function PLGuildBankClassic:InitiateTradeOverride(unitId)
+    local target = UnitName(unitId)
+    self.tradeData = nil
+    PLGuildBankClassic:debug("InitiateTrade: " .. UnitName(unitId))
+    if PLGuildBankClassic:IsGuildBankChar() then
+        if not self.tradeData then
+            self.tradeData = {}
+        end
+        self.tradeData.target = target
+        self.ignoreLootItemMessage = true
+    end
+end
+
+function PLGuildBankClassic:TradeFinished(event)
+    PLGuildBankClassic:debug("TradeFinished: received")
+    if PLGuildBankClassic:IsGuildBankChar() then
+        if self.tradeData then
+            local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
+            local playerLog = PLGuildBankClassic:GetLogByName(charServerName)
+            local alreadyAdded = {}
+            local bChanged = false
+
+            if playerLog and self.tradeData.send then
+                for i=1, #self.tradeData.send do
+                    -- items withdrawn by the target
+                    local checkItem = self.tradeData.send[i]
+                    local itemId = checkItem.itemId
+
+                    if itemId then
+                        -- calculate log key - create only one log per itemid and recipient
+                        local logKey = self.tradeData.target .. ":withdraw:" .. tostring(itemId)
+                        
+                        PLGuildBankClassic:debug("TradeFinished: Created logKey: " .. logKey)
+
+                        if alreadyAdded[logKey] then
+                            PLGuildBankClassic:debug("TradeFinished: Update existing log entry using key: " .. logKey )
+
+                            alreadyAdded[logKey].quantity = alreadyAdded[logKey].quantity + (checkItem.quantity or 0)
+                        else
+                            local logEntry = {}
+                            bChanged = true
+
+                            logEntry.name = self.tradeData.target
+                            logEntry.timestamp = PLGuildBankClassic:GetTimestamp()
+                            logEntry.source = PLGuildBankClassic.transactionSource.trade
+                            logEntry.type = PLGuildBankClassic.transactionTypes.item
+                            logEntry.itemId = itemId
+                            logEntry.quantity = checkItem.quantity or 0
+                            logEntry.goldPerItem = PLGuildBankClassic:GetItemPrice(itemId, false)
+                            logEntry.mode = PLGuildBankClassic.transactionModes.withdraw
+
+                            if #playerLog > 0 then
+                                table.insert(playerLog, 1, logEntry)
+                            else
+                                playerLog[1] = logEntry
+                            end
+
+                            PLGuildBankClassic:debug("TradeFinished: Create new log entry using key: " .. logKey)
+                            alreadyAdded[logKey] = logEntry
+                        end
+                    else
+                        PLGuildBankClassic:debug("TradeFinished: could not get itemId of item " .. name)
+                    end
+                end
+
+                for i=1, #self.tradeData.receive do
+                    -- items withdrawn by the target
+                    local checkItem = self.tradeData.receive[i]
+                    local itemId = checkItem.itemId
+
+                    if itemId then
+                        -- calculate log key - create only one log per itemid and recipient
+                        local logKey = self.tradeData.target .. ":deposit:" .. tostring(itemId)
+                        
+                        PLGuildBankClassic:debug("TradeFinished: Created logKey: " .. logKey)
+
+                        if alreadyAdded[logKey] then
+                            PLGuildBankClassic:debug("TradeFinished: Update existing log entry using key: " .. logKey )
+
+                            alreadyAdded[logKey].quantity = alreadyAdded[logKey].quantity + (checkItem.quantity or 0)
+                        else
+                            local logEntry = {}
+                            bChanged = true
+
+                            logEntry.name = self.tradeData.target
+                            logEntry.timestamp = PLGuildBankClassic:GetTimestamp()
+                            logEntry.source = PLGuildBankClassic.transactionSource.trade
+                            logEntry.type = PLGuildBankClassic.transactionTypes.item
+                            logEntry.itemId = itemId
+                            logEntry.quantity = checkItem.quantity or 0
+                            logEntry.goldPerItem = PLGuildBankClassic:GetItemPrice(itemId, false)
+                            logEntry.mode = PLGuildBankClassic.transactionModes.deposit
+
+                            if #playerLog > 0 then
+                                table.insert(playerLog, 1, logEntry)
+                            else
+                                playerLog[1] = logEntry
+                            end
+
+                            PLGuildBankClassic:debug("TradeFinished: Create new log entry using key: " .. logKey)
+                            alreadyAdded[logKey] = logEntry
+                        end
+                    else
+                        PLGuildBankClassic:debug("TradeFinished: could not get itemId of item " .. name)
+                    end
+                end
+
+                if bChanged then
+                    PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
+                    PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName)
+                end
+            end
+        end
+    end
+
+    self.ignoreLootItemMessage = false
+end
+
 function PLGuildBankClassic:MailboxOpened()
     self.mailData = {}
+    self.sendMailData = nil
     self.mailTransactionLog = {}
     self.mailsTransaction = true
     self.mailItemLootStack = {}
@@ -548,7 +819,7 @@ function PLGuildBankClassic:MailboxClosed()
 
             local logAddedCnt = 0
             local alreadyAdded = {}
-            PLGuildBankClassic:debug("Processing " .. tostring(#self.mailTransactionLog) .. " mail transaction log entries")
+            PLGuildBankClassic:debug("MailboxClosed: Processing " .. tostring(#self.mailTransactionLog) .. " mail transaction log entries")
 
             for i=1, #self.mailTransactionLog do
                 local logEntry = self.mailTransactionLog[i]
@@ -557,10 +828,10 @@ function PLGuildBankClassic:MailboxClosed()
                     logKey = logKey .. ":" .. logEntry.itemId
                 end
                 
-                PLGuildBankClassic:debug("Created logKey: " .. logKey)
+                PLGuildBankClassic:debug("MailboxClosed: Created logKey: " .. logKey)
 
                 if alreadyAdded[logKey] then
-                    PLGuildBankClassic:debug("Update existing log entry using key: " .. logKey )
+                    PLGuildBankClassic:debug("MailboxClosed: Update existing log entry using key: " .. logKey )
 
                     -- add quantity or gold looted to first entry found
                     if logEntry.type == PLGuildBankClassic.transactionTypes.item then
@@ -580,7 +851,7 @@ function PLGuildBankClassic:MailboxClosed()
                         playerLog[1] = logEntry
                     end
 
-                    PLGuildBankClassic:debug("Create new log entry using key: " .. logKey)
+                    PLGuildBankClassic:debug("MailboxClosed: Create new log entry using key: " .. logKey)
                     alreadyAdded[logKey] = logEntry
                 end
             end
@@ -594,6 +865,7 @@ function PLGuildBankClassic:MailboxClosed()
     self.mailTransactionLog = {}
     self.mailItemLootStack = {}
     self.mailMoneyLootStack = {}
+    self.sendMailData = nil
 end
 
 function PLGuildBankClassic:MailboxItemClosed(event, itemIndex)
@@ -666,6 +938,12 @@ function PLGuildBankClassic:ScanMailbox()
                     self.mailData[i].attachments[a].count = count
                     --self.mailData[i].attachments[a].quality = quality
                     self.mailData[i].attachments[a].itemLink = GetInboxItemLink(i,a)
+
+                    if self.mailData[i].subject and name and (string.find(self.mailData[i].subject, name) or string.find(self.mailData[i].subject, "(" .. tostring(count or 1) .. ")"))then
+                        -- override standard item-name-based subject info
+                        -- in order to not add this to the logs
+                        self.mailData[i].subject = nil
+                    end
                 else
                     self.mailData[i].attachments[a] = nil
                 end
@@ -708,9 +986,75 @@ function PLGuildBankClassic:printMailData(mailData)
     end
 end
 
+function PLGuildBankClassic:MailSuccessfullySent()
+    if PLGuildBankClassic:IsGuildBankChar() then
+        PLGuildBankClassic:debug("MailSuccessfullySent received")
+        if self.sendMailData and self.sendMailData.attachments and #self.sendMailData.attachments > 0 then
+            PLGuildBankClassic:debug("MailSuccessfullySent: processing sent mail data")
+            local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
+            local playerLog = PLGuildBankClassic:GetLogByName(charServerName)
+
+            local alreadyAdded = {}
+            local bChanged = false
+
+            if playerLog then
+                for i=1, #self.sendMailData.attachments do
+                    local itemId = self:GetItemIdFromLink(self.sendMailData.attachments[i].itemLink)
+
+                    if itemId then
+                        -- calculate log key - create only one log per itemid and recipient
+                        local logKey = self.sendMailData.recipient .. ":" .. tostring(itemId)
+                        
+                        PLGuildBankClassic:debug("MailSuccessfullySent: Created logKey: " .. logKey)
+
+                        if alreadyAdded[logKey] then
+                            PLGuildBankClassic:debug("MailSuccessfullySent: Update existing log entry using key: " .. logKey )
+
+                            alreadyAdded[logKey].quantity = alreadyAdded[logKey].quantity + (self.sendMailData.attachments[i].count or 0)
+                        else
+                            local logEntry = {}
+                            bChanged = true
+
+                            logEntry.name = self.sendMailData.recipient
+                            logEntry.timestamp = PLGuildBankClassic:GetTimestamp()
+                            logEntry.source = PLGuildBankClassic.transactionSource.mail
+                            logEntry.type = PLGuildBankClassic.transactionTypes.item
+                            logEntry.itemId = itemId
+                            logEntry.quantity = self.sendMailData.attachments[i].count or 0
+                            logEntry.goldPerItem = PLGuildBankClassic:GetItemPrice(itemId, false)
+                            logEntry.mode = PLGuildBankClassic.transactionModes.withdraw
+                            logEntry.title = PLGuildBankClassic:GetNormalizedLogTitleFromSubject(self.sendMailData.subject)
+
+                            if #playerLog > 0 then
+                                table.insert(playerLog, 1, logEntry)
+                            else
+                                playerLog[1] = logEntry
+                            end
+
+                            PLGuildBankClassic:debug("MailSuccessfullySent: Create new log entry using key: " .. logKey)
+                            alreadyAdded[logKey] = logEntry
+                        end
+                    else
+                        PLGuildBankClassic:debug("MailSuccessfullySent: could not get itemId of item " .. name)
+                    end
+                end
+            end
+
+            if bChanged then
+                PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
+                PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName)
+            end
+        end
+    end
+end
 
 function PLGuildBankClassic:LogPlayerGotItem(event, characterName, itemId, itemQuantity)
     PLGuildBankClassic:debug("LogPlayerGotItem: " .. characterName .. " itemId: " .. tostring(itemId) .. " quantity: " .. tostring(itemQuantity))
+
+    if self.ignoreLootItemMessage then
+        PLGuildBankClassic:debug("LogPlayerGotItem: ignorint loot item message")
+        return
+    end
 
     if PLGuildBankClassic:IsGuildBankChar() then
         local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterName)
@@ -751,8 +1095,13 @@ function PLGuildBankClassic:LogPlayerGotItem(event, characterName, itemId, itemQ
                         logEntry.source = PLGuildBankClassic.transactionSource.auction
                         logEntry.name = charName
                     end
-                    if PLGuildBankClassic:IsAuctionSuccessful(openMailData.title) then
-                        logEntry.title = L["Auction income"]
+
+                    if PLGuildBankClassic:IsAuctionSuccessful(logEntry.title) then
+                        logEntry.title = L["Auction won"]
+                    elseif PLGuildBankClassic:IsAuctionCancelled(logEntry.title) then
+                        logEntry.title = L["Auction aborted"]
+                    elseif PLGuildBankClassic:IsAuctionExpired(logEntry.title) then
+                        logEntry.title = L["Auction expired"]
                     end
                 else
                     PLGuildBankClassic:debug("Mail " .. tostring(mailIndex) .. " not found")
@@ -792,7 +1141,8 @@ function PLGuildBankClassic:LogPlayerMoneyGainOrLoss(event, characterName, value
     if PLGuildBankClassic:IsGuildBankChar() then
         local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterName)
         local playerLog = PLGuildBankClassic:GetLogByName(charServerName)
-        
+        local moneySplitMailCost = nil
+
         if playerLog then
             local added = false
             local logEntry = {}
@@ -800,10 +1150,6 @@ function PLGuildBankClassic:LogPlayerMoneyGainOrLoss(event, characterName, value
             logEntry.timestamp = PLGuildBankClassic:GetTimestamp()
             logEntry.source = PLGuildBankClassic.transactionSource.loot
             logEntry.type = PLGuildBankClassic.transactionTypes.money
-            logEntry.goldPerItem = gainedOrLost
-            if logEntry.goldPerItem < 0 then
-                logEntry.goldPerItem = logEntry.goldPerItem * -1
-            end
             logEntry.quantity = 1 
 
 
@@ -836,16 +1182,41 @@ function PLGuildBankClassic:LogPlayerMoneyGainOrLoss(event, characterName, value
                 if openMailData then
                     logEntry.name = openMailData.sender or charName
                     logEntry.title = openMailData.subject or nil
+                    
+                    if PLGuildBankClassic:IsAuctionHouseSender(openMailData.sender) then
+                        logEntry.source = PLGuildBankClassic.transactionSource.auction
+                        logEntry.name = charName
+
+                        if PLGuildBankClassic:IsAuctionSuccessful(openMailData.subject) then
+                            logEntry.title = L["Auction income"]
+
+                            if gainedOrLost < 0 then
+                                logEntry.title = L["Auction expense"]
+                            end
+                        elseif PLGuildBankClassic:IsAuctionOutbid(openMailData.subject) then
+                            logEntry.title = L["Auction outbid return"]
+                        end
+                    end
 
                     if gainedOrLost < 0 and openMailData.cod then
                         logEntry.source = PLGuildBankClassic.transactionSource.cod
-                    elseif PLGuildBankClassic:IsAuctionHouseSender(openMailData.sender) then
-                        logEntry.source = PLGuildBankClassic.transactionSource.auction
-                        logEntry.name = charName
                     end
                 else
-                    PLGuildBankClassic:debug("Mail " .. tostring(mailIndex) .. " not found")
+                    PLGuildBankClassic:debug("Opened mail data not found")
                 end
+
+                if gainedOrLost < 0 and self.sendMailData and (self.sendMailData.money + self.sendMailData.cost) == (gainedOrLost*-1)   then
+                    PLGuildBankClassic:debug("Using sent mail data for money withdrawel")
+                    -- set the recipient for withdrawel
+                    logEntry.name = self.sendMailData.recipient
+                    logEntry.title = self.sendMailData.subject
+                    logEntry.title = PLGuildBankClassic:GetNormalizedLogTitleFromSubject(self.sendMailData.subject)
+
+                    -- subtract mailing costs - need extra log entry
+                    gainedOrLost = gainedOrLost + self.sendMailData.cost
+                    moneySplitMailCost = (self.sendMailData.cost * -1)
+                end
+
             elseif PLGuildBankClassic.Events.atVendor then
                 logEntry.source = PLGuildBankClassic.transactionSource.vendor
             elseif PLGuildBankClassic.Events.atTrade then
@@ -853,7 +1224,19 @@ function PLGuildBankClassic:LogPlayerMoneyGainOrLoss(event, characterName, value
             elseif PLGuildBankClassic.Events.atAuctionHouse then
                 logEntry.source = PLGuildBankClassic.transactionSource.auction
             end
+
+            if self.tradeData and (gainedOrLost == self.tradeData.moneyIn) then
+                logEntry.source = PLGuildBankClassic.transactionSource.directTrade
+                logEntry.name = self.tradeData.target
+            elseif self.tradeData and ((gainedOrLost*-1) == self.tradeData.moneyOut) then
+                logEntry.source = PLGuildBankClassic.transactionSource.directTrade
+                logEntry.name = self.tradeData.target
+            end
                 
+            logEntry.goldPerItem = gainedOrLost
+            if logEntry.goldPerItem < 0 then
+                logEntry.goldPerItem = logEntry.goldPerItem * -1
+            end
 
             if gainedOrLost > 0 then
                 logEntry.mode = PLGuildBankClassic.transactionModes.deposit
@@ -880,6 +1263,11 @@ function PLGuildBankClassic:LogPlayerMoneyGainOrLoss(event, characterName, value
                     PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
                     PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName)
                 end
+            end
+
+            if moneySplitMailCost ~= nil then
+                -- log mail costs in case of money sent as separate entry
+                self:LogPlayerMoneyGainOrLoss(event, characterName, value, moneySplitMailCost, PLGuildBankClassic.atBankChar.logVersion)
             end
         end
     end 

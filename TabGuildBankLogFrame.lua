@@ -196,10 +196,18 @@ function GuildBankLogFrame:PrintTransactions()
                 if ( record.quantity > 1 ) then
                     msg = msg..format(L[" x %d"], record.quantity);
                 end
+
+                if record.title then
+                    msg = msg .. " " .. ORANGE_FONT_COLOR_CODE .. format(L[" for %s"], record.title) .. " " .. FONT_COLOR_CODE_CLOSE
+                end
             else
                 msg = format(L["%s |cffff2020withdrew|r %s"], (name or L["unknown"]), (sLink or L["unknown"]));
                 if ( record.quantity > 1 ) then
                     msg = msg..format(L[" x %d"], record.quantity);
+                end
+
+                if record.title then
+                    msg = msg .. " " .. ORANGE_FONT_COLOR_CODE .. format(L[" for %s"], record.title) .. " " .. FONT_COLOR_CODE_CLOSE
                 end
             end
 
@@ -233,6 +241,14 @@ function GuildBankLogFrame:ConvertSourceToExt(source)
         return L["via auction"]
     elseif source == PLGuildBankClassic.transactionSource.loot then
         return L["via loot"]
+    elseif source == PLGuildBankClassic.transactionSource.vendor then
+        return L["via vendor"]
+    elseif source == PLGuildBankClassic.transactionSource.enchanting then
+        return L["via enchanting"]
+    elseif source == PLGuildBankClassic.transactionSource.destroy then
+        return L["via destruction"]
+    elseif source == PLGuildBankClassic.transactionSource.other then
+        return L["via other"]
     end
 
     return L["via (unkown)"]
