@@ -47,10 +47,12 @@ function GuildConfigFrame:InitUI()
     else
         UIDropDownMenu_DisableDropDown(self.configRankDropDown)
     end
+    self.enableDebugMode:SetChecked(PLGuildBankClassic.db.profile.config.debug)
 end
 
 function GuildConfigFrame:ApplyLocalization()
     self.configRankLabel.Text:SetText(L["Select min. guild rank for bank-alt management"])
+    self.enableDebugMode.Text:SetText(L["Debug mode"])
 end
 
 
@@ -94,4 +96,9 @@ end
 function GuildConfigFrame:GuildRanksDropDownLoad(self)
 	UIDropDownMenu_SetWidth(self, 170);
 	UIDropDownMenu_Initialize(self, PLGuildRanksDropDown_Initialize)
+end
+
+function GuildConfigFrame:ToggleDebugMode(checkButton)
+    PLGuildBankClassic.db.profile.config.debug = not PLGuildBankClassic.db.profile.config.debug
+	self.enableDebugMode:SetChecked(PLGuildBankClassic.db.profile.config.debug)
 end

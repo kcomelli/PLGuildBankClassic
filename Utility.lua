@@ -292,6 +292,17 @@ function PLGuildBankClassic:IsGuildBankChar()
     return PLGuildBankClassic.atBankChar ~= nil
 end
 
+function PLGuildBankClassic:CharacterOwnedByAccount(characterName)
+
+	if characterName and self.db.factionrealm then
+		local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterName)
+
+		return (self.db.factionrealm.accountChars and self.db.factionrealm.accountChars[charServerName])
+	end
+
+	return false
+end
+
 function PLGuildBankClassic:IsInGuild()
     return PLGuildBankClassic.isInGuild
 end

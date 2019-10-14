@@ -52,6 +52,7 @@ L["Decide later"] = true
 L["%s has configured your char as guild-bank character!\nDo you accept this state of the character?\n \nNote: All your inventory, bank and money will be shared across the guild!"] = true
 L["Purchaseable"] = true
 L["unknown"] = true
+L["Debug mode"] = true
 
 L["via direct trade"] = true
 L[" as %s"] = true

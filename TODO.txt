@@ -5,7 +5,7 @@ Allgemein
 - Info text wenn rejected wurde
 x DONE Log und info frame nur dann daten anzeigen wenn state = accepted
 - Checked state of the bank-alt tab buttons
-- enable/disable DEBUG mode in settings
+x DONE enable/disable DEBUG mode in settings
 - search and highlite
 - whisper commands allowing to query bank
 

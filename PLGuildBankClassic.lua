@@ -32,7 +32,8 @@ local defaults = {
     factionrealm  = {
         minGuildRank = 1,
         configTimestamp = 0,
-        showValueEstimationInLogs = true
+        showValueEstimationInLogs = true,
+        accountChars = {}
     }
 }
 
@@ -192,11 +193,21 @@ function PLGuildBankClassic:PlayerEnteringWorld()
     self:ScanGuildStatus()
     self:UpdateAtBankCharState()
     self:CheckIfAcceptenceIsPending()
+    self:SetOwnedCharacters()
 end
 
 function PLGuildBankClassic:PlayerLeavingWorld()
     --Mailboix closed will be sent from events.luad
     --self:MailboxClosed()    
+end
+
+function PLGuildBankClassic:SetOwnedCharacters()
+    if not dbFactionRealm.accountChars then
+        dbFactionRealm.accountChars = {}
+    end
+
+    local myName, myRealm, myServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
+    dbFactionRealm.accountChars[myServerName] = true
 end
 
 function PLGuildBankClassic:CheckIfAcceptenceIsPending()
