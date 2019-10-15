@@ -156,7 +156,7 @@ function Events:MAIL_INBOX_UPDATE()
 end
 
 function Events:CLOSE_INBOX_ITEM(event, mailIndex)
-    if PLGuildBankClassic:IsGuildBankChar() then
+    if mailIndex and PLGuildBankClassic:IsGuildBankChar() then
         PLGuildBankClassic:debug("CLOSE_INBOX_ITEM: index " .. tostring(mailIndex))
         self.lastMailIndexClosed = mailIndex
         self:Fire("PLGBC_MAILBOX_ITEM_CLOSED", mailIndex)
@@ -164,21 +164,23 @@ function Events:CLOSE_INBOX_ITEM(event, mailIndex)
 end
 
 function Events:CHAT_MSG_LOOT(event, lootstring, arg2, arg3, arg4, player)
-    --PLGuildBankClassic:debug("CHAT_MSG_LOOT: lootstring: " .. (lootstring or "na"))
-    PLGuildBankClassic:debug("CHAT_MSG_LOOT: player: " .. (player or "na"))
 
-    local itemLink = string.match(lootstring,"|%x+|Hitem:.-|h.-|h|r")
-    local itemId, itemQuantity
-    if itemLink then
-        itemId = string.match(itemLink, "Hitem:(%d+):")  
-        itemQuantity = tonumber(string.match(lootstring, "x(%d+).") or "1")
+    if lootstring and PLGuildBankClassic:IsGuildBankChar() and UnitName("player") == player then
+        PLGuildBankClassic:debug("CHAT_MSG_LOOT: player: " .. (player or "na"))
 
-        PLGuildBankClassic:debug("CHAT_MSG_LOOT: looted itemId " .. itemId .. " with quantity " .. tostring(itemQuantity))
-    end
+        local itemLink = string.match(lootstring,"|%x+|Hitem:.-|h.-|h|r")
+        local itemId, itemQuantity
+        if itemLink then
+            itemId = string.match(itemLink, "Hitem:(%d+):")  
+            itemQuantity = tonumber(string.match(lootstring, "x(%d+).") or "1")
 
-    if itemLink and PLGuildBankClassic:IsGuildBankChar() and UnitName("player") == player then
-        PLGuildBankClassic:debug("CHAT_MSG_LOOT: BY ME")
-        self:Fire("PLGBC_RECEVIED_ITEM", player, tonumber(itemId), itemQuantity)
+            PLGuildBankClassic:debug("CHAT_MSG_LOOT: looted itemId " .. itemId .. " with quantity " .. tostring(itemQuantity))
+        end
+
+        if itemLink then
+            PLGuildBankClassic:debug("CHAT_MSG_LOOT: BY ME")
+            self:Fire("PLGBC_RECEVIED_ITEM", player, tonumber(itemId), itemQuantity)
+        end
     end
 end
 
