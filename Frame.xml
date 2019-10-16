@@ -330,6 +330,20 @@
 			
 		</Layers>
 		<Frames>
+			<Button parentKey="acceptStateButton" name="$parentAcceptState" inherits="UIPanelButtonTemplate" text="ACCEPT" hidden="true">
+                <Size x="124" y="21"/>
+                <Anchors>
+                    <Anchor point="TOP" relativeTo="$parent" relativePoint="BOTTOM">
+                        <Offset x="0" y="80"/>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        self:GetParent():OnAcceptClick();
+                    </OnClick>
+                </Scripts>
+            </Button>
+
 			<Frame parentKey="EmblemFrame" name="PLGuildBankEmblemFrame">
 				<Size>
 					<AbsDimension x="700" y="80"/>

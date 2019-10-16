@@ -21,6 +21,7 @@ local L = LibStub("AceLocale-3.0"):NewLocale("PLGuildBankClassic", "enUS", true,
 
 L["Save"] = true
 L["Cancel"] = true
+L["Decide later"] = true
 L["%s's Guild Bank"] = true
 L["Available money"] = true
 L["Character %s:"] = true

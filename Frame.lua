@@ -207,11 +207,23 @@ end
 function Frame:DisplayErrorMessage(message)
 	self.errorMessage:SetText(message)
 	self.errorMessage:Show()
+	self.acceptStateButton:Hide()
 	self:HideFrames();
+
+	if PLGuildBankClassic:IsGuildBankChar() and message == L["The bank character must install this AddOn and accept the state of being a guild-bank character!\n \nThis is required because the character's inventory, bank \nand money will be synced with all guild-members which are using this AddOn!"] then
+		-- show an additional accept button
+		self.acceptStateButton:Show()
+	end
+end
+
+function Frame:OnAcceptClick()
+	PLGuildBankClassic:AcceptOrDeclineState("accept")
+	self.acceptStateButton:Hide()
 end
 
 function Frame:HideError()
 	self.errorMessage:Hide()
+	self.acceptStateButton:Hide()
 	self:DisplayTab(self.currentTab)
 end
 
