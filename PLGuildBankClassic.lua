@@ -72,8 +72,8 @@ PLGBC_COMBINED_INVENTORY_CONFIG = { BANK_CONTAINER, 5, 6, 7, 8, 9, 10, BACKPACK_
 StaticPopupDialogs["PLGBC_POPUP_ACCEPT_BANKCHARSTATE"] = {
     text = L["%s has configured your char as guild-bank character!\nDo you accept this state of the character?\n \nNote: All your inventory, bank and money will be shared across the guild!"],
     button1 = L["Accept"],
-    button3 = L["Decide later"],
-    button2 = L["Decline"],
+    button3 = L["Decline"],
+    button2 = L["Decide later"],
     OnAccept = function()
         PLGuildBankClassic:AcceptOrDeclineState("accept")
     end,

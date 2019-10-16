@@ -10,6 +10,7 @@ local COMM_CMD_RESPONSEVERSIONS = "RESPONSEVERSIONS"
 function Comms:OnEnable()
     self:RegisterComm(COMM_PREFIX, "OnCommReceived")
 
+    Comms.comm = {}
     Comms.comm[COMM_CMD_QUERYVERSIONS] = Comms.QueryVersions
     Comms.comm[COMM_CMD_RESPONSEVERSIONS] = Comms.ResponseVersions
 end
@@ -21,7 +22,7 @@ function Comms:OnCommReceived(prefix, message, distribution, sender)
     self:RouteCommand(self:Deserialize(message))
 end
 
-function Comms:RouteCommand(ok,command,sender...)
+function Comms:RouteCommand(ok,command,sender, ...)
     if not ok then
         return
     elseif Comms.comm[command] then
