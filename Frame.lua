@@ -401,12 +401,17 @@ function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTabId)
 		self.addEditBankAltChar:InitCreateNew()
 		self.addEditBankAltChar:Show()
 		self.addEditBankAltChar.openedByTab = tab
-		checkButton.checked = false
+		checkButton:SetChecked(false)
 	else
 		self.currentAltTab = currentTabId
 		-- clear character money info - will be set later if data is available
 		MoneyFrame_Update(self.moneyFrameBankChar:GetName(), 0)
 		local charData = PLGuildBankClassic:GetBankCharDataByIndex(currentTabId)
+
+		for i=1, #self.CharTabs do
+			self.CharTabs[i].checkButton:SetChecked(false)
+		end
+		checkButton:SetChecked(true)
 
 		if mouseButton == "RightButton" then
 			PLGuildBankClassic:debug("Changeing character info by index: " .. currentTabId)
@@ -419,7 +424,7 @@ function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTabId)
 			else
 				PLGuildBankClassic:debug("Could not load bank character data by index: " .. currentTabId)
 			end
-			checkButton.checked = false
+			checkButton:SetChecked(false)
 		else
 			Events:Fire("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", currentTabId, charData)
 		end
