@@ -89,6 +89,9 @@ function GuildConfigFrame:PLGuildRanksDropDown_OnClick(dropDown, selId)
 
         if(PLGuildBankClassic.guildVault.guildSettings.config.minGuildRank ~= selId) then
             PLGuildBankClassic.guildVault.guildSettings.config.minGuildRank = selId
+            PLGuildBankClassic.guildVault.guildSettings.config.configTimestamp = PLGuildBankClassic:GetTimestamp();
+
+            Events.Fire("PLGBC_EVENT_CONFIG_CHANGED", PLGuildBankClassic.guildVault.guildSettings.config.configTimestamp)
         end
     end
 end

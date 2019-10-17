@@ -1,6 +1,7 @@
 local _, PLGuildBankClassic = ...
 
 local Comms = PLGuildBankClassic:NewModule("Comms", "AceComm-3.0", "AceSerializer-3.0")
+local Events = PLGuildBankClassic:GetModule("Events")
 
 local COMM_PREFIX = "PLGBC-"
 
@@ -13,6 +14,12 @@ function Comms:OnEnable()
     Comms.comm = {}
     Comms.comm[COMM_CMD_QUERYVERSIONS] = Comms.QueryVersions
     Comms.comm[COMM_CMD_RESPONSEVERSIONS] = Comms.ResponseVersions
+
+
+    Events.Register(self, "PLGBC_EVENT_CONFIG_CHANGED")
+    Events.Register(self, "PLGBC_EVENT_BANKCHAR_MONEYCHANGED")
+    Events.Register(self, "PLGBC_EVENT_BANKCHAR_INVENTORYCHANGED")
+    Events.Register(self, "PLGBC_GUILD_LOG_UPDATED")
 end
 
 -----------------------------------------------------------------------
@@ -43,4 +50,19 @@ end
 
 function Comms:CreateMessage(ok, command, sender, ...)
     return self:Serialize(ok, command, sender, ...)
+end
+
+-----------------------------------------------------------------------
+-- internal event triggers
+
+function Comms:PLGBC_EVENT_CONFIG_CHANGED(event, configTimestamp)
+end
+
+function Comms:PLGBC_EVENT_BANKCHAR_MONEYCHANGED(event, characterName, value, gainedOrLost, moneyVersion)
+end
+
+function Comms:PLGBC_EVENT_BANKCHAR_INVENTORYCHANGED(event, characterName, hasCachedData, inventoryVersion)
+end
+
+function Comms:PLGBC_GUILD_LOG_UPDATED(event, characterName, logVersion)
 end

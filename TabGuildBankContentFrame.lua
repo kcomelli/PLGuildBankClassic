@@ -153,7 +153,7 @@ function GuildBankContentFrame:Update(characterData)
     end
 end
 
-function GuildBankContentFrame:PLGBC_GUILD_LOG_UPDATED(event, chacaterName)
+function GuildBankContentFrame:PLGBC_GUILD_LOG_UPDATED(event, chacaterName, logVersion)
     local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(chacaterName)
 
     if self.displayingCharacterData and self.displayingCharacterData.name == charName and self.displayingCharacterData.realm == charRealm then

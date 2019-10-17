@@ -265,12 +265,19 @@ function PLGuildBankClassic:UpdateAtBankCharState()
 end
 
 function PLGuildBankClassic:AcceptOrDeclineState(state)
+    local myName, myRealm, myServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
     if PLGuildBankClassic.atBankChar then
         if state == "accept" then
             PLGuildBankClassic.atBankChar.acceptState = 1
+            PLGuildBankClassic.atBankChar.modifiedAt = PLGuildBankClassic:GetTimestamp()
+            PLGuildBankClassic.atBankChar.modifiedBy = myServerName
         elseif state == "decline" then
             PLGuildBankClassic.atBankChar.acceptState = -1
+            PLGuildBankClassic.atBankChar.modifiedAt = PLGuildBankClassic:GetTimestamp()
+            PLGuildBankClassic.atBankChar.modifiedBy = myServerName
         end
+
+        -- TODO: Comms: send char config version changed
 
         self.Events:Fire("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", PLGuildBankClassic.atBankCharIndex, PLGuildBankClassic.atBankChar)
     end
@@ -357,6 +364,9 @@ function PLGuildBankClassic:CreateBankChar(name, realm, description, class, icon
     charData.money = 0
     
     guildConfig.bankChars[getn(guildConfig.bankChars)+1] = charData
+
+    guildConfig.config.configTimestamp = timestamp
+    self.Events:Fire("PLGBC_EVENT_CONFIG_CHANGED", timestamp)
 end
 
 function PLGuildBankClassic:EditBankChar(index, name, realm, description, class, icon, texture, acceptState)
@@ -390,6 +400,9 @@ function PLGuildBankClassic:EditBankChar(index, name, realm, description, class,
         charData.moneyVersion = 0
         charData.money = 0
     end
+    
+    guildConfig.config.configTimestamp = timestamp
+    self.Events:Fire("PLGBC_EVENT_CONFIG_CHANGED", timestamp)
     
     return charChanged
 end
@@ -665,7 +678,7 @@ function PLGuildBankClassic:PostAuctionOverride(minBid, buyoutPrice, runTime, co
                 end
 
                 PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
-                PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName)
+                PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
             end
         else
             PLGuildBankClassic:debug("StartAuctionOverride: could not get itemId of item " .. name)
@@ -885,7 +898,7 @@ function PLGuildBankClassic:ExecuteTradeLog()
 
             if bChanged then
                 PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
-                PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName)
+                PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
             end
         end
 
@@ -956,7 +969,7 @@ function PLGuildBankClassic:MailboxClosed()
             end
 
             PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
-            PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName)
+            PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
         end
 
     end
@@ -1143,7 +1156,7 @@ function PLGuildBankClassic:MailSuccessfullySent()
 
             if bChanged then
                 PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
-                PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName)
+                PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
             end
         end
     end
@@ -1230,7 +1243,7 @@ function PLGuildBankClassic:LogPlayerGotItem(event, characterName, itemId, itemQ
                 end
 
                 PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
-                PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName)
+                PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
             end
         end
     end
@@ -1365,7 +1378,7 @@ function PLGuildBankClassic:LogPlayerMoneyGainOrLoss(event, characterName, value
                     end
     
                     PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
-                    PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName)
+                    PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
                 end
             end
 

@@ -1,18 +1,7 @@
-
-Allgemein
-x DONE Wenn bank char nicht angenommen hat - Accept/reject button unterhalb der Fehlermeldung anzeigen
-- Toggle accept/reject auf der config seite anzeigen
-x DONE Info text wenn rejected wurde
-x DONE Log und info frame nur dann daten anzeigen wenn state = accepted
-x DONE Checked state of the bank-alt tab buttons
-x DONE enable/disable DEBUG mode in settings
-- search and highlite
+==================================================================================================================================================================
+Version 2:
+Allgemein:
 - whisper commands allowing to query bank
-
-Add-Edit BankChar screen
-- TAB funktioniert nicht
-- Im Edit modus auch einen Delete button anzeigen
-    - beim löschen fragen ob log und cache gelöscht werden soll
 
 Add-Edit log entry screen
 - Allow manual log creation
@@ -23,14 +12,32 @@ Add-Edit log entry screen
 Bank-inventory
 - allow players to request items
 - show notification for banck-char account owners
-- 
 
-Guild into
+Guild info
+  - add item requests incl. item name/id/link, max amount, free text info, accepted cod per item
+  - remove, edit requests
+  - broadcast requests to guild-chat
+
+==================================================================================================================================================================
+Version 1:
+
+Allgemein
+x DONE Wenn bank char nicht angenommen hat - Accept/reject button unterhalb der Fehlermeldung anzeigen
+- Toggle accept/reject auf der config seite anzeigen
+x DONE Info text wenn rejected wurde
+x DONE Log und info frame nur dann daten anzeigen wenn state = accepted
+x DONE Checked state of the bank-alt tab buttons
+x DONE enable/disable DEBUG mode in settings
+x DONE search and highlite
+
+Add-Edit BankChar screen
+- TAB funktioniert nicht
+- Im Edit modus auch einen Delete button anzeigen
+    - beim löschen fragen ob log und cache gelöscht werden soll
+    - wenn der char sich selbst löscht, sonst nur fragen ob log gelöscht werden soll
+
+Guild info
 x DONE allow text set per char
-- v2
-    - add item requests incl. item name/id/link, max amount, free text info, accepted cod per item
-    - remove, edit requests
-    - broadcast requests to guild-chat
 
 
 Transaction Log
