@@ -87,6 +87,33 @@ StaticPopupDialogs["PLGBC_POPUP_ACCEPT_BANKCHARSTATE"] = {
     hideOnEscape = 1,
   }
 
+  StaticPopupDialogs["PLGBC_POPUP_TRADE_ENTERLOGTITLE"] = {
+    text = L["You have traded the following items and/or money with a guild-bank char:\n%s\n \nYou can enter a reason for the trade which will be shown in the guild log below:"],
+    button1 = OK,
+    button2 = CANCEL,
+    hasEditBox = 1,
+	maxLetters = 50,
+    OnAccept = function(self)
+        PLGuildBankClassic.tradeLogTitle = self.editBox:GetText();
+    end,
+    EditBoxOnEnterPressed = function(self)
+		PLGuildBankClassic.tradeLogTitle = self:GetParent().editBox:GetText();
+		self:GetParent():Hide();
+	end,
+	OnShow = function(self)
+		self.editBox:SetFocus();
+	end,
+	OnHide = function(self)
+		ChatEdit_FocusActiveWindow();
+        self.editBox:SetText("");
+        PLGuildBankClassic:ExecuteTradeLog()
+	end,
+    timeout = 0,
+	exclusive = 1,
+	whileDead = 1,
+	hideOnEscape = 1
+  }
+
 -- guild master can change the min required guild rank
 -- for bank character configuration
 local minGuildRankForRankConfig = 1 
@@ -110,6 +137,8 @@ function PLGuildBankClassic:OnInitialize()
     self.sendMailData = nil
     self.tradeData = nil
     self.ignoreLootItemMessage = false
+
+    self.tradeLogTitle = nil
 
     self:RefreshPlayerSpellIconInfo()
 
@@ -197,8 +226,7 @@ function PLGuildBankClassic:PlayerEnteringWorld()
 end
 
 function PLGuildBankClassic:PlayerLeavingWorld()
-    --Mailboix closed will be sent from events.luad
-    --self:MailboxClosed()    
+    self:ExecuteTradeLog()   
 end
 
 function PLGuildBankClassic:SetOwnedCharacters()
@@ -675,6 +703,7 @@ function PLGuildBankClassic:AcceptTradeOverride()
                 self.tradeData.receive[idx] = {}
                 self.tradeData.receive[idx].name = receive_name
                 self.tradeData.receive[idx].quantity = receive_quantity
+                self.tradeData.receive[idx].itemLink = receive_itemLink
                 self.tradeData.receive[idx].itemId = PLGuildBankClassic:GetItemIdFromLink(receive_itemLink)
                 self.tradeData.receive[idx].notTradeAction = receive_enchant
             end
@@ -683,6 +712,7 @@ function PLGuildBankClassic:AcceptTradeOverride()
                 self.tradeData.send[idx] = {}
                 self.tradeData.send[idx].name = send_name
                 self.tradeData.send[idx].quantity = send_quantity
+                self.tradeData.send[idx].itemLink = PLGuildBankClassic:GetItemIdFromLink(send_itemLink)
                 self.tradeData.send[idx].itemId = PLGuildBankClassic:GetItemIdFromLink(send_itemLink)
                 self.tradeData.send[idx].notTradeAction = send_enchant
             end
@@ -704,109 +734,165 @@ function PLGuildBankClassic:InitiateTradeOverride(unitId)
 end
 
 function PLGuildBankClassic:TradeFinished(event)
-    PLGuildBankClassic:debug("TradeFinished: received")
     if PLGuildBankClassic:IsGuildBankChar() then
-        if self.tradeData then
-            local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
-            local playerLog = PLGuildBankClassic:GetLogByName(charServerName)
-            local alreadyAdded = {}
-            local bChanged = false
+        PLGuildBankClassic:debug("TradeFinished: received")
 
-            if playerLog and self.tradeData.send then
-                for i=1, #self.tradeData.send do
-                    -- items withdrawn by the target
-                    local checkItem = self.tradeData.send[i]
-                    local itemId = checkItem.itemId
+        self.tradeDataFinish = self.tradeData
+        local tradeSummary = ""
 
-                    if itemId then
-                        -- calculate log key - create only one log per itemid and recipient
-                        local logKey = self.tradeData.target .. ":withdraw:" .. tostring(itemId)
-                        
-                        PLGuildBankClassic:debug("TradeFinished: Created logKey: " .. logKey)
+        if self.tradeDataFinish.send or self.tradeData.moneyOut then
+            tradeSummary = tradeSummary .. "\n" .. L["gave"] .. ": "
 
-                        if alreadyAdded[logKey] then
-                            PLGuildBankClassic:debug("TradeFinished: Update existing log entry using key: " .. logKey )
+            if self.tradeData.moneyOut then
+                tradeSummary = tradeSummary ..  PLGuildBankClassic:PriceToMoneyString(self.tradeData.moneyOut, false) .. "\n"
+            end
 
-                            alreadyAdded[logKey].quantity = alreadyAdded[logKey].quantity + (checkItem.quantity or 0)
-                        else
-                            local logEntry = {}
-                            bChanged = true
-
-                            logEntry.name = self.tradeData.target
-                            logEntry.timestamp = PLGuildBankClassic:GetTimestamp()
-                            logEntry.source = PLGuildBankClassic.transactionSource.trade
-                            logEntry.type = PLGuildBankClassic.transactionTypes.item
-                            logEntry.itemId = itemId
-                            logEntry.quantity = checkItem.quantity or 0
-                            logEntry.goldPerItem = PLGuildBankClassic:GetItemPrice(itemId, false)
-                            logEntry.mode = PLGuildBankClassic.transactionModes.withdraw
-
-                            if #playerLog > 0 then
-                                table.insert(playerLog, 1, logEntry)
-                            else
-                                playerLog[1] = logEntry
-                            end
-
-                            PLGuildBankClassic:debug("TradeFinished: Create new log entry using key: " .. logKey)
-                            alreadyAdded[logKey] = logEntry
-                        end
-                    else
-                        PLGuildBankClassic:debug("TradeFinished: could not get itemId of item " .. name)
+            if self.tradeDataFinish.send then
+                local itemidx=1
+                for i=1, #self.tradeDataFinish.send do
+                    if itemidx > 1 then
+                        tradeSummary = tradeSummary .. ", "
                     end
+                    tradeSummary = tradeSummary .. self.tradeDataFinish.send[i].itemLink
+                    itemidx = itemidx + 1
                 end
 
-                for i=1, #self.tradeData.receive do
-                    -- items withdrawn by the target
-                    local checkItem = self.tradeData.receive[i]
-                    local itemId = checkItem.itemId
-
-                    if itemId then
-                        -- calculate log key - create only one log per itemid and recipient
-                        local logKey = self.tradeData.target .. ":deposit:" .. tostring(itemId)
-                        
-                        PLGuildBankClassic:debug("TradeFinished: Created logKey: " .. logKey)
-
-                        if alreadyAdded[logKey] then
-                            PLGuildBankClassic:debug("TradeFinished: Update existing log entry using key: " .. logKey )
-
-                            alreadyAdded[logKey].quantity = alreadyAdded[logKey].quantity + (checkItem.quantity or 0)
-                        else
-                            local logEntry = {}
-                            bChanged = true
-
-                            logEntry.name = self.tradeData.target
-                            logEntry.timestamp = PLGuildBankClassic:GetTimestamp()
-                            logEntry.source = PLGuildBankClassic.transactionSource.trade
-                            logEntry.type = PLGuildBankClassic.transactionTypes.item
-                            logEntry.itemId = itemId
-                            logEntry.quantity = checkItem.quantity or 0
-                            logEntry.goldPerItem = PLGuildBankClassic:GetItemPrice(itemId, false)
-                            logEntry.mode = PLGuildBankClassic.transactionModes.deposit
-
-                            if #playerLog > 0 then
-                                table.insert(playerLog, 1, logEntry)
-                            else
-                                playerLog[1] = logEntry
-                            end
-
-                            PLGuildBankClassic:debug("TradeFinished: Create new log entry using key: " .. logKey)
-                            alreadyAdded[logKey] = logEntry
-                        end
-                    else
-                        PLGuildBankClassic:debug("TradeFinished: could not get itemId of item " .. name)
-                    end
-                end
-
-                if bChanged then
-                    PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
-                    PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName)
-                end
+                tradeSummary = tradeSummary .. "\n"
             end
         end
-    end
 
-    self.ignoreLootItemMessage = false
+        if self.tradeDataFinish.receive or self.tradeData.moneyIn then
+            tradeSummary = tradeSummary .. "\n" .. L["got"] .. ": "
+
+            if self.tradeData.moneyIn then
+                tradeSummary = tradeSummary ..  PLGuildBankClassic:PriceToMoneyString(self.tradeData.moneyIn, false) .. "\n"
+            end
+
+            if self.tradeDataFinish.receive then
+                local itemidx=1
+                for i=1, #self.tradeDataFinish.receive do
+                    if itemidx > 1 then
+                        tradeSummary = tradeSummary .. ", "
+                    end
+                    tradeSummary = tradeSummary .. self.tradeDataFinish.receive[i].itemLink
+                    itemidx = itemidx + 1
+                end
+
+                tradeSummary = tradeSummary .. "\n"
+            end
+        end
+
+        -- ask for log title
+        StaticPopup_Show("PLGBC_POPUP_TRADE_ENTERLOGTITLE", tradeSummary)
+    end
 end
+
+function PLGuildBankClassic:ExecuteTradeLog()
+    self.ignoreLootItemMessage = false
+
+    if self.tradeDataFinish then
+        local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
+        local playerLog = PLGuildBankClassic:GetLogByName(charServerName)
+        local alreadyAdded = {}
+        local bChanged = false
+
+        if playerLog and self.tradeDataFinish.send then
+            for i=1, #self.tradeDataFinish.send do
+                -- items withdrawn by the target
+                local checkItem = self.tradeDataFinish.send[i]
+                local itemId = checkItem.itemId
+
+                if itemId then
+                    -- calculate log key - create only one log per itemid and recipient
+                    local logKey = self.tradeDataFinish.target .. ":withdraw:" .. tostring(itemId)
+                    
+                    PLGuildBankClassic:debug("TradeFinished: Created logKey: " .. logKey)
+
+                    if alreadyAdded[logKey] then
+                        PLGuildBankClassic:debug("TradeFinished: Update existing log entry using key: " .. logKey )
+
+                        alreadyAdded[logKey].quantity = alreadyAdded[logKey].quantity + (checkItem.quantity or 0)
+                    else
+                        local logEntry = {}
+                        bChanged = true
+
+                        logEntry.name = self.tradeDataFinish.target
+                        logEntry.timestamp = PLGuildBankClassic:GetTimestamp()
+                        logEntry.source = PLGuildBankClassic.transactionSource.trade
+                        logEntry.type = PLGuildBankClassic.transactionTypes.item
+                        logEntry.itemId = itemId
+                        logEntry.quantity = checkItem.quantity or 0
+                        logEntry.goldPerItem = PLGuildBankClassic:GetItemPrice(itemId, false)
+                        logEntry.mode = PLGuildBankClassic.transactionModes.withdraw
+                        logEntry.title = self.tradeLogTitle
+
+                        if #playerLog > 0 then
+                            table.insert(playerLog, 1, logEntry)
+                        else
+                            playerLog[1] = logEntry
+                        end
+
+                        PLGuildBankClassic:debug("TradeFinished: Create new log entry using key: " .. logKey)
+                        alreadyAdded[logKey] = logEntry
+                    end
+                else
+                    PLGuildBankClassic:debug("TradeFinished: could not get itemId of item " .. name)
+                end
+            end
+
+            for i=1, #self.tradeDataFinish.receive do
+                -- items withdrawn by the target
+                local checkItem = self.tradeDataFinish.receive[i]
+                local itemId = checkItem.itemId
+
+                if itemId then
+                    -- calculate log key - create only one log per itemid and recipient
+                    local logKey = self.tradeDataFinish.target .. ":deposit:" .. tostring(itemId)
+                    
+                    PLGuildBankClassic:debug("TradeFinished: Created logKey: " .. logKey)
+
+                    if alreadyAdded[logKey] then
+                        PLGuildBankClassic:debug("TradeFinished: Update existing log entry using key: " .. logKey )
+
+                        alreadyAdded[logKey].quantity = alreadyAdded[logKey].quantity + (checkItem.quantity or 0)
+                    else
+                        local logEntry = {}
+                        bChanged = true
+
+                        logEntry.name = self.tradeDataFinish.target
+                        logEntry.timestamp = PLGuildBankClassic:GetTimestamp()
+                        logEntry.source = PLGuildBankClassic.transactionSource.trade
+                        logEntry.type = PLGuildBankClassic.transactionTypes.item
+                        logEntry.itemId = itemId
+                        logEntry.quantity = checkItem.quantity or 0
+                        logEntry.goldPerItem = PLGuildBankClassic:GetItemPrice(itemId, false)
+                        logEntry.mode = PLGuildBankClassic.transactionModes.deposit
+                        logEntry.title = self.tradeLogTitle
+
+                        if #playerLog > 0 then
+                            table.insert(playerLog, 1, logEntry)
+                        else
+                            playerLog[1] = logEntry
+                        end
+
+                        PLGuildBankClassic:debug("TradeFinished: Create new log entry using key: " .. logKey)
+                        alreadyAdded[logKey] = logEntry
+                    end
+                else
+                    PLGuildBankClassic:debug("TradeFinished: could not get itemId of item " .. name)
+                end
+            end
+
+            if bChanged then
+                PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
+                PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName)
+            end
+        end
+
+        self.tradeDataFinish = nil;
+    end
+end
+
 
 function PLGuildBankClassic:MailboxOpened()
     self.mailData = {}

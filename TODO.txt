@@ -69,6 +69,7 @@ Transaction Log
     x DONE - DONT NEET TRADE_TARGET_ITEM_CHANGED  target adds an item (will be received by you)
     x DONE - DONT NEET TRADE_UPDATE trade window changes
     x DONE hook trade complete and finish events
+    - After trade - popup static edit box and ask player about the reason of the trade (enter title)
 
 - Auction house
     x DONE AUCTIONHOUSE_SHOW and AUCTIONHOUSE_CLOSED to identify if AH is opened

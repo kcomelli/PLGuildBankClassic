@@ -51,9 +51,12 @@ L["Accept"] = true
 L["Decline"] = true
 L["Decide later"] = true
 L["%s has configured your char as guild-bank character!\nDo you accept this state of the character?\n \nNote: All your inventory, bank and money will be shared across the guild!"] = true
+L["You have traded the following items and/or money with a guild-bank char:\n%s\n \nYou can enter a reason for the trade which will be shown in the guild log below:"] = true
 L["Purchaseable"] = true
 L["unknown"] = true
 L["Debug mode"] = true
+L["gave"] = true
+L["got"] = true
 
 L["via direct trade"] = true
 L[" as %s"] = true
