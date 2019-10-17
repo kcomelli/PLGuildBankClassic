@@ -2,7 +2,7 @@
 Allgemein
 x DONE Wenn bank char nicht angenommen hat - Accept/reject button unterhalb der Fehlermeldung anzeigen
 - Toggle accept/reject auf der config seite anzeigen
-- Info text wenn rejected wurde
+x DONE Info text wenn rejected wurde
 x DONE Log und info frame nur dann daten anzeigen wenn state = accepted
 x DONE Checked state of the bank-alt tab buttons
 x DONE enable/disable DEBUG mode in settings

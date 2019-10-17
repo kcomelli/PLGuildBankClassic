@@ -61,14 +61,14 @@ function PLGuildBankClassic:TryGetOpenMailData()
 	if (InboxFrame and InboxFrame.openMailID) then
 		-- player has an inbox item frame open
 		mailIndex = InboxFrame.openMailID
-		PLGuildBankClassic:debug("TryGetOpenMailData: using mailIndex " .. tostring(mailIndex or 0) .. " from open InboxFrame")
+		--PLGuildBankClassic:debug("TryGetOpenMailData: using mailIndex " .. tostring(mailIndex or 0) .. " from open InboxFrame")
 	elseif OpenAllMail and OpenAllMail.mailIndex and not OpenAllMail:IsEnabled() then
 		-- player currently opening all mails
 		mailIndex = OpenAllMail.mailIndex
-		PLGuildBankClassic:debug("TryGetOpenMailData: using mailIndex " .. tostring(mailIndex or 0) .. " from OpenAllMailMixin")
+		--PLGuildBankClassic:debug("TryGetOpenMailData: using mailIndex " .. tostring(mailIndex or 0) .. " from OpenAllMailMixin")
 	elseif self.lastClosedMailData then
 		-- player recently closed a mail frame - use last saved index
-		PLGuildBankClassic:debug("TryGetOpenMailData: using mail " .. (self.lastClosedMailData.subject or "na") .. " from open lastClosedMailData")
+		--PLGuildBankClassic:debug("TryGetOpenMailData: using mail " .. (self.lastClosedMailData.subject or "na") .. " from open lastClosedMailData")
 		return self.lastClosedMailData
 	end
 
@@ -478,7 +478,7 @@ function PLGuildBankClassic:round (v)
 -- Prints a debug message if debug mode is enabled in addon settings
 -------------------------------------------------------------------------------
 function PLGuildBankClassic:debug(message)
-	if (PLGuildBankClassic.db.profile.config.debug) then
+	if (message and PLGuildBankClassic.db.profile.config.debug) then
 		DEFAULT_CHAT_FRAME:AddMessage(PLGBCLASSIC_CHAT_WHITE .. "PLGBC-DBG: " .. message .. PLGBCLASSIC_CHAT_END, 0.1, 0.1, 1);
 	end
 end
@@ -489,7 +489,7 @@ end
 -- Prints a chatframe message if message output or debug mode is enabled
 -------------------------------------------------------------------------------
 function PLGuildBankClassic:println(message)
-	if (PLGuildBankClassic.db.profile.config.printMessage or PLGuildBankClassic.db.profile.config.debug) then
+	if (message and PLGuildBankClassic.db.profile.config.printMessage or PLGuildBankClassic.db.profile.config.debug) then
 		DEFAULT_CHAT_FRAME:AddMessage(PLGBCLASSIC_CHAT_YELLOW .. message .. PLGBCLASSIC_CHAT_END, 1, 1, 1);
 	end
 end
@@ -500,7 +500,9 @@ end
 -- Prints a chatframe message
 -------------------------------------------------------------------------------
 function PLGuildBankClassic:info(message)
-	DEFAULT_CHAT_FRAME:AddMessage(PLGBCLASSIC_CHAT_BLUE .. message .. PLGBCLASSIC_CHAT_END, 1, 1, 1);
+	if message then
+		DEFAULT_CHAT_FRAME:AddMessage(PLGBCLASSIC_CHAT_BLUE .. message .. PLGBCLASSIC_CHAT_END, 1, 1, 1);
+	end
 end
 -------------------------------------------------------------------------------
 -- function  PLGuildBankClassic:errln( Message)
@@ -508,7 +510,7 @@ end
 -- Prints an error message if error pronting is enabled
 -------------------------------------------------------------------------------
 function PLGuildBankClassic:errln(mMessage)
-	if (PLGuildBankClassic.db.profile.config.printErrors) then
+	if (message and PLGuildBankClassic.db.profile.config.printErrors) then
 		DEFAULT_CHAT_FRAME:AddMessage(PLGBCLASSIC_CHAT_RED .. message .. PLGBCLASSIC_CHAT_END, 1, 0.1, 0.1);
 	end
 end
@@ -519,5 +521,7 @@ end
 -- Prints a message within the error screen.
 -------------------------------------------------------------------------------
 function PLGuildBankClassic:screen(message )
-	UIErrorsFrame:AddMessage(message, 1.0, 1.0, 0.0, 1.0, UIERRORS_HOLD_TIME);
+	if message then
+		UIErrorsFrame:AddMessage(message, 1.0, 1.0, 0.0, 1.0, UIERRORS_HOLD_TIME);
+	end
 end

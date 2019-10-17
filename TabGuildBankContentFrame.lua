@@ -142,7 +142,11 @@ function GuildBankContentFrame:Update(characterData)
 		
         self:UpdateBags(characterData)
         self.itemContainer.ownerName = characterData.name .. "-" .. characterData.realm
-		self.itemContainer:UpdateBags()
+        self.itemContainer:UpdateBags()
+        
+        if(self.itemContainer.searchText) then
+            self:ApplySearch(self.itemContainer.searchText)
+        end
     else
         -- clear items
 

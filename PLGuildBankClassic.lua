@@ -1306,7 +1306,7 @@ function PLGuildBankClassic:LogPlayerMoneyGainOrLoss(event, characterName, value
                     PLGuildBankClassic:debug("Opened mail data not found")
                 end
 
-                if gainedOrLost < 0 and self.sendMailData and (self.sendMailData.money + self.sendMailData.cost) == (gainedOrLost*-1)   then
+                if gainedOrLost < 0 and self.sendMailData and self.sendMailData.money > 0 and (self.sendMailData.money + self.sendMailData.cost) == (gainedOrLost*-1)   then
                     PLGuildBankClassic:debug("Using sent mail data for money withdrawel")
                     -- set the recipient for withdrawel
                     logEntry.name = self.sendMailData.recipient
@@ -1316,6 +1316,9 @@ function PLGuildBankClassic:LogPlayerMoneyGainOrLoss(event, characterName, value
                     -- subtract mailing costs - need extra log entry
                     gainedOrLost = gainedOrLost + self.sendMailData.cost
                     moneySplitMailCost = (self.sendMailData.cost * -1)
+                    if moneySplitMailCost == 0 then
+                        moneySplitMailCost = nil
+                    end
                 end
 
             elseif PLGuildBankClassic.Events.atVendor then

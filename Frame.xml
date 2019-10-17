@@ -821,7 +821,7 @@
 				<Scripts>
 					<OnTextChanged>
 						SearchBoxTemplate_OnTextChanged(self)
-						self:GetParent():OnSearchTextChanged()
+						self:GetParent():OnSearchTextChanged(self, self:GetText())
 					</OnTextChanged>
 				</Scripts>
 			</EditBox>

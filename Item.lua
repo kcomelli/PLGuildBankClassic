@@ -219,7 +219,7 @@ end
 function Item:UpdateSearch(text)
 	local found = false
 	if text and self.hasItem then
-		found = ItemSearch:Find(self.hasItem, text)
+		found = ItemSearch:Matches(self.hasItem, text)
 	end
 
 	if not text or found then

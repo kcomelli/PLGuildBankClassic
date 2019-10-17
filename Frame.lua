@@ -210,7 +210,9 @@ function Frame:DisplayErrorMessage(message)
 	self.acceptStateButton:Hide()
 	self:HideFrames();
 
-	if PLGuildBankClassic:IsGuildBankChar() and message == L["The bank character must install this AddOn and accept the state of being a guild-bank character!\n \nThis is required because the character's inventory, bank \nand money will be synced with all guild-members which are using this AddOn!"] then
+	if PLGuildBankClassic:IsGuildBankChar() and 
+		(message == L["The bank character must install this AddOn and accept the state of being a guild-bank character!\n \nThis is required because the character's inventory, bank \nand money will be synced with all guild-members which are using this AddOn!"] or
+		 message == L["You have declined that your character is a bank-guild char! No inventory and money data will be shared!\n \nYou can change this state by accepting the state now by clicking the button below."]) then
 		-- show an additional accept button
 		self.acceptStateButton:Show()
 	end
@@ -346,8 +348,8 @@ function Frame:SetTabContentVisibility(visible)
 	end
 end
 
-function Frame:OnSearchTextChanged()
-	self.bankContents:ApplySearch(self.searchEditBox:GetText())
+function Frame:OnSearchTextChanged(editBox, text)
+	self.bankContents:ApplySearch(text)
 end
 
 -----------------------------------------------------------------------
@@ -467,7 +469,11 @@ function Frame:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED(event, index, characterData)
 			PLGuildBankClassic:debug("No cached data found")
 		end
 
-		self:DisplayErrorMessage(L["The bank character must install this AddOn and accept the state of being a guild-bank character!\n \nThis is required because the character's inventory, bank \nand money will be synced with all guild-members which are using this AddOn!"])
+		if characterData.acceptState == -1 then
+			self:DisplayErrorMessage(L["You have declined that your character is a bank-guild char! No inventory and money data will be shared!\n \nYou can change this state by accepting the state now by clicking the button below."])
+		else
+			self:DisplayErrorMessage(L["The bank character must install this AddOn and accept the state of being a guild-bank character!\n \nThis is required because the character's inventory, bank \nand money will be synced with all guild-members which are using this AddOn!"])
+		end
 		return
 	end
 
