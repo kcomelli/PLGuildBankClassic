@@ -184,6 +184,7 @@ function GuildBankLogFrame:PrintTransactions()
 
         elseif record.type == PLGuildBankClassic.transactionTypes.item then
 
+            PLGuildBankClassic:debug("Getting item info for: " .. tostring(record.itemId))
             local sName, sLink, iRarity, iLevel, iMinLevel, sType, sSubType, iStackCount = GetItemInfo(record.itemId);
 
             moneyValue = (record.goldPerItem or 0) * (record.quantity or 1)
