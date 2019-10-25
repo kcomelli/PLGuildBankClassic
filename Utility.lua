@@ -131,6 +131,38 @@ function PLGuildBankClassic:IsAuctionOutbid(subject)
 	return pos ~= nil and pos > 0
 end
 
+function PLGuildBankClassic:UpdateVersionsInPublicNote()
+	if PLGuildBankClassic:IsGuildBankChar() then
+		local configVersion = PLGuildBankClassic.atBankChar.modifiedAt or 0
+		local inventoryVersion = PLGuildBankClassic.atBankChar.inventoryVersion or 0
+		local moneyVersion = PLGuildBankClassic.atBankChar.moneyVersion or 0
+		local logVersion = PLGuildBankClassic.atBankChar.logVersion or 0
+
+		local noteString = string.format("GB %s,%s,%s,%s", PLGuildBankClassic:base62Encode(configVersion), PLGuildBankClassic:base62Encode(inventoryVersion), PLGuildBankClassic:base62Encode(moneyVersion), PLGuildBankClassic:base62Encode(logVersion))
+		local charIndex = PLGuildBankClassic:GetGuildRosterIndexOfBankChar()
+
+		if charIndex then
+			GuildRosterSetPublicNote(charIndex, noteString)
+			PLGuildBankClassic:debug("UpdateVersionsInPublicNote: Updated public note to: " .. noteString)
+		else
+			PLGuildBankClassic:debug("UpdateVersionsInPublicNote: could not get guild roster index")
+		end
+	end
+end
+
+function PLGuildBankClassic:GetGuildRosterIndexOfBankChar()
+	if PLGuildBankClassic:IsGuildBankChar() then
+		local inGuild, name, rank, level, class, note, officernote, index = PLGuildBankClassic:IsPlayerInGuild(PLGuildBankClassic.atBankChar.name .. "-" .. PLGuildBankClassic.atBankChar.realm)
+		if inGuild then
+			return index
+		end
+	end
+
+	return nil
+end
+
+
+
 --[[ Slot Type ]]--
 
 function PLGuildBankClassic:IsBasicBag(bag)
@@ -280,7 +312,7 @@ function PLGuildBankClassic:IsPlayerInGuild(characterName)
                   achievementPoints, achievementRank, isMobile, isSoREligible, standingID = GetGuildRosterInfo(i)
 
             if name == characterName then
-                return true, name, rank, level, class, note, officernote
+                return true, name, rank, level, class, note, officernote, i
             end
         end
     end
@@ -467,6 +499,30 @@ end
 function PLGuildBankClassic:round (v)
 	return math.floor (v + 0.5);
   end
+
+function PLGuildBankClassic:base62Encode(number)
+local base = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+local index = number % 62 + 1
+local result = base:sub(index, index)
+local quotient = math.floor(number / 62)
+while quotient ~= 0 do
+	index = quotient % 62 + 1
+	quotient = math.floor(quotient / 62)
+	result = base:sub(index, index) .. result
+end
+return result
+end
+
+function PLGuildBankClassic:base62Decode(number)
+local base = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+local char = number:sub(1, 1)
+local result = base:find(char) - 1
+local limit = number:len()
+for i=2, limit do
+	result = 62 * result + (base:find(number:sub(i, i)) - 1)
+end
+return result
+end
 
 -------------------------------------------------------------------------------
 -- printing functions

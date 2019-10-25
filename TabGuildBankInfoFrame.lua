@@ -37,7 +37,9 @@ function GuildBankInfoFrame:OnShow()
     self.infoReadContainer:Show()
     self.infoEditContainer:Hide()
 
-    if PLGuildBankClassic:CanConfigureBankAlts() or PLGuildBankClassic:IsGuildBankChar() then
+    -- do not allow other chars than bacnk char to alter info in order to avoid config info corruption
+    --if PLGuildBankClassic:CanConfigureBankAlts() or PLGuildBankClassic:IsGuildBankChar() then
+    if PLGuildBankClassic:IsGuildBankChar() then
         self.infoReadContainer.editButton:Enable()
         self.infoEditContainer.saveButton:Enable()
     else
@@ -151,12 +153,18 @@ end
 
 function GuildBankInfoFrame:OnSaveClick()
     if self.displayingCharacterData then
+        local guildConfig = PLGuildBankClassic:GetGuildConfig() 
         local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
 
         local infoText = self.infoEditContainer.scrollFrame.editBox:GetText()
         self.displayingCharacterData.guildInfoText = infoText
         self.displayingCharacterData.modifiedBy = charServerName
         self.displayingCharacterData.modifiedAt = PLGuildBankClassic:GetTimestamp()
+
+        guildConfig.config.configTimestamp = timestamp
+        PLGuildBankClassic:UpdateVersionsInPublicNote()
+
+        self.Events:Fire("PLGBC_EVENT_CONFIG_CHANGED", timestamp)
 
         -- fire updated event because guild info of this char has been updated
         Events:Fire("PLGBC_EVENT_BANKCHAR_UPDATED", PLGuildBankClassic:IndexOfBankCharData(self.displayingCharacterData), self.displayingCharacterData, false)

@@ -139,6 +139,7 @@ function PLGuildBankClassic:OnInitialize()
     self.ignoreLootItemMessage = false
 
     self.tradeLogTitle = nil
+    self.canEditPublicNote = false
 
     self:RefreshPlayerSpellIconInfo()
 
@@ -161,7 +162,12 @@ function PLGuildBankClassic:OnEnable()
     self.Events.Register(self, "PLGBC_EVENT_BANKCHAR_MONEYCHANGED", "LogPlayerMoneyGainOrLoss")
     self.Events.Register(self, "PLGBC_RECEVIED_ITEM", "LogPlayerGotItem")
     self.Events.Register(self, "PLGBC_MAIL_SUCCESS", "MailSuccessfullySent")
+    
+    self.Events.Register(self, "PLGBC_TRADE_OPENED", "InitiateTradeOverride")
     self.Events.Register(self, "PLGBC_TRADE_CLOSED", "TradeFinished")
+    self.Events.Register(self, "PLGBC_TRADE_UPDATE", "ScanTradeInfo")
+    self.Events.Register(self, "PLGBC_TRADE_ACCEPT", "AcceptTradeOverride")
+    
 
     self:Hook("TakeInboxItem", "TakeInboxItemOverride", true)
     self:Hook("TakeInboxMoney", "TakeInboxMoneyOverride", true)
@@ -169,8 +175,8 @@ function PLGuildBankClassic:OnEnable()
 
     self:Hook("PostAuction", "PostAuctionOverride", true)
 
-    self:Hook("AcceptTrade", "AcceptTradeOverride", true)
-    self:Hook("InitiateTrade", "InitiateTradeOverride", true)
+    --self:Hook("AcceptTrade", "AcceptTradeOverride", true)
+    --self:Hook("InitiateTrade", "InitiateTradeOverride", true)
 end
 
 function PLGuildBankClassic:HandleSlash(cmd)
@@ -192,6 +198,7 @@ function PLGuildBankClassic:UpdatePlayerMoney()
             local diff = GetMoney() - PLGuildBankClassic.atBankChar.money
             PLGuildBankClassic.atBankChar.money = GetMoney()
             PLGuildBankClassic.atBankChar.moneyVersion = PLGuildBankClassic:GetTimestamp()
+            PLGuildBankClassic:UpdateVersionsInPublicNote()
 
             PLGuildBankClassic.Events:Fire("PLGBC_EVENT_BANKCHAR_MONEYCHANGED", charServerName, GetMoney(), diff, PLGuildBankClassic.atBankChar.moneyVersion)
         end
@@ -206,6 +213,8 @@ function PLGuildBankClassic:UpdateInventoryVersion()
         local hasCachedData = cacheOwnerInfo.class ~= nil
 
         PLGuildBankClassic.atBankChar.inventoryVersion = PLGuildBankClassic:GetTimestamp()
+        PLGuildBankClassic:UpdateVersionsInPublicNote()
+
         PLGuildBankClassic.Events:Fire("PLGBC_EVENT_BANKCHAR_INVENTORYCHANGED", charServerName, hasCachedData, PLGuildBankClassic.atBankChar.inventoryVersion)
     end
 end
@@ -267,18 +276,22 @@ end
 function PLGuildBankClassic:AcceptOrDeclineState(state)
     local myName, myRealm, myServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
     if PLGuildBankClassic.atBankChar then
+        local guildConfig = PLGuildBankClassic:GetGuildConfig() 
+        local timestamp = PLGuildBankClassic:GetTimestamp()
+    
         if state == "accept" then
             PLGuildBankClassic.atBankChar.acceptState = 1
-            PLGuildBankClassic.atBankChar.modifiedAt = PLGuildBankClassic:GetTimestamp()
+            PLGuildBankClassic.atBankChar.modifiedAt = timestamp
             PLGuildBankClassic.atBankChar.modifiedBy = myServerName
         elseif state == "decline" then
             PLGuildBankClassic.atBankChar.acceptState = -1
-            PLGuildBankClassic.atBankChar.modifiedAt = PLGuildBankClassic:GetTimestamp()
+            PLGuildBankClassic.atBankChar.modifiedAt = timestamp
             PLGuildBankClassic.atBankChar.modifiedBy = myServerName
         end
+        guildConfig.config.configTimestamp = timestamp
+        PLGuildBankClassic:UpdateVersionsInPublicNote()
 
-        -- TODO: Comms: send char config version changed
-
+        self.Events.Fire("PLGBC_EVENT_CONFIG_CHANGED", timestamp)
         self.Events:Fire("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", PLGuildBankClassic.atBankCharIndex, PLGuildBankClassic.atBankChar)
     end
 end
@@ -299,7 +312,7 @@ function PLGuildBankClassic:ScanGuildStatus()
         self.guildName = guildName
         self.guildRank = guildRankIndex+1
         self.rankTable = {}
-
+        self.canEditPublicNote = CanEditPublicNote()
 
         self:PrepareGuildConfig()
         if self.guildVault ~= nil then
@@ -366,6 +379,8 @@ function PLGuildBankClassic:CreateBankChar(name, realm, description, class, icon
     guildConfig.bankChars[getn(guildConfig.bankChars)+1] = charData
 
     guildConfig.config.configTimestamp = timestamp
+    PLGuildBankClassic:UpdateVersionsInPublicNote()
+
     self.Events:Fire("PLGBC_EVENT_CONFIG_CHANGED", timestamp)
 end
 
@@ -402,6 +417,8 @@ function PLGuildBankClassic:EditBankChar(index, name, realm, description, class,
     end
     
     guildConfig.config.configTimestamp = timestamp
+    PLGuildBankClassic:UpdateVersionsInPublicNote()
+
     self.Events:Fire("PLGBC_EVENT_CONFIG_CHANGED", timestamp)
     
     return charChanged
@@ -678,6 +695,7 @@ function PLGuildBankClassic:PostAuctionOverride(minBid, buyoutPrice, runTime, co
                 end
 
                 PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
+                PLGuildBankClassic:UpdateVersionsInPublicNote()
                 PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
             end
         else
@@ -686,16 +704,16 @@ function PLGuildBankClassic:PostAuctionOverride(minBid, buyoutPrice, runTime, co
     end
 end
 
-function PLGuildBankClassic:AcceptTradeOverride()
-    PLGuildBankClassic:debug("AcceptTradeOverride trading")
+function PLGuildBankClassic:ScanTradeInfo()
+    PLGuildBankClassic:debug("ScanTradeInfo trading")
     if PLGuildBankClassic:IsGuildBankChar() then
-        self.ignoreLootItemMessage = true
         if not self.tradeData then
             self.tradeData = {}
         end
         local receive_money = GetTargetTradeMoney()
         local send_money = GetPlayerTradeMoney()
 
+        self.tradeData.accepted = false
         self.tradeData.moneyOut = send_money
         self.tradeData.moneyIn = receive_money
 
@@ -733,7 +751,20 @@ function PLGuildBankClassic:AcceptTradeOverride()
     end
 end
 
-function PLGuildBankClassic:InitiateTradeOverride(unitId)
+function PLGuildBankClassic:AcceptTradeOverride()
+    PLGuildBankClassic:debug("AcceptTradeOverride trading")
+    if PLGuildBankClassic:IsGuildBankChar() and self.tradeData then
+        self.ignoreLootItemMessage = true
+        if not self.tradeData then
+            self.tradeData = {}
+        end
+        self.tradeData.accepted = true
+    end
+end
+
+function PLGuildBankClassic:InitiateTradeOverride(event, unitId)
+    PLGuildBankClassic:debug("InitiateTrade: " .. (event or "na") .. ", " .. tostring(unitTd or "na"))
+
     local target = UnitName(unitId)
     self.tradeData = nil
     PLGuildBankClassic:debug("InitiateTrade: " .. UnitName(unitId))
@@ -750,53 +781,57 @@ function PLGuildBankClassic:TradeFinished(event)
     if PLGuildBankClassic:IsGuildBankChar() then
         PLGuildBankClassic:debug("TradeFinished: received")
 
-        self.tradeDataFinish = self.tradeData
-        local tradeSummary = ""
+        if self.tradeData and self.tradeData.accepted then
+            self.tradeDataFinish = self.tradeData
+            local tradeSummary = ""
 
-        if self.tradeDataFinish.send or self.tradeData.moneyOut then
-            tradeSummary = tradeSummary .. "\n" .. L["gave"] .. ": "
+            if self.tradeDataFinish.send or self.tradeData.moneyOut then
+                tradeSummary = tradeSummary .. "\n" .. L["gave"] .. ": "
 
-            if self.tradeData.moneyOut then
-                tradeSummary = tradeSummary ..  PLGuildBankClassic:PriceToMoneyString(self.tradeData.moneyOut, false) .. "\n"
-            end
-
-            if self.tradeDataFinish.send then
-                local itemidx=1
-                for i=1, #self.tradeDataFinish.send do
-                    if itemidx > 1 then
-                        tradeSummary = tradeSummary .. ", "
-                    end
-                    tradeSummary = tradeSummary .. self.tradeDataFinish.send[i].itemLink
-                    itemidx = itemidx + 1
+                if self.tradeData.moneyOut then
+                    tradeSummary = tradeSummary ..  PLGuildBankClassic:PriceToMoneyString(self.tradeData.moneyOut, false) .. "\n"
                 end
 
-                tradeSummary = tradeSummary .. "\n"
-            end
-        end
-
-        if self.tradeDataFinish.receive or self.tradeData.moneyIn then
-            tradeSummary = tradeSummary .. "\n" .. L["got"] .. ": "
-
-            if self.tradeData.moneyIn then
-                tradeSummary = tradeSummary ..  PLGuildBankClassic:PriceToMoneyString(self.tradeData.moneyIn, false) .. "\n"
-            end
-
-            if self.tradeDataFinish.receive then
-                local itemidx=1
-                for i=1, #self.tradeDataFinish.receive do
-                    if itemidx > 1 then
-                        tradeSummary = tradeSummary .. ", "
+                if self.tradeDataFinish.send then
+                    local itemidx=1
+                    for i=1, #self.tradeDataFinish.send do
+                        if itemidx > 1 then
+                            tradeSummary = tradeSummary .. ", "
+                        end
+                        tradeSummary = tradeSummary .. self.tradeDataFinish.send[i].itemLink
+                        itemidx = itemidx + 1
                     end
-                    tradeSummary = tradeSummary .. self.tradeDataFinish.receive[i].itemLink
-                    itemidx = itemidx + 1
+
+                    tradeSummary = tradeSummary .. "\n"
+                end
+            end
+
+            if self.tradeDataFinish.receive or self.tradeData.moneyIn then
+                tradeSummary = tradeSummary .. "\n" .. L["got"] .. ": "
+
+                if self.tradeData.moneyIn then
+                    tradeSummary = tradeSummary ..  PLGuildBankClassic:PriceToMoneyString(self.tradeData.moneyIn, false) .. "\n"
                 end
 
-                tradeSummary = tradeSummary .. "\n"
-            end
-        end
+                if self.tradeDataFinish.receive then
+                    local itemidx=1
+                    for i=1, #self.tradeDataFinish.receive do
+                        if itemidx > 1 then
+                            tradeSummary = tradeSummary .. ", "
+                        end
+                        tradeSummary = tradeSummary .. self.tradeDataFinish.receive[i].itemLink
+                        itemidx = itemidx + 1
+                    end
 
-        -- ask for log title
-        StaticPopup_Show("PLGBC_POPUP_TRADE_ENTERLOGTITLE", tradeSummary)
+                    tradeSummary = tradeSummary .. "\n"
+                end
+            end
+
+            -- ask for log title
+            StaticPopup_Show("PLGBC_POPUP_TRADE_ENTERLOGTITLE", tradeSummary)
+        else
+            PLGuildBankClassic:debug("TradeFinished: no trade-data or trade aborted")
+        end
     end
 end
 
@@ -898,6 +933,7 @@ function PLGuildBankClassic:ExecuteTradeLog()
 
             if bChanged then
                 PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
+                PLGuildBankClassic:UpdateVersionsInPublicNote()
                 PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
             end
         end
@@ -969,6 +1005,7 @@ function PLGuildBankClassic:MailboxClosed()
             end
 
             PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
+            PLGuildBankClassic:UpdateVersionsInPublicNote()
             PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
         end
 
@@ -1156,6 +1193,7 @@ function PLGuildBankClassic:MailSuccessfullySent()
 
             if bChanged then
                 PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
+                PLGuildBankClassic:UpdateVersionsInPublicNote()
                 PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
             end
         end
@@ -1243,6 +1281,7 @@ function PLGuildBankClassic:LogPlayerGotItem(event, characterName, itemId, itemQ
                 end
 
                 PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
+                PLGuildBankClassic:UpdateVersionsInPublicNote()
                 PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
             end
         end
@@ -1378,6 +1417,7 @@ function PLGuildBankClassic:LogPlayerMoneyGainOrLoss(event, characterName, value
                     end
     
                     PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
+                    PLGuildBankClassic:UpdateVersionsInPublicNote()
                     PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
                 end
             end

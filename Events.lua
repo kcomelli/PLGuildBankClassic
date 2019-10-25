@@ -17,6 +17,8 @@ PLGBC_AUCTION_HOUSE_OPENED = "PLGBC_AUCTION_HOUSE_OPENED"
 PLGBC_AUCTION_HOUSE_CLOSED = "PLGBC_AUCTION_HOUSE_CLOSED"
 PLGBC_TRADE_OPENED = "PLGBC_TRADE_OPENED"
 PLGBC_TRADE_CLOSED = "PLGBC_TRADE_CLOSED"
+PLGBC_TRADE_ACCEPT = "PLGBC_TRADE_ACCEPT"
+PLGBC_TRADE_UPDATE = "PLGBC_TRADE_UPDATE"
 
 PLGBC_MAIL_SUCCESS = "PLGBC_MAIL_SUCCESS"
 PLGBC_RECEVIED_ITEM = "PLGBC_RECEVIED_ITEM"
@@ -70,6 +72,14 @@ function Events:OnEnable()
 
     self:RegisterEvent("TRADE_SHOW")
     self:RegisterEvent("TRADE_CLOSED")
+    self:RegisterEvent("TRADE_ACCEPT_UPDATE")
+    self:RegisterEvent("TRADE_REQUEST")
+
+    self:RegisterEvent("TRADE_MONEY_CHANGED")
+    self:RegisterEvent("TRADE_PLAYER_ITEM_CHANGED")
+    self:RegisterEvent("TRADE_TARGET_ITEM_CHANGED")
+    self:RegisterEvent("PLAYER_TRADE_MONEY")
+    
 end
 
 function Events:GenericEvent(event, ...)
@@ -221,18 +231,58 @@ function Events:MERCHANT_CLOSED()
     end
 end
 
+function Events:TRADE_REQUEST(evt, arg1)
+    if PLGuildBankClassic:IsGuildBankChar() then
+        PLGuildBankClassic:debug("TRADE_REQUEST: trade req event - " .. (evt or "na") .. ", " .. (arg1 or "na"))
+    end
+end
 function Events:TRADE_SHOW()
     if PLGuildBankClassic:IsGuildBankChar() then
-        PLGuildBankClassic:debug("TRADE_SHOW: ah show event")
+        PLGuildBankClassic:debug("TRADE_SHOW: trade show event")
         self.atTrade = true
-        self:Fire("PLGBC_TRADE_SHOW")
+        self:Fire("PLGBC_TRADE_OPENED", "target")
+    end
+end
+
+function Events:TRADE_ACCEPT_UPDATE(event, arg1, arg2)
+    if PLGuildBankClassic:IsGuildBankChar() then
+        PLGuildBankClassic:debug("TRADE_ACCEPT_UPDATE: trade accepted")
+        self:Fire("PLGBC_TRADE_ACCEPT")
     end
 end
 
 function Events:TRADE_CLOSED()
     if PLGuildBankClassic:IsGuildBankChar() then
-        PLGuildBankClassic:debug("TRADE_CLOSED: ah closed event")
+        PLGuildBankClassic:debug("TRADE_CLOSED: trade closed event")
         self.atTrade = false
-        self:Fire("PLGBC_TRADE_CLOSED")
+        self:Fire("PLGBC_TRADE_UPDATE")
+    end
+end
+
+function Events:TRADE_MONEY_CHANGED()
+    if PLGuildBankClassic:IsGuildBankChar() then
+        PLGuildBankClassic:debug("TRADE_MONEY_CHANGED: trade money changed event")
+        self:Fire("TRADE_MONEY_CHANGED")
+    end
+end
+
+function Events:TRADE_PLAYER_ITEM_CHANGED()
+    if PLGuildBankClassic:IsGuildBankChar() then
+        PLGuildBankClassic:debug("TRADE_PLAYER_ITEM_CHANGED: trade player item changed event")
+        self:Fire("PLGBC_TRADE_UPDATE")
+    end
+end
+
+function Events:TRADE_TARGET_ITEM_CHANGED()
+    if PLGuildBankClassic:IsGuildBankChar() then
+        PLGuildBankClassic:debug("TRADE_TARGET_ITEM_CHANGED: trade target item changed event")
+        self:Fire("PLGBC_TRADE_UPDATE")
+    end
+end
+
+function Events:PLAYER_TRADE_MONEY()
+    if PLGuildBankClassic:IsGuildBankChar() then
+        PLGuildBankClassic:debug("PLAYER_TRADE_MONEY: trade player money event")
+        self:Fire("PLGBC_TRADE_UPDATE")
     end
 end
