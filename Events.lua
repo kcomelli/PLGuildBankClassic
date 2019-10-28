@@ -240,7 +240,7 @@ function Events:TRADE_SHOW()
     if PLGuildBankClassic:IsGuildBankChar() then
         PLGuildBankClassic:debug("TRADE_SHOW: trade show event")
         self.atTrade = true
-        self:Fire("PLGBC_TRADE_OPENED", "target")
+        self:Fire("PLGBC_TRADE_OPENED", "NPC")
     end
 end
 
