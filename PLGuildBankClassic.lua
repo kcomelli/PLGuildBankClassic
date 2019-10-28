@@ -120,6 +120,9 @@ StaticPopupDialogs["PLGBC_POPUP_ACCEPT_BANKCHARSTATE"] = {
 -- for bank character configuration
 local minGuildRankForRankConfig = 1 
 
+-- timeout waiting waiting after a trade window closes and has been accepted from either side
+local timeoutTradeScanInSeconds = 2
+
 function PLGuildBankClassic:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("PLGuildBankClassicDB", defaults, true)
     dbProfile = self.db.profile
