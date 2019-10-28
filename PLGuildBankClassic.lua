@@ -168,7 +168,8 @@ function PLGuildBankClassic:OnEnable()
     self.Events.Register(self, "PLGBC_TRADE_OPENED", "InitiateTradeOverride")
     self.Events.Register(self, "PLGBC_TRADE_CLOSED", "TradeFinished")
     self.Events.Register(self, "PLGBC_TRADE_UPDATE", "ScanTradeInfo")
-    self.Events.Register(self, "PLGBC_TRADE_ACCEPT", "AcceptTradeOverride")
+    self.Events.Register(self, "PLGBC_TRADE_ACCEPT_UPDATE", "AcceptTradeUpdate")
+    self.Events.Register(self, "PLGBC_TRADE_ACCEPT", "TradeAccepted")
     
 
     self:Hook("TakeInboxItem", "TakeInboxItemOverride", true)
@@ -176,9 +177,6 @@ function PLGuildBankClassic:OnEnable()
     self:Hook("SendMail", "SendMailOverride", true)
 
     self:Hook("PostAuction", "PostAuctionOverride", true)
-
-    --self:Hook("AcceptTrade", "AcceptTradeOverride", true)
-    --self:Hook("InitiateTrade", "InitiateTradeOverride", true)
 end
 
 function PLGuildBankClassic:HandleSlash(cmd)
@@ -773,8 +771,11 @@ function PLGuildBankClassic:ScanTradeInfo()
     end
 end
 
-function PLGuildBankClassic:AcceptTradeOverride(event, playerAccepted, targetAccepted)
-    PLGuildBankClassic:debug("AcceptTradeOverride trading")
+function PLGuildBankClassic:AcceptTradeUpdate(event, playerAccepted, targetAccepted)
+    PLGuildBankClassic:debug("AcceptTradeUpdate trading")
+    return 
+    -- no need? need to listen
+
     if PLGuildBankClassic:IsGuildBankChar() and self.tradeData then
 
         -- targetAccepted == 1 only if the target accepts first
@@ -793,6 +794,7 @@ function PLGuildBankClassic:InitiateTradeOverride(event, unitId)
 
     local target = UnitName(unitId)
     self.tradeData = nil
+    self.listenLastTradeAccepted = false
     PLGuildBankClassic:debug("InitiateTrade: " .. UnitName(unitId))
     if PLGuildBankClassic:IsGuildBankChar() then
         if not self.tradeData then
@@ -809,6 +811,14 @@ function PLGuildBankClassic:TradeFinished(event)
 
         if self.tradeDataFinish then
             PLGuildBankClassic:debug("TradeFinished: skip event since unfinished data is in queue")
+            return
+        end
+
+        if self.tradeData then
+            -- set this flag to true will cause the update frame event 
+            -- to listen to inventoriy or money changes
+            -- if thats the case - the trade has been accepted
+            self.listenLastTradeAccepted = true
             return
         end
 
