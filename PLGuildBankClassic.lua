@@ -137,6 +137,7 @@ function PLGuildBankClassic:OnInitialize()
     self.sendMailData = nil
     self.tradeData = nil
     self.ignoreLootItemMessage = false
+    self.executingTradeDataLog = false
 
     self.tradeLogTitle = nil
     self.canEditPublicNote = false
@@ -201,6 +202,9 @@ function PLGuildBankClassic:UpdatePlayerMoney()
             PLGuildBankClassic:UpdateVersionsInPublicNote()
 
             PLGuildBankClassic.Events:Fire("PLGBC_EVENT_BANKCHAR_MONEYCHANGED", charServerName, GetMoney(), diff, PLGuildBankClassic.atBankChar.moneyVersion)
+
+            -- check if inventory update was triggered by a trade
+            PLGuildBankClassic:CheckPendingTradeData()
         end
     end
 end
@@ -216,6 +220,9 @@ function PLGuildBankClassic:UpdateInventoryVersion()
         PLGuildBankClassic:UpdateVersionsInPublicNote()
 
         PLGuildBankClassic.Events:Fire("PLGBC_EVENT_BANKCHAR_INVENTORYCHANGED", charServerName, hasCachedData, PLGuildBankClassic.atBankChar.inventoryVersion)
+
+        -- check if inventory update was triggered by a trade
+        PLGuildBankClassic:CheckPendingTradeData()
     end
 end
 
@@ -751,14 +758,23 @@ function PLGuildBankClassic:ScanTradeInfo()
     end
 end
 
-function PLGuildBankClassic:AcceptTradeOverride()
+function PLGuildBankClassic:AcceptTradeOverride(event, playerAccepted, targetAccepted)
     PLGuildBankClassic:debug("AcceptTradeOverride trading")
     if PLGuildBankClassic:IsGuildBankChar() and self.tradeData then
         self.ignoreLootItemMessage = true
         if not self.tradeData then
             self.tradeData = {}
         end
-        self.tradeData.accepted = true
+        self.tradeData.accepted = false
+        self.tradeData.acceptedState = 0
+
+        if targetAccepted == 1 and playerAccepted == 1 then
+            self.tradeData.acceptedState = 2
+            self.tradeData.accepted = true
+        elseif playerAccepted == 1 then
+            self.tradeData.acceptedState = 1
+            self.tradeData.accepted = true
+        end
     end
 end
 
@@ -773,7 +789,9 @@ function PLGuildBankClassic:InitiateTradeOverride(event, unitId)
             self.tradeData = {}
         end
         self.tradeData.target = target
+        self.tradeDataFinish = nil
         self.ignoreLootItemMessage = true
+        self.executingTradeDataLog = false
     end
 end
 
@@ -783,6 +801,7 @@ function PLGuildBankClassic:TradeFinished(event)
 
         if self.tradeData and self.tradeData.accepted then
             self.tradeDataFinish = self.tradeData
+            self.tradeDataFinish.finishTime = PLGuildBankClassic:GetTimestamp()
             local tradeSummary = ""
 
             if self.tradeDataFinish.send or self.tradeData.moneyOut then
@@ -827,12 +846,37 @@ function PLGuildBankClassic:TradeFinished(event)
                 end
             end
 
-            -- ask for log title
-            StaticPopup_Show("PLGBC_POPUP_TRADE_ENTERLOGTITLE", tradeSummary)
+            self.tradeDataFinish.tradeSummary = tradeSummary
+
+            -- everything else will be handled if player's money or inventory changes
         else
             PLGuildBankClassic:debug("TradeFinished: no trade-data or trade aborted")
         end
     end
+end
+
+function PLGuildBankClassic:CheckPendingTradeData(tradeLogTitle)
+
+    if self.executingTradeDataLog then
+        return
+    end
+
+    -- this function will be triggered if a an inventory or player update occured
+    if self.tradeDataFinish then
+        local curTime = PLGuildBankClassic:GetTimestamp()
+
+        if curTime - self.tradeDataFinish.finishTime
+        self.executingTradeDataLog = true
+        if tradeLogTitle ~= nil then
+            self.tradeLogTitle = tradeLogTitle
+            PLGuildBankClassic:ExecuteTradeLog()
+        else
+            -- ask for log title
+            StaticPopup_Show("PLGBC_POPUP_TRADE_ENTERLOGTITLE", self.tradeDataFinish.tradeSummary)
+        end
+    end
+
+    self.executingTradeDataLog = false
 end
 
 function PLGuildBankClassic:ExecuteTradeLog()

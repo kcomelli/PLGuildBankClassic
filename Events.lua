@@ -247,7 +247,7 @@ end
 function Events:TRADE_ACCEPT_UPDATE(event, arg1, arg2)
     if PLGuildBankClassic:IsGuildBankChar() then
         PLGuildBankClassic:debug("TRADE_ACCEPT_UPDATE: trade accepted")
-        self:Fire("PLGBC_TRADE_ACCEPT")
+        self:Fire("PLGBC_TRADE_ACCEPT", arg1, arg2)
     end
 end
 
