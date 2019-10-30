@@ -173,8 +173,6 @@ function PLGuildBankClassic:OnEnable()
     self.Events.Register(self, "PLGBC_TRADE_CLOSED", "TradeFinished")
     self.Events.Register(self, "PLGBC_TRADE_UPDATE", "ScanTradeInfo")
     self.Events.Register(self, "PLGBC_TRADE_ACCEPT_UPDATE", "AcceptTradeUpdate")
-    self.Events.Register(self, "PLGBC_TRADE_ACCEPT", "TradeAccepted")
-    
 
     self:Hook("TakeInboxItem", "TakeInboxItemOverride", true)
     self:Hook("TakeInboxMoney", "TakeInboxMoneyOverride", true)
@@ -245,7 +243,7 @@ function PLGuildBankClassic:PlayerEnteringWorld()
 end
 
 function PLGuildBankClassic:PlayerLeavingWorld()
-    self:ExecuteTradeLog()   
+    self:CheckPendingTradeData("trade")
 end
 
 function PLGuildBankClassic:SetOwnedCharacters()
@@ -799,20 +797,24 @@ end
 
 function PLGuildBankClassic:InitiateTradeOverride(event, unitId)
     PLGuildBankClassic:debug("InitiateTrade: " .. (event or "na") .. ", " .. tostring(unitTd or "na"))
+    PLGuildBankClassic:ResetTradeInfo()
 
     local target = UnitName(unitId)
-    self.tradeData = nil
-    self.listenLastTradeAccepted = false
     PLGuildBankClassic:debug("InitiateTrade: " .. UnitName(unitId))
     if PLGuildBankClassic:IsGuildBankChar() then
-        if not self.tradeData then
-            self.tradeData = {}
-        end
+        self.tradeData = {}
         self.tradeData.target = target
-        self.tradeDataFinish = nil
         self.ignoreLootItemMessage = true
-        self.executingTradeDataLog = false
     end
+end
+
+function PLGuildBankClassic:ResetTradeInfo()
+    PLGuildBankClassic:debug("ResetTradeInfo")
+
+    self.tradeData = nil
+    self.tradeDataFinish = nil
+    self.ignoreLootItemMessage = false
+    self.executingTradeDataLog = false
 end
 
 function PLGuildBankClassic:TradeFinished(event)
@@ -821,14 +823,6 @@ function PLGuildBankClassic:TradeFinished(event)
 
         if self.tradeDataFinish then
             PLGuildBankClassic:debug("TradeFinished: skip event since unfinished data is in queue")
-            return
-        end
-
-        if self.tradeData then
-            -- set this flag to true will cause the update frame event 
-            -- to listen to inventoriy or money changes
-            -- if thats the case - the trade has been accepted
-            self.listenLastTradeAccepted = true
             return
         end
 
@@ -880,7 +874,6 @@ function PLGuildBankClassic:TradeFinished(event)
             end
 
             self.tradeDataFinish.tradeSummary = tradeSummary
-
             -- everything else will be handled if player's money or inventory changes
         else
             PLGuildBankClassic:debug("TradeFinished: no trade-data or trade aborted")
@@ -898,14 +891,17 @@ function PLGuildBankClassic:CheckPendingTradeData(tradeLogTitle)
     if self.tradeDataFinish then
         local curTime = PLGuildBankClassic:GetTimestamp()
 
-        if curTime - self.tradeDataFinish.finishTime
-        self.executingTradeDataLog = true
-        if tradeLogTitle ~= nil then
-            self.tradeLogTitle = tradeLogTitle
-            PLGuildBankClassic:ExecuteTradeLog()
+        if (curTime - self.tradeDataFinish.finishTime) <= timeoutTradeScanInSeconds or tradeLogTitle ~= nil then
+            self.executingTradeDataLog = true
+            if tradeLogTitle ~= nil then
+                self.tradeLogTitle = tradeLogTitle
+                PLGuildBankClassic:ExecuteTradeLog()
+            else
+                -- ask for log title
+                StaticPopup_Show("PLGBC_POPUP_TRADE_ENTERLOGTITLE", self.tradeDataFinish.tradeSummary)
+            end
         else
-            -- ask for log title
-            StaticPopup_Show("PLGBC_POPUP_TRADE_ENTERLOGTITLE", self.tradeDataFinish.tradeSummary)
+            PLGuildBankClassic:ResetTradeInfo()
         end
     end
 
@@ -914,8 +910,6 @@ end
 
 function PLGuildBankClassic:ExecuteTradeLog()
     PLGuildBankClassic:debug("ExecuteTradeLog: executing trade log")
-    self.ignoreLootItemMessage = false
-
     if self.tradeDataFinish then
         local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(UnitName("player"))
         local playerLog = PLGuildBankClassic:GetLogByName(charServerName)
@@ -1061,9 +1055,9 @@ function PLGuildBankClassic:ExecuteTradeLog()
                 PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
             end
         end
-
-        self.tradeDataFinish = nil;
     end
+
+    PLGuildBankClassic:ResetTradeInfo()
 end
 
 
