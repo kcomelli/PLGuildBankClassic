@@ -90,20 +90,22 @@ StaticPopupDialogs["PLGBC_POPUP_ACCEPT_BANKCHARSTATE"] = {
   StaticPopupDialogs["PLGBC_POPUP_TRADE_ENTERLOGTITLE"] = {
     text = L["You have traded the following items and/or money with a guild-bank char:\n%s\n \nYou can enter a reason for the trade which will be shown in the guild log below:"],
     button1 = OK,
+    button3 = OK,
     button2 = CANCEL,
     hasEditBox = 1,
 	maxLetters = 50,
     OnAccept = function(self)
-        PLGuildBankClassic.tradeLogTitle = self.editBox:GetText();
+        PLGuildBankClassic.tradeLogTitle = self:GetParent().editBox:GetText();
     end,
     EditBoxOnEnterPressed = function(self)
-		PLGuildBankClassic.tradeLogTitle = self:GetParent().editBox:GetText();
+		PLGuildBankClassic.tradeLogTitle = self:GetText();
 		self:GetParent():Hide();
 	end,
 	OnShow = function(self)
 		self.editBox:SetFocus();
 	end,
-	OnHide = function(self)
+    OnHide = function(self)
+        --PLGuildBankClassic.tradeLogTitle = self.editBox:GetText();
 		ChatEdit_FocusActiveWindow();
         self.editBox:SetText("");
         PLGuildBankClassic:ExecuteTradeLog()
@@ -117,6 +119,9 @@ StaticPopupDialogs["PLGBC_POPUP_ACCEPT_BANKCHARSTATE"] = {
 -- guild master can change the min required guild rank
 -- for bank character configuration
 local minGuildRankForRankConfig = 1 
+
+-- timeout waiting waiting after a trade window closes and has been accepted from either side
+local timeoutTradeScanInSeconds = 2
 
 function PLGuildBankClassic:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("PLGuildBankClassicDB", defaults, true)
@@ -167,7 +172,8 @@ function PLGuildBankClassic:OnEnable()
     self.Events.Register(self, "PLGBC_TRADE_OPENED", "InitiateTradeOverride")
     self.Events.Register(self, "PLGBC_TRADE_CLOSED", "TradeFinished")
     self.Events.Register(self, "PLGBC_TRADE_UPDATE", "ScanTradeInfo")
-    self.Events.Register(self, "PLGBC_TRADE_ACCEPT", "AcceptTradeOverride")
+    self.Events.Register(self, "PLGBC_TRADE_ACCEPT_UPDATE", "AcceptTradeUpdate")
+    self.Events.Register(self, "PLGBC_TRADE_ACCEPT", "TradeAccepted")
     
 
     self:Hook("TakeInboxItem", "TakeInboxItemOverride", true)
@@ -175,9 +181,6 @@ function PLGuildBankClassic:OnEnable()
     self:Hook("SendMail", "SendMailOverride", true)
 
     self:Hook("PostAuction", "PostAuctionOverride", true)
-
-    --self:Hook("AcceptTrade", "AcceptTradeOverride", true)
-    --self:Hook("InitiateTrade", "InitiateTradeOverride", true)
 end
 
 function PLGuildBankClassic:HandleSlash(cmd)
@@ -717,18 +720,30 @@ function PLGuildBankClassic:ScanTradeInfo()
         if not self.tradeData then
             self.tradeData = {}
         end
+
+        if self.tradeData.accepted then
+            PLGuildBankClassic:debug("Already accepted trade ")
+            return
+        end
+
+
         local receive_money = GetTargetTradeMoney()
         local send_money = GetPlayerTradeMoney()
 
         self.tradeData.accepted = false
         self.tradeData.moneyOut = send_money
         self.tradeData.moneyIn = receive_money
+        if not self.tradeData.send then
+            self.tradeData.send = {}
+        end
+
+        if not self.tradeData.receive then
+            self.tradeData.receive = {}
+        end
 
         --self.tradeData.recipient = 
         for i=1, 7 do
-            self.tradeData.send = {}
-            self.tradeData.receive = {}
-
+            PLGuildBankClassic:debug("Scanning item " .. tostring(i))
             -- i=7 ... will-not-be-traded-slot
             local receive_name, receive_texture, receive_quantity, receive_quality, receive_isUsable, receive_enchant = GetTradeTargetItemInfo(i)
             local receive_itemLink = GetTradeTargetItemLink(i)
@@ -744,15 +759,23 @@ function PLGuildBankClassic:ScanTradeInfo()
                 self.tradeData.receive[idx].itemLink = receive_itemLink
                 self.tradeData.receive[idx].itemId = PLGuildBankClassic:GetItemIdFromLink(receive_itemLink)
                 self.tradeData.receive[idx].notTradeAction = receive_enchant
+
+                PLGuildBankClassic:debug("Set Receive-item " .. tostring(idx) .. " " .. (receive_name or "na") .. " - " .. (receive_itemLink or "na"))
+            else
+                PLGuildBankClassic:debug("Receive-item name not set")
             end
             if send_name then
                 local idx = #self.tradeData.send + 1
                 self.tradeData.send[idx] = {}
                 self.tradeData.send[idx].name = send_name
                 self.tradeData.send[idx].quantity = send_quantity
-                self.tradeData.send[idx].itemLink = PLGuildBankClassic:GetItemIdFromLink(send_itemLink)
+                self.tradeData.send[idx].itemLink = send_itemLink
                 self.tradeData.send[idx].itemId = PLGuildBankClassic:GetItemIdFromLink(send_itemLink)
                 self.tradeData.send[idx].notTradeAction = send_enchant
+
+                PLGuildBankClassic:debug("Set Send-item " .. tostring(idx) .. " " .. (send_name or "na") .. " - " .. (send_itemLink or "na"))
+            else
+                PLGuildBankClassic:debug("Send-item name not set")
             end
         end
     end
@@ -761,10 +784,6 @@ end
 function PLGuildBankClassic:AcceptTradeOverride(event, playerAccepted, targetAccepted)
     PLGuildBankClassic:debug("AcceptTradeOverride trading")
     if PLGuildBankClassic:IsGuildBankChar() and self.tradeData then
-        self.ignoreLootItemMessage = true
-        if not self.tradeData then
-            self.tradeData = {}
-        end
         self.tradeData.accepted = false
         self.tradeData.acceptedState = 0
 
@@ -783,6 +802,7 @@ function PLGuildBankClassic:InitiateTradeOverride(event, unitId)
 
     local target = UnitName(unitId)
     self.tradeData = nil
+    self.listenLastTradeAccepted = false
     PLGuildBankClassic:debug("InitiateTrade: " .. UnitName(unitId))
     if PLGuildBankClassic:IsGuildBankChar() then
         if not self.tradeData then
@@ -799,16 +819,29 @@ function PLGuildBankClassic:TradeFinished(event)
     if PLGuildBankClassic:IsGuildBankChar() then
         PLGuildBankClassic:debug("TradeFinished: received")
 
+        if self.tradeDataFinish then
+            PLGuildBankClassic:debug("TradeFinished: skip event since unfinished data is in queue")
+            return
+        end
+
+        if self.tradeData then
+            -- set this flag to true will cause the update frame event 
+            -- to listen to inventoriy or money changes
+            -- if thats the case - the trade has been accepted
+            self.listenLastTradeAccepted = true
+            return
+        end
+
         if self.tradeData and self.tradeData.accepted then
             self.tradeDataFinish = self.tradeData
             self.tradeDataFinish.finishTime = PLGuildBankClassic:GetTimestamp()
             local tradeSummary = ""
 
-            if self.tradeDataFinish.send or self.tradeData.moneyOut then
+            if (self.tradeDataFinish.send and #self.tradeDataFinish.send > 0) or (self.tradeDataFinish.moneyOut and self.tradeDataFinish.moneyOut > 0 ) then
                 tradeSummary = tradeSummary .. "\n" .. L["gave"] .. ": "
 
-                if self.tradeData.moneyOut then
-                    tradeSummary = tradeSummary ..  PLGuildBankClassic:PriceToMoneyString(self.tradeData.moneyOut, false) .. "\n"
+                if (self.tradeDataFinish.moneyOut and self.tradeDataFinish.moneyOut > 0 ) then
+                    tradeSummary = tradeSummary ..  PLGuildBankClassic:PriceToMoneyString(self.tradeDataFinish.moneyOut, false) .. "\n"
                 end
 
                 if self.tradeDataFinish.send then
@@ -825,11 +858,11 @@ function PLGuildBankClassic:TradeFinished(event)
                 end
             end
 
-            if self.tradeDataFinish.receive or self.tradeData.moneyIn then
+            if (self.tradeDataFinish.receive and #self.tradeDataFinish.receive > 0) or (self.tradeDataFinish.moneyIn and self.tradeDataFinish.moneyIn > 0) then
                 tradeSummary = tradeSummary .. "\n" .. L["got"] .. ": "
 
-                if self.tradeData.moneyIn then
-                    tradeSummary = tradeSummary ..  PLGuildBankClassic:PriceToMoneyString(self.tradeData.moneyIn, false) .. "\n"
+                if (self.tradeDataFinish.moneyIn and self.tradeDataFinish.moneyIn > 0) then
+                    tradeSummary = tradeSummary ..  PLGuildBankClassic:PriceToMoneyString(self.tradeDataFinish.moneyIn, false) .. "\n"
                 end
 
                 if self.tradeDataFinish.receive then
@@ -880,6 +913,7 @@ function PLGuildBankClassic:CheckPendingTradeData(tradeLogTitle)
 end
 
 function PLGuildBankClassic:ExecuteTradeLog()
+    PLGuildBankClassic:debug("ExecuteTradeLog: executing trade log")
     self.ignoreLootItemMessage = false
 
     if self.tradeDataFinish then
@@ -888,7 +922,30 @@ function PLGuildBankClassic:ExecuteTradeLog()
         local alreadyAdded = {}
         local bChanged = false
 
-        if playerLog and self.tradeDataFinish.send then
+        if playerLog and (self.tradeDataFinish.send or self.tradeDataFinish.receive) then
+            PLGuildBankClassic:debug("ExecuteTradeLog: using title: " .. (self.tradeLogTitle or "na"))
+
+            if (self.tradeDataFinish.moneyOut and self.tradeDataFinish.moneyOut > 0) then
+                PLGuildBankClassic:debug("TradeFinished: Money withdrawl  " .. tostring(self.tradeDataFinish.moneyOut))
+                local logEntry = {}
+                bChanged = true
+
+                logEntry.name = self.tradeDataFinish.target
+                logEntry.timestamp = PLGuildBankClassic:GetTimestamp()
+                logEntry.source = PLGuildBankClassic.transactionSource.trade
+                logEntry.type = PLGuildBankClassic.transactionTypes.money
+                logEntry.quantity = 1
+                logEntry.goldPerItem = self.tradeDataFinish.moneyOut
+                logEntry.mode = PLGuildBankClassic.transactionModes.withdraw
+                logEntry.title = self.tradeLogTitle
+
+                if #playerLog > 0 then
+                    table.insert(playerLog, 1, logEntry)
+                else
+                    playerLog[1] = logEntry
+                end
+            end 
+
             for i=1, #self.tradeDataFinish.send do
                 -- items withdrawn by the target
                 local checkItem = self.tradeDataFinish.send[i]
@@ -932,6 +989,27 @@ function PLGuildBankClassic:ExecuteTradeLog()
                 end
             end
 
+            if (self.tradeDataFinish.moneyIn and self.tradeDataFinish.moneyIn > 0) then
+                PLGuildBankClassic:debug("TradeFinished: Money disposal  " .. tostring(self.tradeDataFinish.moneyOut))
+                local logEntry = {}
+                bChanged = true
+
+                logEntry.name = self.tradeDataFinish.target
+                logEntry.timestamp = PLGuildBankClassic:GetTimestamp()
+                logEntry.source = PLGuildBankClassic.transactionSource.trade
+                logEntry.type = PLGuildBankClassic.transactionTypes.money
+                logEntry.quantity = 1
+                logEntry.goldPerItem = self.tradeDataFinish.moneyOut
+                logEntry.mode = PLGuildBankClassic.transactionModes.disposal
+                logEntry.title = self.tradeLogTitle
+
+                if #playerLog > 0 then
+                    table.insert(playerLog, 1, logEntry)
+                else
+                    playerLog[1] = logEntry
+                end
+            end 
+
             for i=1, #self.tradeDataFinish.receive do
                 -- items withdrawn by the target
                 local checkItem = self.tradeDataFinish.receive[i]
@@ -974,6 +1052,8 @@ function PLGuildBankClassic:ExecuteTradeLog()
                     PLGuildBankClassic:debug("TradeFinished: could not get itemId of item " .. name)
                 end
             end
+
+            
 
             if bChanged then
                 PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()

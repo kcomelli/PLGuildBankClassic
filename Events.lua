@@ -17,6 +17,7 @@ PLGBC_AUCTION_HOUSE_OPENED = "PLGBC_AUCTION_HOUSE_OPENED"
 PLGBC_AUCTION_HOUSE_CLOSED = "PLGBC_AUCTION_HOUSE_CLOSED"
 PLGBC_TRADE_OPENED = "PLGBC_TRADE_OPENED"
 PLGBC_TRADE_CLOSED = "PLGBC_TRADE_CLOSED"
+PLGBC_TRADE_ACCEPT_UPDATE = "PLGBC_TRADE_ACCEPT_UPDATE"
 PLGBC_TRADE_ACCEPT = "PLGBC_TRADE_ACCEPT"
 PLGBC_TRADE_UPDATE = "PLGBC_TRADE_UPDATE"
 
@@ -79,7 +80,6 @@ function Events:OnEnable()
     self:RegisterEvent("TRADE_PLAYER_ITEM_CHANGED")
     self:RegisterEvent("TRADE_TARGET_ITEM_CHANGED")
     self:RegisterEvent("PLAYER_TRADE_MONEY")
-    
 end
 
 function Events:GenericEvent(event, ...)
@@ -246,8 +246,8 @@ end
 
 function Events:TRADE_ACCEPT_UPDATE(event, arg1, arg2)
     if PLGuildBankClassic:IsGuildBankChar() then
-        PLGuildBankClassic:debug("TRADE_ACCEPT_UPDATE: trade accepted")
-        self:Fire("PLGBC_TRADE_ACCEPT", arg1, arg2)
+        PLGuildBankClassic:debug("TRADE_ACCEPT_UPDATE: trade accepted " .. (arg1 or "na") .. " - " .. (arg2 or "na"))
+        self:Fire("PLGBC_TRADE_ACCEPT_UPDATE", arg1, arg2)
     end
 end
 
@@ -255,7 +255,7 @@ function Events:TRADE_CLOSED()
     if PLGuildBankClassic:IsGuildBankChar() then
         PLGuildBankClassic:debug("TRADE_CLOSED: trade closed event")
         self.atTrade = false
-        self:Fire("PLGBC_TRADE_UPDATE")
+        self:Fire("PLGBC_TRADE_CLOSED")
     end
 end
 
