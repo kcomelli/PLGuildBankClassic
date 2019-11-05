@@ -101,7 +101,10 @@ StaticPopupDialogs["PLGBC_POPUP_ACCEPT_BANKCHARSTATE"] = {
 		PLGuildBankClassic.tradeLogTitle = self:GetText();
 		self:GetParent():Hide();
 	end,
-	OnShow = function(self)
+    OnShow = function(self)
+        if PLGuildBankClassic.tradeLogTitle then
+            self.editBox:SetText(PLGuildBankClassic.tradeLogTitle); 
+        end
 		self.editBox:SetFocus();
 	end,
     OnHide = function(self)
@@ -779,8 +782,8 @@ function PLGuildBankClassic:ScanTradeInfo()
     end
 end
 
-function PLGuildBankClassic:AcceptTradeOverride(event, playerAccepted, targetAccepted)
-    PLGuildBankClassic:debug("AcceptTradeOverride trading")
+function PLGuildBankClassic:AcceptTradeUpdate(event, playerAccepted, targetAccepted)
+    PLGuildBankClassic:debug("AcceptTradeUpdate trading")
     if PLGuildBankClassic:IsGuildBankChar() and self.tradeData then
         self.tradeData.accepted = false
         self.tradeData.acceptedState = 0
