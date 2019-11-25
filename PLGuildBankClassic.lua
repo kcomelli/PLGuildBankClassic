@@ -4,6 +4,9 @@ local L = LibStub("AceLocale-3.0"):GetLocale("PLGuildBankClassic")
 
 local ItemCache = LibStub("LibItemCache-2.0")
 
+-- 1.00.00
+PLGBC_BUILD_NUMBER = 10000
+
 local dbProfile
 local dbFactionRealm
 local defaults = {
@@ -125,6 +128,9 @@ local minGuildRankForRankConfig = 1
 
 -- timeout waiting waiting after a trade window closes and has been accepted from either side
 local timeoutTradeScanInSeconds = 2
+
+PLGuildBankClassic.IsOfficer = ""
+PLGuildBankClassic.LastVerCheck = 0
 
 function PLGuildBankClassic:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("PLGuildBankClassicDB", defaults, true)
@@ -360,6 +366,7 @@ function PLGuildBankClassic:NumberOfConfiguredAlts()
     
     return 0
 end
+
 
 function PLGuildBankClassic:CreateBankChar(name, realm, description, class, icon, texture, acceptState)
     local guildConfig = PLGuildBankClassic:GetGuildConfig() 
