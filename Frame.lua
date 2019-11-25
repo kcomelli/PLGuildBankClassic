@@ -33,6 +33,8 @@ MoneyTypeInfo["PLGUILDBANKCLASSIC"] = {
 	showSmallerCoins = "Backpack"
 };
 
+PLGuildBankClassic.CommsThresholdTriggers = {}
+
 PLGuildBankClassic.Frame = {}
 PLGuildBankClassic.Frame.defaults = {}
 PLGuildBankClassic.Frame.prototype = Frame
@@ -60,6 +62,7 @@ function PLGuildBankClassic.Frame:Create(name, titleText, settings, guildSetting
 	frame:SetScript("OnShow", frame.OnShow)
 	frame:SetScript("OnHide", frame.OnHide)
 	frame:SetScript("OnEvent", frame.OnEvent)
+	frame:SetScript("OnUpdate", frame.OnUpdate)
 	frame:SetScript("OnSizeChanged", frame.OnSizeChanged)
 
 	-- non-bag events
@@ -190,6 +193,23 @@ function Frame:OnEvent(event, ...)
 	--if event == "UNIT_PORTRAIT_UPDATE" and self:IsShown() then
 	--	SetPortraitTexture(self.portrait, "player")
 	--end
+end
+
+function Frame:OnUpdate(event, ...)
+	
+	if PLGuildBankClassic.CommsThresholdTriggers ~= nil and #PLGuildBankClassic.CommsThresholdTriggers > 0 then
+		for idx, cmd in ipairs(PLGuildBankClassic.CommsThresholdTriggers) do
+			if PLGuildBankClassic.CommsThresholdTriggers[cmd] ~= nil and PLGuildBankClassic.CommsThresholdTriggers[cmd].trigger > 0 and PLGuildBankClassic.CommsThresholdTriggers[cmd].trigger <= time() then
+				-- ensure not sending data twice
+				PLGuildBankClassic.CommsThresholdTriggers[cmd].trigger = 0
+				
+				-- send command and data
+				PLGuildBankClassic.Comms:SendData(cmd, PLGuildBankClassic.CommsThresholdTriggers[cmd].data)
+				-- delete key from 
+				PLGuildBankClassic.CommsThresholdTriggers[cmd] = nil
+			end
+		end
+	end
 end
 
 function Frame:OnSizeChanged(width, height)

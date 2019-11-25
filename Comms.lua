@@ -20,6 +20,7 @@ local COMM_CMD_SENDMONEY        = "PLGBCSendMoney"
 local COMM_CMD_SENDLOG          = "PLGBCSendLog"
 
 PLGuildBankClassic.Comms = Comms
+Comms.KnownVersions = {}
 
 function Comms:OnEnable()
     self:RegisterComm(COMM_PREFIX_COMPRESSED_MESSAGE, "OnCommReceived")
@@ -28,7 +29,10 @@ function Comms:OnEnable()
     Comms.comm = {}
     Comms.comm[COMM_CMD_BUILDCHECK] = Comms.BuildCheck
     Comms.comm[COMM_CMD_QUERYVERSIONS] = Comms.QueryVersions
-    Comms.comm[COMM_CMD_SENDCONFIG] = Comms.ResponseVersions
+    Comms.comm[COMM_CMD_SENDCONFIG] = Comms.ReceiveConfig
+    Comms.comm[COMM_CMD_SENDINVENTORY] = Comms.ReceiveInventory
+    Comms.comm[COMM_CMD_SENDMONEY] = Comms.ReceiveMoney
+    Comms.comm[COMM_CMD_SENDLOG] = Comms.ReceiveLog
 
 
     Events.Register(self, "PLGBC_EVENT_CONFIG_CHANGED")
@@ -80,7 +84,19 @@ function Comms:QueryVersions(sender, data)
 
 end
 
-function Comms:ResponseVersions(sender, data)
+function Comms:ReceiveConfig(sender, data)
+
+end
+
+function Comms:ReceiveInventory(sender, data)
+
+end
+
+function Comms:ReceiveMoney(sender, data)
+
+end
+
+function Comms:ReceiveLog(sender, data)
 
 end
 
@@ -101,12 +117,22 @@ function Comms:BuildCheck(sender, data)
 end
 
 -----------------------------------------------------------------------
+-- sending
+
+function Comms:SendVersionQuery()
+    local versionsData = Comms:BuildVersionsPacket()
+
+    Comms:SendData(COMM_CMD_QUERYVERSIONS, versionsData)
+end
+
+
+-----------------------------------------------------------------------
 -- internal event triggers
 
 function Comms:PLGBC_EVENT_CONFIG_CHANGED(event, configTimestamp)
-    local versionsData = Comms:BuildConfigPacket()
+    local configData = Comms:BuildConfigPacket()
 
-    Comms:SendData(COMM_CMD_SENDCONFIG, versionsData)
+    Comms:SendData(COMM_CMD_SENDCONFIG, configData)
 end
 
 function Comms:PLGBC_EVENT_BANKCHAR_MONEYCHANGED(event, characterName, value, gainedOrLost, moneyVersion)
@@ -120,7 +146,12 @@ function Comms:PLGBC_EVENT_BANKCHAR_MONEYCHANGED(event, characterName, value, ga
         moneyData.gainedOrLost = gainedOrLost
         moneyData.moneyVersion = moneyVersion
 
-        Comms:SendData(COMM_CMD_SENDMONEY, moneyData)
+        -- threshold impl - send data if no other update comes within 2sec
+        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDMONEY] = {}
+        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDMONEY].trigger = time() + 2
+        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDMONEY].data = moneyData
+        
+        --Comms:SendData(COMM_CMD_SENDMONEY, moneyData)
     end
 end
 
@@ -128,14 +159,17 @@ function Comms:PLGBC_EVENT_BANKCHAR_INVENTORYCHANGED(event, characterName, hasCa
     -- this event should only trigger an event if triggered on a bank-char
     if PLGuildBankClassic:IsGuildBankChar() then
 
-        -- TODO: threshold impl
         local inventoryData = {}
         inventoryData.charaterName = characterName
         inventoryData.inventoryVersion = inventoryVersion
         inventoryData.data = PLGuildBankClassic:GetInventoryCache(characterName)
-        -- TODO: Get inventory data from cache
 
-        Comms:SendData(COMM_CMD_SENDINVENTORY, inventoryData)
+        -- threshold impl - send data if no other update comes within 2sec
+        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDINVENTORY] = {}
+        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDINVENTORY].trigger = time() + 2
+        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDINVENTORY].data = inventoryData
+
+        --Comms:SendData(COMM_CMD_SENDINVENTORY, inventoryData)
     end
 end
 
@@ -143,7 +177,6 @@ function Comms:PLGBC_GUILD_LOG_UPDATED(event, characterName, logVersion)
     -- this event should only trigger an event if triggered on a bank-char
     if PLGuildBankClassic:IsGuildBankChar() then
 
-        -- TODO: threshold impl
         local logData = {}
         logData.charaterName = characterName
         logData.logVersion = logVersion
@@ -152,7 +185,12 @@ function Comms:PLGBC_GUILD_LOG_UPDATED(event, characterName, logVersion)
         -- logs may be large - so only send diffs which may also allow merging
         logData.log = PLGuildBankClassic:GetLogByName(charServerName)
 
-        Comms:SendData(COMM_CMD_SENDLOG, logData)
+        -- threshold impl - send data if no other update comes within 2sec
+        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDLOG] = {}
+        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDLOG].trigger = time() + 2
+        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDLOG].data = logData
+
+        --Comms:SendData(COMM_CMD_SENDLOG, logData)
     end
 end
 
@@ -163,12 +201,37 @@ local function Comms:BuildConfigPacket()
     local guildConfig = PLGuildBankClassic:GetGuildConfig() 
 
     if guildConfig then
-        local versionsData = {}
+        local configData = {}
 
-        versionsData.config = guildConfig.config
-        versionsData.bankChars = guildConfig.bankChars
+        configData.config = guildConfig.config
+        configData.bankChars = guildConfig.bankChars
+
+        return configData
     end
+
+    return nil
 end
+
+local function Comms:BuildVersionsPacket()
+    local guildConfig = PLGuildBankClassic:GetGuildConfig() 
+    local versionData = {}
+    versionData.configVersion = 0
+
+    if guildConfig then
+        versionData.configVersion = guildConfig.configTimestamp
+        versionData.bankChars = {}
+        for idx, char in ipairs(guildConfig.bankChars) do
+            versionData.bankChars[char] = {}
+            versionData.bankChars[char].inventoryVersion = guildConfig.bankChars[char].inventoryVersion
+            versionData.bankChars[char].logVersion = guildConfig.bankChars[char].logVersion
+            versionData.bankChars[char].moneyVersion = guildConfig.bankChars[char].moneyVersion
+            versionData.bankChars[char].dataVersion = guildConfig.bankChars[char].modifiedAt
+        end
+    end
+
+    return versionData
+end
+
 
 local function Comms:BuildCommsPacket(command, data)
     local commsData = {}
