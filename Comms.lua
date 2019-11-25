@@ -14,6 +14,7 @@ local COMM_PREFIX_CLEARTEXT_MESSAGE = "PLGBCClear"
 
 local COMM_CMD_BUILDCHECK       = "PLGBCBuildCheck"
 local COMM_CMD_QUERYVERSIONS    = "PLGBCQVersions"
+local COMM_CMD_REQUESTVERSIONS  = "PLGBCRVersions"
 local COMM_CMD_SENDCONFIG       = "PLGBCSendConfig"
 local COMM_CMD_SENDINVENTORY    = "PLGBCSendInventory"
 local COMM_CMD_SENDMONEY        = "PLGBCSendMoney"
