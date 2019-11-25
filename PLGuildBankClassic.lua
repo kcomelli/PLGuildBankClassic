@@ -753,7 +753,7 @@ function PLGuildBankClassic:ScanTradeInfo()
             local send_itemLink = GetTradePlayerItemLink(i)
 
             if receive_name then
-                local idx = #self.tradeData.receive + 1
+                local idx = i --#self.tradeData.receive + 1
                 self.tradeData.receive[idx] = {}
                 self.tradeData.receive[idx].name = receive_name
                 self.tradeData.receive[idx].quantity = receive_quantity
@@ -766,7 +766,7 @@ function PLGuildBankClassic:ScanTradeInfo()
                 PLGuildBankClassic:debug("Receive-item name not set")
             end
             if send_name then
-                local idx = #self.tradeData.send + 1
+                local idx = i --#self.tradeData.send + 1
                 self.tradeData.send[idx] = {}
                 self.tradeData.send[idx].name = send_name
                 self.tradeData.send[idx].quantity = send_quantity
