@@ -132,6 +132,7 @@ local timeoutTradeScanInSeconds = 2
 PLGuildBankClassic.IsOfficer = ""
 PLGuildBankClassic.LastVerCheck = 0
 
+
 function PLGuildBankClassic:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("PLGuildBankClassicDB", defaults, true)
     dbProfile = self.db.profile
@@ -161,11 +162,15 @@ function PLGuildBankClassic:OnInitialize()
     self:RegisterEvent("PLAYER_ENTERING_WORLD", "PlayerEnteringWorld")
     self:RegisterEvent("PLAYER_LEAVING_WORLD", "PlayerLeavingWorld")
     self:RegisterEvent("PLAYER_GUILD_UPDATE", "InitializePlayerStatus")
+    self:RegisterEvent("PLAYER_GUILD_UPDATE", "InitializePlayerStatus")
+
+    
 end
 
 function PLGuildBankClassic:OnEnable()
     local guildSettings = PLGuildBankClassic:GetGuildConfig()
 	self.guildVault = PLGuildBankClassic.Frame:Create("PLGuildBankClassicFrame", "PLGuildBankClassicFrame", dbProfile, guildSettings)
+
 
     self:RegisterChatCommand("plgb", "HandleSlash")
     
@@ -188,6 +193,9 @@ function PLGuildBankClassic:OnEnable()
     self:Hook("SendMail", "SendMailOverride", true)
 
     self:Hook("PostAuction", "PostAuctionOverride", true)
+
+    self.scanFrame = CreateFrame("Frame", "test12333", UIParent)
+    self.scanFrame:SetScript("OnUpdate", function (frame, elapsed) PLGuildBankClassic:OnUpdate(frame, elapsed) end)
 end
 
 function PLGuildBankClassic:HandleSlash(cmd)
@@ -198,6 +206,25 @@ function PLGuildBankClassic:HandleSlash(cmd)
 		self:Print(" /plgb show: Show the guild bank")
 	end
 end
+
+
+function PLGuildBankClassic:OnUpdate(frame, elapsed)
+
+    if PLGuildBankClassic.CommsThresholdTriggers ~= nil and PLGuildBankClassic:countDictionaryKeys(PLGuildBankClassic.CommsThresholdTriggers, false) > 0 then
+        for cmd, data in pairs(PLGuildBankClassic.CommsThresholdTriggers) do
+			if data ~= nil and data.trigger > 0 and data.trigger <= time() then
+				-- ensure not sending data twice
+				data.trigger = 0
+				PLGuildBankClassic:debug("Executeing sync command '" .. cmd .. "' ...")
+				-- send command and data
+				PLGuildBankClassic.Comms:SendData(cmd, data.data)
+				-- delete key from 
+				PLGuildBankClassic.CommsThresholdTriggers[cmd] = nil
+			end
+		end
+	end
+end
+
 
 function PLGuildBankClassic:UpdatePlayerMoney()
     if PLGuildBankClassic:IsGuildBankChar() then

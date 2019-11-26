@@ -456,20 +456,20 @@ function PLGuildBankClassic:GetInventoryCache(characterName)
 
 	if characterName ~= nil then
 		local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterName)
-		local cacheOwnerInfo = ItemCache:GetOwnerInfo(charServerName)
+		local cacheOwnerInfo = Cache:GetOwnerInfo(charServerName)
 
 		local inventoryData = {}
 
-		for bag in PLGBC_COMBINED_INVENTORY_CONFIG do
+		for i, bag in ipairs(PLGBC_COMBINED_INVENTORY_CONFIG) do
 			inventoryData[bag] = {}
 			
-			inventoryData[bag].info = ItemCache:GetBagInfo(cacheOwnerInfo.name, bag)
+			inventoryData[bag].info = Cache:GetBagInfo(cacheOwnerInfo.name, bag)
 
 			if inventoryData[bag].info.bagSize ~= nil then
 				inventoryData[bag].items = {}
 
 				for slot = 1, inventoryData[bag].info.bagSize do
-					inventoryData[bag].items[slot] = ItemCache:GetItemInfo(cacheOwnerInfo.name, bag, slot)
+					inventoryData[bag].items[slot] = Cache:GetItemInfo(cacheOwnerInfo.name, bag, slot)
 				end
 			end
 		end
@@ -625,6 +625,20 @@ for i=2, limit do
 	result = 62 * result + (base:find(number:sub(i, i)) - 1)
 end
 return result
+end
+
+function PLGuildBankClassic:countDictionaryKeys(dictionary, countNils)
+	local cnt = 0
+
+	if dictionary ~= nil and type(dictionary) == 'table' then
+		for k,v in pairs(dictionary) do
+			if v ~= nil or (v == nil and countNils == true) then
+				cnt = cnt + 1
+			end
+		end
+	end
+
+	return cnt
 end
 
 -------------------------------------------------------------------------------

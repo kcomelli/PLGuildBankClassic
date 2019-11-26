@@ -148,6 +148,9 @@ function Comms:PLGBC_EVENT_BANKCHAR_MONEYCHANGED(event, characterName, value, ga
         moneyData.moneyVersion = moneyVersion
 
         -- threshold impl - send data if no other update comes within 2sec
+        if PLGuildBankClassic.CommsThresholdTriggers == nil then
+            PLGuildBankClassic.CommsThresholdTriggers = {}
+        end
         PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDMONEY] = {}
         PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDMONEY].trigger = time() + 2
         PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDMONEY].data = moneyData
@@ -166,6 +169,10 @@ function Comms:PLGBC_EVENT_BANKCHAR_INVENTORYCHANGED(event, characterName, hasCa
         inventoryData.data = PLGuildBankClassic:GetInventoryCache(characterName)
 
         -- threshold impl - send data if no other update comes within 2sec
+        if PLGuildBankClassic.CommsThresholdTriggers == nil then
+            PLGuildBankClassic.CommsThresholdTriggers = {}
+        end
+
         PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDINVENTORY] = {}
         PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDINVENTORY].trigger = time() + 2
         PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDINVENTORY].data = inventoryData
@@ -184,9 +191,12 @@ function Comms:PLGBC_GUILD_LOG_UPDATED(event, characterName, logVersion)
 
         -- TODO: log diffs???
         -- logs may be large - so only send diffs which may also allow merging
-        logData.log = PLGuildBankClassic:GetLogByName(charServerName)
+        logData.log = PLGuildBankClassic:GetLogByName(characterName)
 
         -- threshold impl - send data if no other update comes within 2sec
+        if PLGuildBankClassic.CommsThresholdTriggers == nil then
+            PLGuildBankClassic.CommsThresholdTriggers = {}
+        end
         PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDLOG] = {}
         PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDLOG].trigger = time() + 2
         PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDLOG].data = logData
@@ -198,7 +208,7 @@ end
 -----------------------------------------------------------------------
 -- Data 
 
-local function Comms:BuildConfigPacket()
+function Comms:BuildConfigPacket()
     local guildConfig = PLGuildBankClassic:GetGuildConfig() 
 
     if guildConfig then
@@ -213,7 +223,7 @@ local function Comms:BuildConfigPacket()
     return nil
 end
 
-local function Comms:BuildVersionsPacket()
+function Comms:BuildVersionsPacket()
     local guildConfig = PLGuildBankClassic:GetGuildConfig() 
     local versionData = {}
     versionData.configVersion = 0
@@ -234,7 +244,7 @@ local function Comms:BuildVersionsPacket()
 end
 
 
-local function Comms:BuildCommsPacket(command, data)
+function Comms:BuildCommsPacket(command, data)
     local commsData = {}
     commsData.command = command
     commsData.data = data
