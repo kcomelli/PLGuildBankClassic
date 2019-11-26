@@ -26,6 +26,8 @@ PLGBC_RECEVIED_ITEM = "PLGBC_RECEVIED_ITEM"
 -- coms relevant events
 -- config may be changed by more members depending on the min-guild rank
 PLGBC_EVENT_CONFIG_CHANGED = "PLGBC_EVENT_CONFIG_CHANGED"
+-- character configuration changed (char added, removed edited ...)
+PLGBC_EVENT_CHAR_CONFIG_CHANGED = "PLGBC_EVENT_CHAR_CONFIG_CHANGED"
 -- these events only happen on guild bank chars, so comms should only track them if logged in with the bank char
 PLGBC_EVENT_BANKCHAR_MONEYCHANGED = "PLGBC_EVENT_BANKCHAR_MONEYCHANGED"
 PLGBC_EVENT_BANKCHAR_INVENTORYCHANGED = "PLGBC_EVENT_BANKCHAR_INVENTORYCHANGED"

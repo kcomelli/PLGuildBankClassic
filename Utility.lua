@@ -459,6 +459,7 @@ function PLGuildBankClassic:GetInventoryCache(characterName)
 		local cacheOwnerInfo = Cache:GetOwnerInfo(charServerName)
 
 		local inventoryData = {}
+		inventoryData.ownerInfo = cacheOwnerInfo
 
 		for i, bag in ipairs(PLGBC_COMBINED_INVENTORY_CONFIG) do
 			inventoryData[bag] = {}

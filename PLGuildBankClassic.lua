@@ -35,6 +35,7 @@ local defaults = {
     factionrealm  = {
         minGuildRank = 1,
         configTimestamp = 0,
+        charConfigTimestamp = 0,
         showValueEstimationInLogs = true,
         accountChars = nil
     }
@@ -332,10 +333,10 @@ function PLGuildBankClassic:AcceptOrDeclineState(state)
             PLGuildBankClassic.atBankChar.modifiedAt = timestamp
             PLGuildBankClassic.atBankChar.modifiedBy = myServerName
         end
-        guildConfig.config.configTimestamp = timestamp
+        guildConfig.config.charConfigTimestamp = timestamp
         PLGuildBankClassic:UpdateVersionsInPublicNote()
 
-        self.Events.Fire("PLGBC_EVENT_CONFIG_CHANGED", timestamp)
+        self.Events.Fire("PLGBC_EVENT_CHAR_CONFIG_CHANGED", timestamp)
         self.Events:Fire("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", PLGuildBankClassic.atBankCharIndex, PLGuildBankClassic.atBankChar)
     end
 end
@@ -420,13 +421,14 @@ function PLGuildBankClassic:CreateBankChar(name, realm, description, class, icon
     charData.inventoryVersion = 0
     charData.moneyVersion = 0
     charData.money = 0
+    charData.isDeleted = false
     
     guildConfig.bankChars[getn(guildConfig.bankChars)+1] = charData
 
-    guildConfig.config.configTimestamp = timestamp
+    guildConfig.config.charConfigTimestamp = timestamp
     PLGuildBankClassic:UpdateVersionsInPublicNote()
 
-    self.Events:Fire("PLGBC_EVENT_CONFIG_CHANGED", timestamp)
+    self.Events:Fire("PLGBC_EVENT_CHAR_CONFIG_CHANGED", timestamp)
 end
 
 function PLGuildBankClassic:EditBankChar(index, name, realm, description, class, icon, texture, acceptState)
@@ -454,6 +456,7 @@ function PLGuildBankClassic:EditBankChar(index, name, realm, description, class,
     charData.modifiedAt = timestamp
     charData.modifiedBy = myServerName
     charData.acceptState = acceptState
+    charData.isDeleted = false
  
     if charChanged then
         charData.inventoryVersion = 0
@@ -461,10 +464,10 @@ function PLGuildBankClassic:EditBankChar(index, name, realm, description, class,
         charData.money = 0
     end
     
-    guildConfig.config.configTimestamp = timestamp
+    guildConfig.config.charConfigTimestamp = timestamp
     PLGuildBankClassic:UpdateVersionsInPublicNote()
 
-    self.Events:Fire("PLGBC_EVENT_CONFIG_CHANGED", timestamp)
+    self.Events:Fire("PLGBC_EVENT_CHAR_CONFIG_CHANGED", timestamp)
     
     return charChanged
 end
@@ -526,6 +529,28 @@ function PLGuildBankClassic:GetLogByName(characterName)
     end
 
     return guildConfig.logs[charServerName]
+end
+
+function PLGuildBankClassic:DeleteLogByName(characterName)
+    local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterName)
+
+    local guildConfig = PLGuildBankClassic:GetGuildConfig() 
+
+    if guildConfig == nil then
+        return false
+    end
+
+    if guildConfig.logs == nil then
+        return false
+    end
+
+    if guildConfig.logs[charServerName] ~= nil then
+        guildConfig.logs[charServerName] = nil
+
+        return true
+    end
+
+    return false
 end
 
 function PLGuildBankClassic:SumBankCharMoney()
@@ -632,6 +657,44 @@ function PLGuildBankClassic:ShowEstimatedValueForItemLogs()
     end
 
     return minGuildRankForRankConfig
+end
+
+function PLGuildBankClassic:ClearBankCharData(characterName, setTimestamps)
+    if characterName == nil then
+        return
+    end
+
+    local timestamp = PLGuildBankClassic:GetTimestamp()
+    local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterName)
+    local bankCharData = PLGuildBankClassic:GetBankCharDataByName(characterName)
+
+    if bankCharData ~= nil then
+        if PLGuildBankClassic:CharacterOwnedByAccount(characterName) == false then
+            -- removing log and inventory data
+            local cacheOwnerInfo = ItemCache:GetOwnerInfo(charServerName)
+            if cacheOwnerInfo ~= nil then
+                ItemCache:DeleteOwnerInfo(charServerName)
+                bankCharData.inventoryVersion = 0
+            end
+
+            if PLGuildBankClassic:DeleteLogByName(characterName) == true then
+                bankCharData.logVersion = 0
+            end
+
+            PLGuildBankClassic:debug("ClearBankCharData: Deleted inventory data and log of character " .. (characterName or "n/a"))
+        end
+
+        if setTimestamps == true then
+            guildConfig.config.charConfigTimestamp = timestamp
+        else
+            timestamp = guildConfig.config.charConfigTimestamp
+        end
+        PLGuildBankClassic:UpdateVersionsInPublicNote()
+
+        self.Events:Fire("PLGBC_EVENT_CHAR_CONFIG_CHANGED", timestamp)
+    else
+        PLGuildBankClassic:debug("ClearBankCharData: No bank data found for character " .. (characterName or "n/a"))
+    end
 end
 
 function PLGuildBankClassic:TakeInboxItemOverride(mailIndex, itemIndex)

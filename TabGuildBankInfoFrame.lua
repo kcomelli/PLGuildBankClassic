@@ -161,10 +161,10 @@ function GuildBankInfoFrame:OnSaveClick()
         self.displayingCharacterData.modifiedBy = charServerName
         self.displayingCharacterData.modifiedAt = PLGuildBankClassic:GetTimestamp()
 
-        guildConfig.config.configTimestamp = timestamp
+        guildConfig.config.charConfigTimestamp = timestamp
         PLGuildBankClassic:UpdateVersionsInPublicNote()
 
-        self.Events:Fire("PLGBC_EVENT_CONFIG_CHANGED", timestamp)
+        self.Events:Fire("PLGBC_EVENT_CHAR_CONFIG_CHANGED", timestamp)
 
         -- fire updated event because guild info of this char has been updated
         Events:Fire("PLGBC_EVENT_BANKCHAR_UPDATED", PLGuildBankClassic:IndexOfBankCharData(self.displayingCharacterData), self.displayingCharacterData, false)
