@@ -365,7 +365,7 @@ end
 
 function Comms:ResponseBankCharOnline(sender, data)
     if data.bankChars ~= nil and #data.bankChars > 0 then
-        for i, #data.bankChars do
+        for i=1, #data.bankChars do
             -- saving that the bank char is owned by the player 
             Comms.KnownBankCharOwners[data.bankChars[i]] = data.currentCharName
         end
@@ -475,7 +475,7 @@ function Comms:PLGBC_GUILD_LOG_UPDATED(event, characterName, logVersion)
 
         -- limit log size
         if fullLog ~= nil and #fullLog > MAX_LOG_ENTRIES_TO_SEND then
-            logData.data = table.unpack(fullLog, 1, MAX_LOG_ENTRIES_TO_SEND)
+            logData.data = PLGuildBankClassic:sliceTable(fullLog, 1, MAX_LOG_ENTRIES_TO_SEND)
         else
             logData.data = fullLog
         end

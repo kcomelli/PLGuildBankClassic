@@ -642,6 +642,22 @@ function PLGuildBankClassic:countDictionaryKeys(dictionary, countNils)
 	return cnt
 end
 
+function PLGuildBankClassic:sliceTable(tableData, start, numberOfItems)
+	if tableData == nil or type(tableData) ~= 'table' then
+		return nil
+	end
+
+	local ret = {}
+	
+	for i=start, numberOfItems do
+		if tableData[i] then
+			tinsert(ret, tableData[i])
+		end
+	end
+
+	return ret
+end
+
 -------------------------------------------------------------------------------
 -- printing functions
 -------------------------------------------------------------------------------
