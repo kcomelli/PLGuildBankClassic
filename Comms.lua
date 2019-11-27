@@ -319,6 +319,7 @@ function Comms:QueryVersions(sender, data)
     end
 
     if doRequestVersion == true then
+        -- TODO: dely request for x seconds (e.g. 5) and allow other versions to be recognized via queryversions comms
         Comms:SendData(COMM_CMD_REQUESTVERSIONS, requestVersionData)
     end
 
