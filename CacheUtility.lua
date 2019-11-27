@@ -103,7 +103,34 @@ local function SetBagBrotherCache(ownerInfo, bagData)
         playerCache.equip = ownerInfo.equip
 
         for bagId, contents in pairs(bagData) do
-            playerCache[bagId] = contents
+            playerCache[bagId] = {}
+            if contents then
+                for idx=1, #contents do
+                    -- only itemstring;quantity
+                    local bagbrotherItemInfo = nil
+
+                    if BagBrother.ParseItem and contents[idx].link then
+
+                        -- use bagbrothers parseItem method to produce a saveable / compatible string
+                        bagbrotherItemInfo = BagBrother:ParseItem(contents[idx].link, contents[idx].count or 1)
+
+                    else if contents[idx].id then
+                        local itemString PLGuildBankClassic:GetItemStringFromId(contents[idx].id)
+
+                        if itemString then
+                            bagbrotherItemInfo = itemString
+
+                            if contents[idx].count > 1 then
+                                bagbrotherItemInfo = bagbrotherItemInfo .. ";" .. tostring(contents[idx].count)
+                            end
+                        end
+                    end
+
+                    if bagbrotherItemInfo then
+                        playerCache[bagId][idx] = bagbrotherItemInfo
+                    end
+                end
+            end
         end
 
         PLGuildBankClassic:debug("PLGBC-BagBrother: Set or updated local player cache received via comms")

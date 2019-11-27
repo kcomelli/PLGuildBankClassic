@@ -55,6 +55,32 @@ function PLGuildBankClassic:GetItemIdFromLink(itemLink)
 	return nil
 end
 
+function PLGuildBankClassic:GetItemStringFromId(itemId)
+	if itemId then
+		local itemName, itemLink, itemRarity, _, itemMinLevel, itemType, _, _, _, _, itemVendorPrice, classID = GetItemInfo(itemId);
+		return PLGuildBankClassic:GetItemStringFromLink(itemLink)
+	end
+
+	return nil
+end
+
+function PLGuildBankClassic:GetItemStringFromName(itemName)
+	if itemName then
+		local itemName, itemLink, itemRarity, _, itemMinLevel, itemType, _, _, _, _, itemVendorPrice, classID = GetItemInfo(itemName);
+		return PLGuildBankClassic:GetItemStringFromLink(itemLink)
+	end
+
+	return nil
+end
+
+function PLGuildBankClassic:GetItemStringFromLink(itemLink)
+	if itemLink then
+		return select(3, strfind(itemLink, "|H(.+)|h"))
+	end
+
+	return nil
+end
+
 function PLGuildBankClassic:TryGetOpenMailData()
 	local mailIndex = 0
 	
