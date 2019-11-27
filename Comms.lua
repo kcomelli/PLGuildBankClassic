@@ -31,6 +31,11 @@ Comms.RequestedVersions = {}
 -- limit log entries to broadcast to latest 250
 local MAX_LOG_ENTRIES_TO_SEND = 250
 
+local DEFAULT_LOG_SEND_TRIGGER_SEC = 5
+local DEFAULT_INVENTORY_SEND_TRIGGER_SEC = 5
+local DEFAULT_MONEY_SEND_TRIGGER_SEC = 5
+local DEFAULT_VREQUEST_SEND_TRIGGER_SEC = 5
+
 function Comms:OnEnable()
     self:RegisterComm(COMM_PREFIX_COMPRESSED_MESSAGE, "OnCommReceived")
     self:RegisterComm(COMM_PREFIX_CLEARTEXT_MESSAGE, "OnCommReceived")
@@ -320,7 +325,8 @@ function Comms:QueryVersions(sender, data)
 
     if doRequestVersion == true then
         -- TODO: dely request for x seconds (e.g. 5) and allow other versions to be recognized via queryversions comms
-        Comms:SendData(COMM_CMD_REQUESTVERSIONS, requestVersionData)
+        Comms:ScheduleSendComms(COMM_CMD_REQUESTVERSIONS, requestVersionData, DEFAULT_VREQUEST_SEND_TRIGGER_SEC)
+        --Comms:SendData(COMM_CMD_REQUESTVERSIONS, requestVersionData)
     end
 
     if doSendVersion == true then
@@ -539,6 +545,16 @@ function Comms:PLGBC_EVENT_CHAR_CONFIG_CHANGED(event, configTimestamp)
     Comms:SendData(COMM_CMD_SENDCHARCONFIG, configData)
 end
 
+function Comms:ScheduleSendComms(subCommand, data, threshold)
+     -- threshold impl - send data if no other update comes within 2sec
+     if PLGuildBankClassic.CommsThresholdTriggers == nil then
+        PLGuildBankClassic.CommsThresholdTriggers = {}
+    end
+    PLGuildBankClassic.CommsThresholdTriggers[subCommand] = {}
+    PLGuildBankClassic.CommsThresholdTriggers[subCommand].trigger = time() + threshold
+    PLGuildBankClassic.CommsThresholdTriggers[subCommand].data = data
+end
+
 
 function Comms:PLGBC_EVENT_BANKCHAR_MONEYCHANGED(event, characterName, value, gainedOrLost, moneyVersion)
     -- this event should only trigger an event if triggered on a bank-char
@@ -552,14 +568,8 @@ function Comms:PLGBC_EVENT_BANKCHAR_MONEYCHANGED(event, characterName, value, ga
         moneyData.moneyVersion = moneyVersion
         moneyData.ownerInfo = PLGuildBankClassic:GetCachedOwnerInfo(characterName)
 
-        -- threshold impl - send data if no other update comes within 2sec
-        if PLGuildBankClassic.CommsThresholdTriggers == nil then
-            PLGuildBankClassic.CommsThresholdTriggers = {}
-        end
-        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDMONEY] = {}
-        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDMONEY].trigger = time() + 2
-        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDMONEY].data = moneyData
-        
+       
+        Comms:ScheduleSendComms(COMM_CMD_SENDMONEY, moneyData, DEFAULT_MONEY_SEND_TRIGGER_SEC)
         --Comms:SendData(COMM_CMD_SENDMONEY, moneyData)
     end
 end
@@ -573,15 +583,7 @@ function Comms:PLGBC_EVENT_BANKCHAR_INVENTORYCHANGED(event, characterName, hasCa
         inventoryData.inventoryVersion = inventoryVersion
         inventoryData.data = PLGuildBankClassic:GetInventoryCache(characterName)
 
-        -- threshold impl - send data if no other update comes within 2sec
-        if PLGuildBankClassic.CommsThresholdTriggers == nil then
-            PLGuildBankClassic.CommsThresholdTriggers = {}
-        end
-
-        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDINVENTORY] = {}
-        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDINVENTORY].trigger = time() + 2
-        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDINVENTORY].data = inventoryData
-
+        Comms:ScheduleSendComms(COMM_CMD_SENDINVENTORY, inventoryData, DEFAULT_INVENTORY_SEND_TRIGGER_SEC)
         --Comms:SendData(COMM_CMD_SENDINVENTORY, inventoryData)
     end
 end
@@ -605,14 +607,7 @@ function Comms:PLGBC_GUILD_LOG_UPDATED(event, characterName, logVersion)
             logData.data = fullLog
         end
 
-        -- threshold impl - send data if no other update comes within 2sec
-        if PLGuildBankClassic.CommsThresholdTriggers == nil then
-            PLGuildBankClassic.CommsThresholdTriggers = {}
-        end
-        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDLOG] = {}
-        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDLOG].trigger = time() + 2
-        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDLOG].data = logData
-
+        Comms:ScheduleSendComms(COMM_CMD_SENDLOG, logData, DEFAULT_LOG_SEND_TRIGGER_SEC)
         --Comms:SendData(COMM_CMD_SENDLOG, logData)
     end
 end
