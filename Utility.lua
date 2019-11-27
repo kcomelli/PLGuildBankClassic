@@ -452,34 +452,6 @@ function PLGuildBankClassic:GetSpellorMacroIconInfo(index)
 	end
 end
 
-function PLGuildBankClassic:GetInventoryCache(characterName)
-
-	if characterName ~= nil then
-		local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterName)
-		local cacheOwnerInfo = Cache:GetOwnerInfo(charServerName)
-
-		local inventoryData = {}
-		inventoryData.ownerInfo = cacheOwnerInfo
-
-		for i, bag in ipairs(PLGBC_COMBINED_INVENTORY_CONFIG) do
-			inventoryData[bag] = {}
-			
-			inventoryData[bag].info = Cache:GetBagInfo(cacheOwnerInfo.name, bag)
-
-			if inventoryData[bag].info.bagSize ~= nil then
-				inventoryData[bag].items = {}
-
-				for slot = 1, inventoryData[bag].info.bagSize do
-					inventoryData[bag].items[slot] = Cache:GetItemInfo(cacheOwnerInfo.name, bag, slot)
-				end
-			end
-		end
-
-		return inventoryData
-	end
-
-	return nil
-end
 
 function PLGuildBankClassic:SecondsToTimeTable(seconds, noSeconds, roundUp)
 	local tempTime;

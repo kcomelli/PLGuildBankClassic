@@ -553,6 +553,67 @@ function PLGuildBankClassic:DeleteLogByName(characterName)
     return false
 end
 
+function PLGuildBankClassic:MergeLogEntries(currentLog, entriesToMerge)
+    if entriesToMerge and currentLog then
+        if #currentLog == 0 then
+            for i=1, #entriesToMerge do
+                tinsert(currentLog, entriesToMerge[i])
+            end    
+            return
+        end
+
+        local added = 0
+
+        for i=1, #entriesToMerge do
+            local mergeEntry = entriesToMerge[i]
+
+            local existingIndex = PLGuildBankClassic:FindLogEntryIndex(currentLog, mergeEntry)
+            if not existingIndex then
+                local insertionIndex = PLGuildBankClassic:FindInsertionIndex(currentLog, mergeEntry)
+
+                if insertionIndex then
+                    tinsert(currentLog, insertionIndex, mergeEntry)
+                    added = added + 1
+                end
+            else
+                -- TODO: check title or note change?!?
+            end
+        end
+        
+        PLGuildBankClassic:debug("MergeLogEntries: Added '" .. tostring(added) .. "' new entries!")
+    end
+end
+
+function PLGuildBankClassic:FindLogEntryIndex(currentLog, logEntryToSearch)
+    if logEntryToSearch and currentLog then
+        for l=1, #currentLog do
+            local curEntry = currentLog[i]
+            if curEntry.type == logEntryToSearch.type and curEntry.source == logEntryToSearch.source and curEntry.goldPerItem == logEntryToSearch.goldPerItem and curEntry.quantity == logEntryToSearch.quantity and curEntry.name == logEntryToSearch.name and 
+                curEntry.timestamp == logEntryToSearch.timestamp and curEntry.mode == logEntryToSearch.mode and curEntry.itemId == logEntryToSearch.itemId then
+                
+                return l
+            end
+        end
+    end
+
+    return nil
+end
+
+function PLGuildBankClassic:FindInsertionIndex(currentLog, logEntryToInsert)
+    if logEntryToInsert and currentLog then
+        for l=1, #currentLog do
+            local curEntry = currentLog[i]
+            if logEntryToInsert.timestamp >= curEntry.timestamp then
+                return l
+            end
+        end
+
+        return #currentLog
+    end
+
+    return 1
+end
+
 function PLGuildBankClassic:SumBankCharMoney()
     local capital = 0
 

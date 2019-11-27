@@ -43,6 +43,7 @@ Events.lua
 Comms.lua
 
 Utility.lua
+CacheUtility.lua
 Frame.lua
 TabGuildConfigFrame.lua
 CreateEditBankAltDialogFrame.lua

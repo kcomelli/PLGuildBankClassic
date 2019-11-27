@@ -94,8 +94,61 @@ function Comms:RouteCommand(sender,command, data)
     end
 end
 
+function Comms:BuildVersionsPacket()
+    local guildConfig = PLGuildBankClassic:GetGuildConfig() 
+    local versionData = {}
+    versionData.configVersion = 0
+    versionData.charConfigVersion = 0
+
+    if guildConfig then
+        versionData.configVersion = guildConfig.configTimestamp
+        versionData.charConfigVersion = guildConfig.cahrConfigTimestamp
+        versionData.bankChars = {}
+        for idx, char in ipairs(guildConfig.bankChars) do
+            versionData.bankChars[char] = {}
+            versionData.bankChars[char].inventoryVersion = guildConfig.bankChars[char].inventoryVersion
+            versionData.bankChars[char].logVersion = guildConfig.bankChars[char].logVersion
+            versionData.bankChars[char].moneyVersion = guildConfig.bankChars[char].moneyVersion
+            versionData.bankChars[char].dataVersion = guildConfig.bankChars[char].modifiedAt
+        end
+    end
+
+    return versionData
+end
+
+-- ------------------------------------------------------------------
+-- merging known version information with full or partial version data of sender
+--
+
+local function MergeKnownVersionData(sender, data)
+    if not Comms.KnownVersions[sender] then
+        Comms.KnownVersions[sender] = data
+    else
+        Comms.KnownVersions[sender].configVersion = data.configVersion or Comms.KnownVersions[sender].configVersion
+        Comms.KnownVersions[sender].charConfigVersion = data.charConfigVersion or Comms.KnownVersions[sender].charConfigVersion
+
+        if data.bankChars then
+            if not Comms.KnownVersions[sender].bankChars then
+                Comms.KnownVersions[sender].bankChars = data.bankChars
+                return
+            end
+
+            for char, vdata in pairs(data.bankChars) do
+                if not Comms.KnownVersions[sender].bankChars[char] then
+                    Comms.KnownVersions[sender].bankChars[char] = data.bankChars[char]
+                else
+                    Comms.KnownVersions[sender].bankChars[char].inventoryVersion = data.bankChars[char].inventoryVersion or Comms.KnownVersions[sender].bankChars[char].inventoryVersion
+                    Comms.KnownVersions[sender].bankChars[char].logVersion = data.bankChars[char].logVersion or Comms.KnownVersions[sender].bankChars[char].logVersion
+                    Comms.KnownVersions[sender].bankChars[char].moneyVersion = data.bankChars[char].moneyVersion or Comms.KnownVersions[sender].bankChars[char].moneyVersion
+                    Comms.KnownVersions[sender].bankChars[char].dataVersion = data.bankChars[char].dataVersion or Comms.KnownVersions[sender].bankChars[char].dataVersion
+                end
+            end
+        end
+    end
+end
+
 function Comms:QueryVersions(sender, data)
-    Comms.KnownVersions[sender] = data
+    MergeKnownVersionData(sender, data)
 
     local myVersionsData = Comms:BuildVersionsPacket()
     local requestVersionData = {}
@@ -220,6 +273,35 @@ function Comms:QueryVersions(sender, data)
                     -- in order to avoid version ping-pong
                     strippedVersionQuery.bankChars[charR].moneyVersion = VersionsData.bankChars[charR].moneyVersion
                 end
+
+
+                if data.bankChars[charR].isDeleted ~= true and data.bankChars[charR].dataVersion ~= nil and data.bankChars[charR].dataVersion > myVersionsData.bankChars[charR].dataVersion and (Comms.RequestedVersions.bankChars == nil or Comms.RequestedVersions.bankChars[charR] == nil or Comms.RequestedVersions.bankChars[charR].dataVersion < data.bankChars[charR].dataVersion) then
+                    if requestVersionData.bankChars[charR] == nil then
+                        requestVersionData.bankChars[charR] = {}
+                    end
+
+                    -- request a version higher or equal the currently sent version
+                    requestVersionData.bankChars[charR].dataVersion = data.bankChars[charR].dataVersion
+                    doRequestVersion = true
+
+                    if Comms.RequestedVersions.bankChars == nil then
+                        Comms.RequestedVersions.bankChars = {}
+                    end
+                    if Comms.RequestedVersions.bankChars[charR] == nil then
+                        Comms.RequestedVersions.bankChars[charR] = {}
+                    end
+                    Comms.RequestedVersions.bankChars[charR].dataVersion = data.bankChars[charR].dataVersion
+                end
+
+                if data.bankChars[charR].isDeleted ~= true and data.bankChars[charR].dataVersion ~= nil and data.bankChars[charR].dataVersion < myVersionsData.bankChars[charR].dataVersion then
+                    doSendVersion = true
+                    if strippedVersionQuery.bankChars[charR] == nil then
+                        strippedVersionQuery.bankChars[charR] = {}
+                    end
+                    -- only sent this version info in the query version data
+                    -- in order to avoid version ping-pong
+                    strippedVersionQuery.bankChars[charR].dataVersion = VersionsData.bankChars[charR].dataVersion
+                end
             end
         end
 
@@ -261,6 +343,8 @@ function Comms:ReceiveConfig(sender, data)
             PLGuildBankClassic:debug("Updating rank config from sync source")
             guildConfig.minGuildRank = data.config.minGuildRank
             guildConfig.configTimestamp = data.config.configTimestamp
+
+            -- TODO: Update local UI
         end
     end
 end
@@ -295,13 +379,17 @@ function Comms:ReceiveCharConfig(sender, data)
 
                 if foundCharLocally == false then
                     PLGuildBankClassic:debug("Adding bank character with name '" .. charL .. "'")
+                    local requireQueryVersions = not guildConfig.bankChars[charR]
+                    
                     guildConfig.bankChars[charR] = valR
                     guildConfig.bankChars[charR].inventoryVersion = 0
                     guildConfig.bankChars[charR].logVersion = 0
-                    
-                    if guildConfig.bankChars[charR] ~= true then
+
+                    if requireQueryVersions then
                         -- TODO: need query versions in order to receive log and inventory data
                     end
+
+                    -- TODO: Update local UI, ask accept if ?!?!?
                 end
             end
 
@@ -313,29 +401,64 @@ function Comms:ReceiveCharConfig(sender, data)
                 end
             end
         end
+
+        -- TODO: Update local UI
     end
 end
 
 function Comms:ReceiveInventory(sender, data)
+    if data ~= nil and data.charaterName ~= nil and data.ownerInfo ~= nil and data.bags ~= nil then
+        local bankCharData = PLGuildBankClassic:GetBankCharDataByName(data.charaterName)
+        if bankCharData ~= nil then
+            PLGuildBankClassic:debug("Updating inventory information for '" ..  data.charaterName .. "'")
+            bankCharData.inventoryVersion = data.inventoryVersion or bankCharData.inventoryVersion
+            PLGuildBankClassic:SetCacheInventoryInfo(data.ownerInfo, data.bags)
 
+            -- TODO: Update local UI
+        else
+            PLGuildBankClassic:debug("No local bank char data found for '" ..  data.charaterName .. "'")
+        end
+    else
+        PLGuildBankClassic:debug("ReceiveInventory: missing data or cached owner info / bags '" ..  (data.charaterName or "unknown") .. "'")
+    end
 end
 
 function Comms:ReceiveMoney(sender, data)
-    if data ~= nil and data.charaterName ~= nil then
+    if data ~= nil and data.charaterName ~= nil and data.ownerInfo ~= nil then
         local bankCharData = PLGuildBankClassic:GetBankCharDataByName(data.charaterName)
 
         if bankCharData ~= nil then
             PLGuildBankClassic:debug("Updating money information for '" ..  data.charaterName .. "'")
             bankCharData.money = data.value or bankCharData.money
             bankCharData.moneyVersion = data.moneyVersion or bankCharData.moneyVersion
+            PLGuildBankClassic:SetCachedMoneyInfo(data.ownerInfo, bankCharData.money)
+
+            -- TODO: Update local UI
         else
             PLGuildBankClassic:debug("No local bank char data found for '" ..  data.charaterName .. "'")
         end
+    else
+        PLGuildBankClassic:debug("ReceiveMoney: missing data or cached owner info '" ..  (data.charaterName or "unknown") .. "'")
     end
 end
 
 function Comms:ReceiveLog(sender, data)
+    if data ~= nil and data.charaterName ~= nil and data.logVersion ~= nil then
+        local bankCharData = PLGuildBankClassic:GetBankCharDataByName(data.charaterName)
+        local logForChar = PLGuildBankClassic:GetLogByName(data.charaterName)
 
+        if logForChar ~= nil and bankCharData ~= nil then
+            PLGuildBankClassic:debug("Updating log for '" ..  data.charaterName .. "'")
+            bankCharData.logVersion = data.logVersion or bankCharData.logVersion
+            PLGuildBankClassic:MergeLogEntries(logForChar, data.data)
+
+            -- TODO: Update local UI
+        else
+            PLGuildBankClassic:debug("No local log or bank char data found for '" ..  data.charaterName .. "'")
+        end
+    else
+        PLGuildBankClassic:debug("ReceiveLog: missing data or cached owner info '" ..  (data.charaterName or "unknown") .. "'")
+    end
 end
 
 function Comms:QueryBankCharOnline(sender, data)
@@ -426,6 +549,7 @@ function Comms:PLGBC_EVENT_BANKCHAR_MONEYCHANGED(event, characterName, value, ga
         moneyData.value = value
         moneyData.gainedOrLost = gainedOrLost
         moneyData.moneyVersion = moneyVersion
+        moneyData.ownerInfo = PLGuildBankClassic:GetCachedOwnerInfo(characterName)
 
         -- threshold impl - send data if no other update comes within 2sec
         if PLGuildBankClassic.CommsThresholdTriggers == nil then
@@ -527,6 +651,7 @@ function Comms:BuildVersionsPacket()
             versionData.bankChars[char].inventoryVersion = guildConfig.bankChars[char].inventoryVersion
             versionData.bankChars[char].logVersion = guildConfig.bankChars[char].logVersion
             versionData.bankChars[char].moneyVersion = guildConfig.bankChars[char].moneyVersion
+            versionData.bankChars[char].dataVersion = guildConfig.bankChars[char].modifiedAt
         end
     end
 
