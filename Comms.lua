@@ -409,6 +409,27 @@ function Comms:ReceiveCharConfig(sender, data)
             end
         end
 
+        local haveAddedNewChars = false
+        for charL, valL in pairs(guildConfig.bankChars) do
+            local foundInRemotePackage = false
+            for charR, valR in pairs(data.bankChars) do
+                if charR == charL then
+                    foundInRemotePackage = true
+                end
+            end
+
+            if foundInRemotePackage == false then
+                haveAddedNewChars = true
+            end
+        end
+
+        if haveAddedNewChars == true then
+            -- this character hab been added on the local account between the last changes
+            -- update last char info version and broadcast version query
+            guildConfig.charConfigTimestamp = PLGuildBankClassic:GetTimestamp()
+            Comms:SendVersionQuery()
+        end
+        
         -- TODO: Update local UI
     end
 end
