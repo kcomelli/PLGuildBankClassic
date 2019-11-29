@@ -34,6 +34,7 @@ MoneyTypeInfo["PLGUILDBANKCLASSIC"] = {
 };
 
 PLGuildBankClassic.CommsThresholdTriggers = {}
+PLGuildBankClassic.LastBankCharOnlineQuery = 0
 
 PLGuildBankClassic.Frame = {}
 PLGuildBankClassic.Frame.defaults = {}

@@ -28,6 +28,9 @@ Comms.KnownVersions = {}
 Comms.KnownBankCharOwners = {}
 Comms.RequestedVersions = {}
 Comms.SendStack = {}
+Comms.QueryBankCharThreshold = 60
+-- maximum age of online bank char information if adding send schedules
+Comms.MaxBankCharOnlineQueryAgeIfSendingScheduledComm = 10
 
 -- limit log entries to broadcast to latest 250
 local MAX_LOG_ENTRIES_TO_SEND = 250
@@ -98,28 +101,6 @@ function Comms:RouteCommand(sender,command, data)
     elseif Comms.comm[command] then
         Comms.comm[command](sender, data)
     end
-end
-
-function Comms:BuildVersionsPacket()
-    local guildConfig = PLGuildBankClassic:GetGuildConfig() 
-    local versionData = {}
-    versionData.configVersion = 0
-    versionData.charConfigVersion = 0
-
-    if guildConfig then
-        versionData.configVersion = guildConfig.configTimestamp
-        versionData.charConfigVersion = guildConfig.cahrConfigTimestamp
-        versionData.bankChars = {}
-        for idx, char in ipairs(guildConfig.bankChars) do
-            versionData.bankChars[char] = {}
-            versionData.bankChars[char].inventoryVersion = guildConfig.bankChars[char].inventoryVersion
-            versionData.bankChars[char].logVersion = guildConfig.bankChars[char].logVersion
-            versionData.bankChars[char].moneyVersion = guildConfig.bankChars[char].moneyVersion
-            versionData.bankChars[char].dataVersion = guildConfig.bankChars[char].modifiedAt
-        end
-    end
-
-    return versionData
 end
 
 -- ------------------------------------------------------------------
@@ -428,7 +409,7 @@ function Comms:ShouldISend(otherCharacters)
     local myRankIndex = PLDKPBids:GetGuildRankIndex(UnitName("player"))
 
     if otherCharacters and #otherCharacters > 0 then
-        for idx, char in ipairs(otherCharacters) then
+        for idx, char in ipairs(otherCharacters) do
             local otherRankIndex = PLDKPBids:GetGuildRankIndex(char)
 
             if PLDKPBids:IsGuildPlayerOnline(char) and (otherRankIndex < myRankIndex or char < UnitName("player")) then
@@ -664,7 +645,10 @@ function Comms:ReceiveCharConfig(sender, data)
 
             for charR, valR in pairs(data.bankChars) do
                 local foundCharLocally = false
-                for charL, valL in pairs(guildConfig.bankChars) do
+                for idx=1, #guildConfig.bankChars do
+                --for charL, valL in pairs(guildConfig.bankChars) do
+                    local charL = guildConfig.bankChars[idx].name
+                    local valL = guildConfig.bankChars[idx]
                     if charR == charL then
                         foundCharLocally = true
                         if valR.modifiedAt > valL.modifiedAt then
@@ -680,14 +664,15 @@ function Comms:ReceiveCharConfig(sender, data)
 
                 if foundCharLocally == false then
                     PLGuildBankClassic:debug("Adding bank character with name '" .. charL .. "'")
-                    local requireQueryVersions = not guildConfig.bankChars[charR]
+                    local requireQueryVersions = true
                     
-                    guildConfig.bankChars[charR] = valR
-                    guildConfig.bankChars[charR].inventoryVersion = 0
-                    guildConfig.bankChars[charR].logVersion = 0
+                    valR.inventoryVersion = 0
+                    valR.logVersion = 0
+                    tinsert(guildConfig.bankChars, valR)
 
                     if requireQueryVersions then
                         -- TODO: need query versions in order to receive log and inventory data
+                        Comms:SendVersionQuery()
                     end
 
                     -- TODO: Update local UI, ask accept if ?!?!?
@@ -696,7 +681,9 @@ function Comms:ReceiveCharConfig(sender, data)
 
             -- eventually remove logs and data for deleted chars
             -- if they are not owned by the player
-            for charL, valL in pairs(guildConfig.bankChars) do
+            for idx=1, #guildConfig.bankChars do
+                local charL = guildConfig.bankChars[idx].name
+                local valL = guildConfig.bankChars[idx]
                 if valL.isDeleted == true and PLGuildBankClassic:CharacterOwnedByAccount(charL) == false then
                     PLGuildBankClassic:ClearBankCharData(charL)
                 end
@@ -704,7 +691,10 @@ function Comms:ReceiveCharConfig(sender, data)
         end
 
         local haveAddedNewChars = false
-        for charL, valL in pairs(guildConfig.bankChars) do
+        for idx=1, #guildConfig.bankChars do
+            local charL = guildConfig.bankChars[idx].name
+            local valL = guildConfig.bankChars[idx]
+
             local foundInRemotePackage = false
             for charR, valR in pairs(data.bankChars) do
                 if charR == charL then
@@ -904,6 +894,12 @@ function Comms:PLGBC_EVENT_CHAR_CONFIG_CHANGED(event, configTimestamp)
 end
 
 function Comms:ScheduleSendComms(subCommand, data, threshold)
+    -- ensure 
+    if (time() - PLGuildBankClassic.LastBankCharOnlineQuery) > Comms.MaxBankCharOnlineQueryAgeIfSendingScheduledComm then
+        -- force query bacnk char online state if information is older than specified age
+        PLGuildBankClassic.LastBankCharOnlineQuery = time() - Comms.QueryBankCharThreshold - 5
+    end
+
      -- threshold impl - send data if no other update comes within 2sec
      if PLGuildBankClassic.CommsThresholdTriggers == nil then
         PLGuildBankClassic.CommsThresholdTriggers = {}
@@ -979,12 +975,13 @@ function Comms:BuildVersionsPacket()
         versionData.configVersion = guildConfig.configTimestamp
         versionData.charConfigVersion = guildConfig.cahrConfigTimestamp
         versionData.bankChars = {}
-        for idx, char in ipairs(guildConfig.bankChars) do
+        for idx=1, #guildConfig.bankChars do
+            local char = guildConfig.bankChars[idx].name
             versionData.bankChars[char] = {}
-            versionData.bankChars[char].inventoryVersion = guildConfig.bankChars[char].inventoryVersion
-            versionData.bankChars[char].logVersion = guildConfig.bankChars[char].logVersion
-            versionData.bankChars[char].moneyVersion = guildConfig.bankChars[char].moneyVersion
-            versionData.bankChars[char].dataVersion = guildConfig.bankChars[char].modifiedAt
+            versionData.bankChars[char].inventoryVersion = guildConfig.bankChars[idx].inventoryVersion
+            versionData.bankChars[char].logVersion = guildConfig.bankChars[idx].logVersion
+            versionData.bankChars[char].moneyVersion = guildConfig.bankChars[idx].moneyVersion
+            versionData.bankChars[char].dataVersion = guildConfig.bankChars[idx].modifiedAt
         end
     end
 
@@ -1006,7 +1003,7 @@ function Comms:SendData(prefix, data)
     local commsData = Comms:BuildCommsPacket(prefix, data)
 
 	if IsInGuild() then
-        if prefix == COMM_CMD_BUILDCHECK or prefix == COMM_CMD_QUERYVERSIONS then
+        if prefix == COMM_CMD_BUILDCHECK then
             PLGuildBankClassic:debug("Broadcasted " .. prefix)
             -- cleartext message
 			Comms:SendCommMessage(COMM_PREFIX_CLEARTEXT_MESSAGE, data, "GUILD")

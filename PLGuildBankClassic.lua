@@ -212,6 +212,12 @@ end
 
 
 function PLGuildBankClassic:OnUpdate(frame, elapsed)
+
+    if PLGuildBankClassic.LastBankCharOnlineQuery > 0 and PLGuildBankClassic.LastBankCharOnlineQuery <= time() then
+        PLGuildBankClassic.LastBankCharOnlineQuery = time() + PLGuildBankClassic.Comms.QueryBankCharThreshold -- scan all 60 seconds
+        PLGuildBankClassic.Comms:SendQueryBankcharOnline()
+    end
+
     if executingSendTriggers == true then
         return
     end
@@ -293,10 +299,14 @@ function PLGuildBankClassic:PlayerEnteringWorld()
     self:UpdateAtBankCharState()
     self:CheckIfAcceptenceIsPending()
     self:SetOwnedCharacters()
+    PLGuildBankClassic.LastBankCharOnlineQuery = time() - PLGuildBankClassic.Comms.QueryBankCharThreshold - 5 -- force query online via sync
+    PLGuildBankClassic.Comms:SendVersionQuery() -- send version query
 end
 
 function PLGuildBankClassic:PlayerLeavingWorld()
     self:CheckPendingTradeData("trade")
+
+    -- TODO: send queued comm stacks
 end
 
 function PLGuildBankClassic:SetOwnedCharacters()
