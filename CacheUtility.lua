@@ -6,22 +6,22 @@ local Cache = LibStub('LibItemCache-2.0')
 function PLGuildBankClassic:GetInventoryCache(characterName)
 
 	if characterName ~= nil then
-		local cacheOwnerInfo = Cache:GetCachedOwnerInfo(characterName)
+		local cacheOwnerInfo = PLGuildBankClassic:GetCachedOwnerInfo(characterName)
 
 		local inventoryData = {}
 		inventoryData.ownerInfo = cacheOwnerInfo
 		inventoryData.bags = {}
 
 		for i, bag in ipairs(PLGBC_COMBINED_INVENTORY_CONFIG) do
-			inventoryData.bag[bag] = {}
+			inventoryData.bags[bag] = {}
 			
-			inventoryData.bag[bag].info = Cache:GetBagInfo(cacheOwnerInfo.name, bag)
+			inventoryData.bags[bag].info = Cache:GetBagInfo(cacheOwnerInfo.name, bag)
 
-			if inventoryData.bag[bag].info.bagSize ~= nil then
-				inventoryData.bag[bag].items = {}
+			if inventoryData.bags[bag].info.bagSize ~= nil then
+				inventoryData.bags[bag].items = {}
 
-				for slot = 1, inventoryData[bag].info.bagSize do
-					inventoryData.bag[bag].items[slot] = Cache:GetItemInfo(cacheOwnerInfo.name, bag, slot)
+				for slot = 1, inventoryData.bags[bag].info.bagSize do
+					inventoryData.bags[bag].items[slot] = Cache:GetItemInfo(cacheOwnerInfo.name, bag, slot)
 				end
 			end
 		end
@@ -114,7 +114,7 @@ local function SetBagBrotherCache(ownerInfo, bagData)
                         -- use bagbrothers parseItem method to produce a saveable / compatible string
                         bagbrotherItemInfo = BagBrother:ParseItem(contents[idx].link, contents[idx].count or 1)
 
-                    else if contents[idx].id then
+                    elseif contents[idx].id then
                         local itemString PLGuildBankClassic:GetItemStringFromId(contents[idx].id)
 
                         if itemString then

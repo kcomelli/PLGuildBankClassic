@@ -130,6 +130,8 @@ local minGuildRankForRankConfig = 1
 -- timeout waiting waiting after a trade window closes and has been accepted from either side
 local timeoutTradeScanInSeconds = 2
 
+local executingSendTriggers = false
+
 PLGuildBankClassic.IsOfficer = ""
 PLGuildBankClassic.LastVerCheck = 0
 
@@ -210,20 +212,34 @@ end
 
 
 function PLGuildBankClassic:OnUpdate(frame, elapsed)
+    if executingSendTriggers == true then
+        return
+    end
 
     if PLGuildBankClassic.CommsThresholdTriggers ~= nil and PLGuildBankClassic:countDictionaryKeys(PLGuildBankClassic.CommsThresholdTriggers, false) > 0 then
+        executingSendTriggers = true
         for cmd, data in pairs(PLGuildBankClassic.CommsThresholdTriggers) do
-			if data ~= nil and data.trigger > 0 and data.trigger <= time() then
-				-- ensure not sending data twice
-				data.trigger = 0
-				PLGuildBankClassic:debug("Executeing sync command '" .. cmd .. "' ...")
-				-- send command and data
-				PLGuildBankClassic.Comms:SendData(cmd, data.data)
-				-- delete key from 
-				PLGuildBankClassic.CommsThresholdTriggers[cmd] = nil
-			end
-		end
-	end
+            for idx=#data, 1, -1 do -- loop from end to top (FIFO)
+                local sendInfo = data[idx]
+                if sendInfo ~= nil and sendInfo.trigger > 0 and sendInfo.trigger <= time() then
+                    -- ensure not sending data twice
+                    sendInfo.trigger = 0
+                    PLGuildBankClassic:debug("Executeing sync command '" .. cmd .. "' ...")
+                    -- send command and data
+                    PLGuildBankClassic.Comms:SendData(cmd, sendInfo.data)
+                    -- remove from table is ok because we are looping backwards
+                    tremove(data, idx) 
+                end
+            end
+
+            -- delete key from 
+            if not data or #data <= 0 then
+                PLGuildBankClassic.CommsThresholdTriggers[cmd] = nil
+            end
+        end
+    end
+    
+    executingSendTriggers = false
 end
 
 

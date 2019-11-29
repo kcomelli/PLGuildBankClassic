@@ -27,6 +27,7 @@ PLGuildBankClassic.Comms = Comms
 Comms.KnownVersions = {}
 Comms.KnownBankCharOwners = {}
 Comms.RequestedVersions = {}
+Comms.SendStack = {}
 
 -- limit log entries to broadcast to latest 250
 local MAX_LOG_ENTRIES_TO_SEND = 250
@@ -324,7 +325,10 @@ function Comms:QueryVersions(sender, data)
     end
 
     if doRequestVersion == true then
-        -- TODO: dely request for x seconds (e.g. 5) and allow other versions to be recognized via queryversions comms
+        -- remove current request versions queue if any
+        -- just to make sure not sending multiple requests within the trigger frame
+        Comms:ScheduleSendComms(COMM_CMD_REQUESTVERSIONS, requestVersionData, nil)
+        -- add request version sent queue delayed
         Comms:ScheduleSendComms(COMM_CMD_REQUESTVERSIONS, requestVersionData, DEFAULT_VREQUEST_SEND_TRIGGER_SEC)
         --Comms:SendData(COMM_CMD_REQUESTVERSIONS, requestVersionData)
     end
@@ -337,7 +341,297 @@ function Comms:QueryVersions(sender, data)
 end
 
 function Comms:RequestVersions(sender, data)
+    local haveDataWhichShouldBeSended = Comms:BuildSendStack(data)
 
+    if not haveDataWhichShouldBeSended then
+        return
+    end
+    
+    -- algorithm selecting who should send data
+    -- for characters - prio1 bank char
+    if Comms.SendStack.configVersion ~= nil and Comms:ShouldISend(Comms:ListOfCharsWhichMaySendData("config", Comms.SendStack.configVersion)) then
+        Comms:PLGBC_EVENT_CONFIG_CHANGED("PLGBC_EVENT_CONFIG_CHANGED", Comms.SendStack.configVersion)
+    end
+    Comms.SendStack.configVersion = nil 
+
+    if Comms.SendStack.charConfigVersion ~= nil and Comms:ShouldISend(Comms:ListOfCharsWhichMaySendData("charconfig", Comms.SendStack.charConfigVersion)) then
+        Comms:PLGBC_EVENT_CHAR_CONFIG_CHANGED("PLGBC_EVENT_CHAR_CONFIG_CHANGED", Comms.SendStack.charConfigVersion)
+    end
+    Comms.SendStack.charConfigVersion = nil
+
+    if Comms.SendStack.bankChars ~= nil then
+        for charR, valR in pairs(Comms.SendStack.bankChars) do
+            if PLGuildBankClassic:CharacterOwnedByAccount(charR) then
+                -- i'm owning this bank char so I will send the data
+                if valR.inventoryVersion ~= nil then
+                    -- send inventory
+                    Comms:ScheduleSendInventory(charR, valR.inventoryVersion)
+                end
+
+                if valR.moneyVersion ~= nil then
+                    -- send money
+                    Comms:ScheduleSendInventory(charR, nil, valR.moneyVersion)
+                end
+
+                if valR.logVersion ~= nil then
+                    -- send log
+                    Comms:ScheduleSendLog(charR, valR.logVersion)
+                end
+
+                --if valR.dataVersion ~= nil then 
+                    -- TODO: send config portion as a single record per character!
+                --end
+
+            elseif Comms.KnownBankCharOwners[charR] ~= nil and PLGuildBankClassic:IsGuildPlayerOnline(Comms.KnownBankCharOwners[charR]) then
+                -- the bank char owner is online
+                -- he/she should send data
+                -- do not send
+                PLGuildBankClassic:debug("Skip sending data for character '" .. charR .. "' since '" .. Comms.KnownBankCharOwners[charR] .. "' is online and owning the char!")
+            else
+                -- select one character with the same version
+                -- by guild rank, name and online status
+                if valR.inventoryVersion ~= nil and Comms:ShouldISend(Comms:ListOfCharsWhichMaySendData("inventory", valR.inventoryVersion)) then
+                    -- send inventory
+                    Comms:ScheduleSendInventory(charR, valR.inventoryVersion)
+                end
+
+                if valR.moneyVersion ~= nil  and Comms:ShouldISend(Comms:ListOfCharsWhichMaySendData("money", valR.inventoryVersion)) then
+                    -- send money
+                    Comms:ScheduleSendInventory(charR, nil, valR.moneyVersion)
+                end
+
+                if valR.logVersion ~= nil  and Comms:ShouldISend(Comms:ListOfCharsWhichMaySendData("log", valR.inventoryVersion)) then
+                    -- send log
+                    Comms:ScheduleSendLog(charR, valR.logVersion)
+                end
+
+                --if valR.dataVersion ~= nil  and Comms:ShouldISend(Comms:ListOfCharsWhichMaySendData("data", valR.inventoryVersion)) then 
+                    -- TODO: send config portion as a single record per character!
+                --end
+            end
+
+            -- delete sendstack
+            -- will be rebuild if additional version requests received
+            Comms.SendStack.bankChars[charR] = nil
+        end
+    end
+end
+
+-- ---------------------------------------------------------------------------------------
+-- takes a list of other characters which have the same data version
+-- select a player based on online-status, guild rank and name which will send the data
+function Comms:ShouldISend(otherCharacters)
+    -- algorithm electing one character to send data
+    -- prio 1 - is online
+    -- prio 2 - guild rank
+    -- prio 3 - name sort
+    local myRankIndex = PLDKPBids:GetGuildRankIndex(UnitName("player"))
+
+    if otherCharacters and #otherCharacters > 0 then
+        for idx, char in ipairs(otherCharacters) then
+            local otherRankIndex = PLDKPBids:GetGuildRankIndex(char)
+
+            if PLDKPBids:IsGuildPlayerOnline(char) and (otherRankIndex < myRankIndex or char < UnitName("player")) then
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
+
+-- ---------------------------------------------------------------------------------------
+-- cross check requested versions with self owning versions and build a send stack
+-- which versions of which data should/can be sent by this account
+-- algorithm for account choosing will be done afterwards
+function Comms:BuildSendStack(data)
+    if data == nil then
+        -- clear stack
+        Comms.SendStack = {}
+        return false
+    end
+
+    local myVersions = Comms:BuildVersionsPacket()
+    local eligableToSendDat = false
+
+    if data.configVersion ~= nil then
+        if Comms:DoIHaveGreaterOrEqualVersion("config", data.configVersion, nil, true) then
+            Comms.SendStack.configVersion = myVersions.configVersion
+            eligableToSendDat = true
+        else
+            Comms.SendStack.configVersion = nil
+        end
+
+        if Comms:DoIHaveGreaterOrEqualVersion("charconfig", data.charConfigVersion, nil, true) then
+            Comms.SendStack.charConfigVersion = myVersions.charConfigVersion
+            eligableToSendDat = true
+        else
+            Comms.SendStack.charConfigVersion = nil
+        end
+
+        if data.bankChars ~= nil then
+            for charR, valR in pairs(data.bankChars) do
+                if Comms:DoIHaveGreaterOrEqualVersion("inventory", valR.inventoryVersion, charR, true) then
+                    Comms.SendStack.bankChars[charR] = Comms.SendStack.bankChars[charR] or {}
+                    Comms.SendStack.bankChars[charR].inventoryVersion = valR.inventoryVersion
+                    eligableToSendDat = true
+                else
+                    if Comms.SendStack.bankChars[charR] then
+                        Comms.SendStack.bankChars[charR].inventoryVersion = nil
+                    end
+                end
+
+                if Comms:DoIHaveGreaterOrEqualVersion("money", valR.moneyVersion, charR, true) then
+                    Comms.SendStack.bankChars[charR] = Comms.SendStack.bankChars[charR] or {}
+                    Comms.SendStack.bankChars[charR].moneyVersion = valR.moneyVersion
+                    eligableToSendDat = true
+                else
+                    if Comms.SendStack.bankChars[charR] then
+                        Comms.SendStack.bankChars[charR].moneyVersion = nil
+                    end
+                end
+
+                if Comms:DoIHaveGreaterOrEqualVersion("log", valR.logVersion, charR, true) then
+                    Comms.SendStack.bankChars[charR] = Comms.SendStack.bankChars[charR] or {}
+                    Comms.SendStack.bankChars[charR].logVersion = valR.logVersion
+                    eligableToSendDat = true
+                else
+                    if Comms.SendStack.bankChars[charR] then
+                        Comms.SendStack.bankChars[charR].logVersion = nil
+                    end
+                end
+
+                if Comms:DoIHaveGreaterOrEqualVersion("data", valR.dataVersion, charR, true) then
+                    Comms.SendStack.bankChars[charR] = Comms.SendStack.bankChars[charR] or {}
+                    Comms.SendStack.bankChars[charR].dataVersion = valR.dataVersion
+                    eligableToSendDat = true
+                else
+                    if Comms.SendStack.bankChars[charR] then
+                        Comms.SendStack.bankChars[charR].dataVersion = nil
+                    end
+                end
+            end
+        end
+    end
+
+    return eligableToSendDat
+end
+
+
+-- ---------------------------------------------------------------------------------------
+-- check if this character or account have a higher or equal version of the requested one
+-- if useKnownVersionsAsWell == true, then the method will only return true if no one else
+-- in the known version list has a higher version
+function Comms:DoIHaveGreaterOrEqualVersion(type, version, characterName, useKnownVersionsAsWell)
+    if type == nil or version == nil then
+        return false
+    end
+
+    local myVersions = Comms:BuildVersionsPacket()
+    if useKnownVersionsAsWell and Comms:AnyOtherWithHigherVersion(type, version, characterName) then
+        return false
+    end
+
+    if type == "config" then
+        return myVersions.configVersion >= version
+    elseif type == "charconfig" then
+        return myVersions.charConfigVersion >= version
+    elseif type == "inventory" then
+        return myVersions.bankChars[char] ~= nul and myVersions.bankChars[char].inventoryVersion >= version
+    elseif type == "log" then
+        return myVersions.bankChars[char] ~= nul and myVersions.bankChars[char].logVersion >= version
+    elseif type == "money" then
+        return myVersions.bankChars[char] ~= nul and myVersions.bankChars[char].moneyVersion >= version
+    elseif type == "data"  then
+        return myVersions.bankChars[char] ~= nul and myVersions.bankChars[char].dataVersion >= version
+    else
+        PLGuildBankClassic:errln(string.format(L["Unkown version comparison type received: '%s'."], type))
+    end
+
+    return false
+end
+
+-- ---------------------------------------------------------------------------------------
+-- check if any other known player has a higher version as the given one
+function Comms:AnyOtherWithHigherVersion(type, version, characterName)
+    if type == nil or version == nil then
+        return false
+    end
+
+    for char, knowData in paris(Comms.KnownVersions) do
+        if type == "config" then
+            if knowData.configVersion > version then
+                return true
+            end
+        elseif type == "charconfig" then
+            if knowData.charConfigVersion > version then
+                return true
+            end
+        elseif type == "inventory" then
+            if knowData.bankChars[char] ~= nul and knowData.bankChars[char].inventoryVersion > version then
+                return true
+            end
+        elseif type == "log" then
+            if knowData.bankChars[char] ~= nul and knowData.bankChars[char].logVersion > version then
+                return true
+            end
+        elseif type == "money" then
+            if knowData.bankChars[char] ~= nul and knowData.bankChars[char].moneyVersion > version then
+                return true
+            end
+        elseif type == "data"  then
+            if knowData.bankChars[char] ~= nul and knowData.bankChars[char].dataVersion > version then
+                return true
+            end
+        else
+            PLGuildBankClassic:errln(string.format(L["Unkown version comparison type received: '%s'."], type))
+        end
+    end
+
+    return false
+end
+
+-- ---------------------------------------------------------------------------------------
+-- generates a list of character names which have the requested version number or higher
+function Comms:ListOfCharsWhichMaySendData(type, version)
+    local chars = {}
+
+    if type == nil or version == nil then
+        return chars
+    end
+
+    for char, knowData in paris(Comms.KnownVersions) do
+        if type == "config" then
+            if knowData.configVersion >= version then
+                tinsert(chars, char)
+            end
+        elseif type == "charconfig" then
+            if knowData.charConfigVersion >= version then
+                tinsert(chars, char)
+            end
+        elseif type == "inventory" then
+            if knowData.bankChars[char] ~= nul and knowData.bankChars[char].inventoryVersion >= version then
+                tinsert(chars, char)
+            end
+        elseif type == "log" then
+            if knowData.bankChars[char] ~= nul and knowData.bankChars[char].logVersion >= version then
+                tinsert(chars, char)
+            end
+        elseif type == "money" then
+            if knowData.bankChars[char] ~= nul and knowData.bankChars[char].moneyVersion >= version then
+                tinsert(chars, char)
+            end
+        elseif type == "data"  then
+            if knowData.bankChars[char] ~= nul and knowData.bankChars[char].dataVersion >= version then
+                tinsert(chars, char)
+            end
+        else
+            PLGuildBankClassic:errln(string.format(L["Unkown version comparison type received: '%s'."], type))
+        end
+    end
+
+    return chars
 end
 
 function Comms:ReceiveConfig(sender, data)
@@ -403,7 +697,7 @@ function Comms:ReceiveCharConfig(sender, data)
             -- eventually remove logs and data for deleted chars
             -- if they are not owned by the player
             for charL, valL in pairs(guildConfig.bankChars) do
-                if valL.isDeleted == true  then
+                if valL.isDeleted == true and PLGuildBankClassic:CharacterOwnedByAccount(charL) == false then
                     PLGuildBankClassic:ClearBankCharData(charL)
                 end
             end
@@ -429,7 +723,7 @@ function Comms:ReceiveCharConfig(sender, data)
             guildConfig.charConfigTimestamp = PLGuildBankClassic:GetTimestamp()
             Comms:SendVersionQuery()
         end
-        
+
         -- TODO: Update local UI
     end
 end
@@ -551,6 +845,49 @@ end
 function Comms:SendQueryBankcharOnline()
     Comms:SendData(COMM_CMD_QUERY_BANKCHARONLINE, "")
 end
+
+function Comms:ScheduleSendInventory(characterName, inventoryVersion)
+    local inventoryData = {}
+    inventoryData.charaterName = characterName
+    inventoryData.inventoryVersion = inventoryVersion
+    inventoryData.data = PLGuildBankClassic:GetInventoryCache(characterName)
+
+    Comms:ScheduleSendComms(COMM_CMD_SENDINVENTORY, inventoryData, DEFAULT_INVENTORY_SEND_TRIGGER_SEC)
+end
+
+function Comms:ScheduleSendMoney(characterName, value, moneyVersion)
+    local moneyData = {}
+    moneyData.charaterName = characterName
+    moneyData.value = value
+    moneyData.moneyVersion = moneyVersion
+    moneyData.ownerInfo = PLGuildBankClassic:GetCachedOwnerInfo(characterName)
+    
+    if value == nil then -- use cached value
+        moneyData.value = moneyData.ownerInfo.money
+    end
+    
+    Comms:ScheduleSendComms(COMM_CMD_SENDMONEY, moneyData, DEFAULT_MONEY_SEND_TRIGGER_SEC)
+end
+
+function Comms:ScheduleSendLog(characterName, logVersion)
+    local logData = {}
+    logData.charaterName = characterName
+    logData.logVersion = logVersion
+
+    -- TODO: log diffs???
+    -- logs may be large - so only send diffs which may also allow merging
+    local fullLog = PLGuildBankClassic:GetLogByName(characterName)
+
+    -- limit log size
+    if fullLog ~= nil and #fullLog > MAX_LOG_ENTRIES_TO_SEND then
+        logData.data = PLGuildBankClassic:sliceTable(fullLog, 1, MAX_LOG_ENTRIES_TO_SEND)
+    else
+        logData.data = fullLog
+    end
+
+    Comms:ScheduleSendComms(COMM_CMD_SENDLOG, logData, DEFAULT_LOG_SEND_TRIGGER_SEC)
+end
+
 -----------------------------------------------------------------------
 -- internal event triggers
 
@@ -571,65 +908,44 @@ function Comms:ScheduleSendComms(subCommand, data, threshold)
      if PLGuildBankClassic.CommsThresholdTriggers == nil then
         PLGuildBankClassic.CommsThresholdTriggers = {}
     end
-    PLGuildBankClassic.CommsThresholdTriggers[subCommand] = {}
-    PLGuildBankClassic.CommsThresholdTriggers[subCommand].trigger = time() + threshold
-    PLGuildBankClassic.CommsThresholdTriggers[subCommand].data = data
+
+    if threshold == nil then
+        -- remove scheduled sending command
+        PLGuildBankClassic.CommsThresholdTriggers[subCommand] = nil
+    else
+        PLGuildBankClassic.CommsThresholdTriggers[subCommand] = {}
+        local sendInfo = {}
+        sendInfo.trigger = time() + threshold
+        sendInfo.data = data
+        -- insert send data at top of the array (FIFO list)
+        tinsert(PLGuildBankClassic.CommsThresholdTriggers[subCommand], 1, sendInfo)
+        --PLGuildBankClassic.CommsThresholdTriggers[subCommand].trigger = time() + threshold
+        --PLGuildBankClassic.CommsThresholdTriggers[subCommand].data = data
+    end
 end
 
 
 function Comms:PLGBC_EVENT_BANKCHAR_MONEYCHANGED(event, characterName, value, gainedOrLost, moneyVersion)
     -- this event should only trigger an event if triggered on a bank-char
     if PLGuildBankClassic:IsGuildBankChar() then
-
-        -- TODO: threshold impl
-        local moneyData = {}
-        moneyData.charaterName = characterName
-        moneyData.value = value
-        moneyData.gainedOrLost = gainedOrLost
-        moneyData.moneyVersion = moneyVersion
-        moneyData.ownerInfo = PLGuildBankClassic:GetCachedOwnerInfo(characterName)
-
-       
-        Comms:ScheduleSendComms(COMM_CMD_SENDMONEY, moneyData, DEFAULT_MONEY_SEND_TRIGGER_SEC)
-        --Comms:SendData(COMM_CMD_SENDMONEY, moneyData)
+        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDMONEY] = nil
+        Comms:ScheduleSendMoney(characterName, value, moneyVersion)
     end
 end
 
 function Comms:PLGBC_EVENT_BANKCHAR_INVENTORYCHANGED(event, characterName, hasCachedData, inventoryVersion)
     -- this event should only trigger an event if triggered on a bank-char
     if PLGuildBankClassic:IsGuildBankChar() then
-
-        local inventoryData = {}
-        inventoryData.charaterName = characterName
-        inventoryData.inventoryVersion = inventoryVersion
-        inventoryData.data = PLGuildBankClassic:GetInventoryCache(characterName)
-
-        Comms:ScheduleSendComms(COMM_CMD_SENDINVENTORY, inventoryData, DEFAULT_INVENTORY_SEND_TRIGGER_SEC)
-        --Comms:SendData(COMM_CMD_SENDINVENTORY, inventoryData)
+        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDINVENTORY] = nil
+        Comms:ScheduleSendInventory(characterName, inventoryVersion)
     end
 end
 
 function Comms:PLGBC_GUILD_LOG_UPDATED(event, characterName, logVersion)
     -- this event should only trigger an event if triggered on a bank-char
     if PLGuildBankClassic:IsGuildBankChar() then
-
-        local logData = {}
-        logData.charaterName = characterName
-        logData.logVersion = logVersion
-
-        -- TODO: log diffs???
-        -- logs may be large - so only send diffs which may also allow merging
-        local fullLog = PLGuildBankClassic:GetLogByName(characterName)
-
-        -- limit log size
-        if fullLog ~= nil and #fullLog > MAX_LOG_ENTRIES_TO_SEND then
-            logData.data = PLGuildBankClassic:sliceTable(fullLog, 1, MAX_LOG_ENTRIES_TO_SEND)
-        else
-            logData.data = fullLog
-        end
-
-        Comms:ScheduleSendComms(COMM_CMD_SENDLOG, logData, DEFAULT_LOG_SEND_TRIGGER_SEC)
-        --Comms:SendData(COMM_CMD_SENDLOG, logData)
+        PLGuildBankClassic.CommsThresholdTriggers[COMM_CMD_SENDLOG] = nil
+        Comms:ScheduleSendLog(characterName, logVersion)
     end
 end
 

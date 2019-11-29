@@ -60,6 +60,7 @@ L["gave"] = true
 L["got"] = true
 L["Your version of PL GuildBank classic is out-of-date! Please update to latest version!"] = true
 L["No supported Cache AddOn found. Could NOT update local cache!"] = true
+L["Unkown version comparison type received: '%s'."] = true
 
 L["via direct trade"] = true
 L[" as %s"] = true
