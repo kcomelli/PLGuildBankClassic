@@ -12,6 +12,7 @@ PLGBC_CREATE_BANK_ALT_TAB_LIST[1] = "CreateEditBankAltDialogFrameCharacterEditBo
 PLGBC_CREATE_BANK_ALT_TAB_LIST[2] = "CreateEditBankAltDialogFrameGuildTabDescription";
 PLGBC_CREATE_BANK_ALT_TAB_LIST[3] = "CreateEditBankAltDialogFrameEditSave";
 PLGBC_CREATE_BANK_ALT_TAB_LIST[4] = "CreateEditBankAltDialogFrameEditCancel";
+PLGBC_CREATE_BANK_ALT_TAB_LIST[5] = "CreateEditBankAltDialogFrameEditDelete";
 
 PLGuildBankClassic.CreateEditBankAltDialogFrame = {}
 PLGuildBankClassic.CreateEditBankAltDialogFrame.defaults = {}
@@ -95,8 +96,10 @@ function CreateEditBankAltDialogFrame:InitEditExisting(charaterInfo)
 
     if(self.characterData.name) then
         self.dragArea:SetText(L["Edit bank character"])
+        self.deleteButton:Show()
     else
         self.dragArea:SetText(L["Add new bank character"])
+        self.deleteButton:Hide()
     end
 
     self.configCharacterEditBox:SetText(self.characterData.name)
@@ -128,6 +131,24 @@ function CreateEditBankAltDialogFrame:OnCancelClick()
         self:callback(self.mainFrame, self.openedByTab, "cancel", self.characterData, self.modeNew)
     else
         PLGuildBankClassic:debug("OnCancelClick: No callback registered")
+    end
+end
+
+function CreateEditBankAltDialogFrame:OnDeleteClick()
+    if self.callback then
+        
+        PLGuildBankClassic:debug("OnDeleteClick: calling callback")
+
+        local sharedData = {}
+        sharedData.editDialog = self
+        if PLGuildBankClassic:CharacterOwnedByAccount(self.characterData.name) then
+            -- self delete
+            StaticPopup_Show("PLGBC_POPUP_DELETE_CHARACTER_SELFOWN", self.characterData.name, nil, sharedData)
+        else
+            StaticPopup_Show("PLGBC_POPUP_DELETE_CHARACTER", self.characterData.name, nil, sharedData)
+        end
+    else
+        PLGuildBankClassic:debug("OnDeleteClick: No callback registered")
     end
 end
 

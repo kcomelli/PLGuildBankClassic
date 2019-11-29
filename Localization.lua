@@ -61,6 +61,11 @@ L["got"] = true
 L["Your version of PL GuildBank classic is out-of-date! Please update to latest version!"] = true
 L["No supported Cache AddOn found. Could NOT update local cache!"] = true
 L["Unkown version comparison type received: '%s'."] = true
+L["Are you sure that you want to remove the character '%s' from the list of bank-characters?"] = true
+L["Yes, keep Log"] = true
+L["Yes, with Log"] = true
+L["No, cancel"] = true
+L["Yes"] = true
 
 L["via direct trade"] = true
 L[" as %s"] = true

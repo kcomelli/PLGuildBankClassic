@@ -87,29 +87,65 @@ end
 
 function Frame:AddEditBankCharDialogResult(initiator, tab, mode, characterData, createNew)
 	if mode == "save" then
-			local changedName = false
-			--local tab = initiator.addEditBankAltChar.openedByTab
-			if createNew then
-				PLGuildBankClassic:debug("Creating new bank character config using char: " .. characterData.name)
-				PLGuildBankClassic:CreateBankChar(characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture, characterData.acceptState)
-			else
-				PLGuildBankClassic:debug("Updating new bank character config using char: " .. characterData.name)
-				changedName = PLGuildBankClassic:EditBankChar(tab:GetID(), characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture, characterData.acceptState)
+		local changedName = false
+		local existingDeleted = PLGuildBankClassic:GetBankCharDataByName(characterData.name)
+
+		--local tab = initiator.addEditBankAltChar.openedByTab
+		if createNew and existingDeleted == nil then
+			PLGuildBankClassic:debug("Creating new bank character config using char: " .. characterData.name)
+			PLGuildBankClassic:CreateBankChar(characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture, characterData.acceptState)
+		else
+			PLGuildBankClassic:debug("Updating bank character config using char: " .. characterData.name)
+			if existingDeleted and existingDeleted.isDeleted then
+				PLGuildBankClassic:debug("Reactivate deleted char: " .. characterData.name)
+			end
+
+			changedName = PLGuildBankClassic:EditBankChar(tab:GetID(), characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture, characterData.acceptState)
+		end
+
+		initiator:UpdateBankAltTabs(false)
+
+		if createNew then
+			Events:Fire("PLGBC_EVENT_BANKCHAR_ADDED", tab:GetID(), characterData)
+		else
+			Events:Fire("PLGBC_EVENT_BANKCHAR_UPDATED", tab:GetID(), characterData, changedName)
+		end
+
+		initiator:UpdateCurrentTab()
+
+		if initiator.currentTab == 1 then
+			initiator:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", tab:GetID(), characterData)
+		end
+	elseif mode == "delete" or mode=="delete-with-log" then
+		PLGuildBankClassic:debug("Deleting character '" .. characterData.name .. "' ..")
+		local existingDeleted = PLGuildBankClassic:GetBankCharDataByName(characterData.name)
+		if existingDeleted then
+			existingDeleted.isDeleted = true
+			existingDeleted.acceptState = 0 -- reset accept state
+
+			if mode=="delete-with-log" then
+				-- delete log!
+				PLGuildBankClassic:debug("Deleting character " .. characterData.name .. "'s LOG ..")
+			end
+
+			if not PLGuildBankClassic:CharacterOwnedByAccount(characterData.name) then
+				-- remove cache
+				PLGuildBankClassic:debug("Deleting character " .. characterData.name .. "'s cached-Inventory ..")
 			end
 
 			initiator:UpdateBankAltTabs(false)
-
-			if createNew then
-				Events:Fire("PLGBC_EVENT_BANKCHAR_ADDED", tab:GetID(), characterData)
-			else
-				Events:Fire("PLGBC_EVENT_BANKCHAR_UPDATED", tab:GetID(), characterData, changedName)
-			end
+			Events:Fire("PLGBC_EVENT_BANKCHAR_REMOVED", tab:GetID(), characterData)
 
 			initiator:UpdateCurrentTab()
-
-			if initiator.currentTab == 1 then
-				initiator:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", tab:GetID(), characterData)
+			if initiator.currentTab == tab:GetID() then
+				local changedData = PLGuildBankClassic.GetBankCharDataByIndex(tab:GetID())
+				if changedData then
+					initiator:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", tab:GetID(), changedData)
+				end
 			end
+		else
+			PLGuildBankClassic:debug("Deleting character " .. characterData.name .. "' not possible - char not found !")
+		end
 	end
 end
 

@@ -123,6 +123,37 @@ StaticPopupDialogs["PLGBC_POPUP_ACCEPT_BANKCHARSTATE"] = {
 	hideOnEscape = 1
   }
 
+  StaticPopupDialogs["PLGBC_POPUP_DELETE_CHARACTER_SELFOWN"] = {
+    text = L["Are you sure that you want to remove the character '%s' from the list of bank-characters?"],
+    button1 = L["Yes, keep Log"],
+    button3 = L["Yes, with Log"],
+    button2 = L["No, cancel"],
+    OnAccept = function(self)
+        self.data.editDialog:Hide()
+        self.data.editDialog:callback(self.data.editDialog.mainFrame, self.data.editDialog.openedByTab, "delete", self.data.editDialog.characterData, self.data.editDialog.modeNew)
+    end,
+    OnAlt = function (self,reason)
+        self.data.editDialog:Hide()
+        self.data.editDialog:callback(self.data.editDialog.mainFrame, self.data.editDialog.openedByTab, "delete-with-log", self.data.editDialog.characterData, self.data.editDialog.modeNew)
+    end,
+    OnCancel = function() end,
+    whileDead = 1,
+    hideOnEscape = 1,
+  }
+
+  StaticPopupDialogs["PLGBC_POPUP_DELETE_CHARACTER"] = {
+    text = L["Are you sure that you want to remove the character '%s' from the list of bank-characters?"],
+    button1 = L["Yes"],
+    button2 = L["No, cancel"],
+    OnAccept = function(self)
+        self.data.editDialog:Hide()
+        self.data.editDialog:callback(self.data.editDialog.mainFrame, self.data.editDialog.openedByTab, "delete-with-log", self.data.editDialog.characterData, self.data.editDialog.modeNew)
+    end,
+    OnCancel = function() end,
+    whileDead = 1,
+    hideOnEscape = 1,
+  }
+
 -- guild master can change the min required guild rank
 -- for bank character configuration
 local minGuildRankForRankConfig = 1 
@@ -414,11 +445,17 @@ end
 function PLGuildBankClassic:NumberOfConfiguredAlts()
     local guildConfig = PLGuildBankClassic:GetGuildConfig() 
     
+    local count = 0
     if guildConfig ~= nil and guildConfig.bankChars ~= nill then
-        return getn(guildConfig.bankChars)
+        -- do NOT count deleted chars
+        for idx=1, #guildConfig.bankChars do
+            if not guildConfig.bankChars[idx].isDeleted then
+                count = count + 1
+            end
+        end
     end
     
-    return 0
+    return count
 end
 
 
@@ -505,7 +542,19 @@ function PLGuildBankClassic:GetBankCharDataByIndex(index)
         return nil
     end
 
-    return guildConfig.bankChars[index]
+    -- do NOT count deleted character configs if using get by index!
+    local checkedIndex = 1
+    for idx=1, #guildConfig.bankChars do
+        local checkCfg = guildConfig.bankChars[idx]
+        if checkCfg.isDeleted ~= true then
+            if checkedIndex == index then
+                return checkCfg
+            end
+            checkedIndex = checkedIndex + 1
+        end
+    end
+
+    return nil
 end
 
 function PLGuildBankClassic:GetBankCharDataByName(characterName)
@@ -519,7 +568,7 @@ function PLGuildBankClassic:GetBankCharDataByName(characterName)
 
     for i=1, getn(guildConfig.bankChars) do
         local checkData = guildConfig.bankChars[i]
-        if checkData.name == myName and checkData.realm == myRealm then
+        if checkData.name == myName and (checkData.realm == myRealm or checkData.realm == nil) then
             return guildConfig.bankChars[i]
         end
     end

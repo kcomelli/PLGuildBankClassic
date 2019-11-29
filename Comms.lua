@@ -647,7 +647,7 @@ function Comms:ReceiveCharConfig(sender, data)
                 local foundCharLocally = false
                 for idx=1, #guildConfig.bankChars do
                 --for charL, valL in pairs(guildConfig.bankChars) do
-                    local charL = guildConfig.bankChars[idx].name
+                    local charL = guildConfig.bankChars[idx].name .. "-" .. (guildConfig[idx].realm or GetRealmName())
                     local valL = guildConfig.bankChars[idx]
                     if charR == charL then
                         foundCharLocally = true
@@ -682,7 +682,7 @@ function Comms:ReceiveCharConfig(sender, data)
             -- eventually remove logs and data for deleted chars
             -- if they are not owned by the player
             for idx=1, #guildConfig.bankChars do
-                local charL = guildConfig.bankChars[idx].name
+                local charL = guildConfig.bankChars[idx].name .. "-" .. (guildConfig[idx].realm or GetRealmName())
                 local valL = guildConfig.bankChars[idx]
                 if valL.isDeleted == true and PLGuildBankClassic:CharacterOwnedByAccount(charL) == false then
                     PLGuildBankClassic:ClearBankCharData(charL)
@@ -692,7 +692,7 @@ function Comms:ReceiveCharConfig(sender, data)
 
         local haveAddedNewChars = false
         for idx=1, #guildConfig.bankChars do
-            local charL = guildConfig.bankChars[idx].name
+            local charL = guildConfig.bankChars[idx].name .. "-" .. (guildConfig[idx].realm or GetRealmName())
             local valL = guildConfig.bankChars[idx]
 
             local foundInRemotePackage = false
@@ -976,7 +976,7 @@ function Comms:BuildVersionsPacket()
         versionData.charConfigVersion = guildConfig.cahrConfigTimestamp
         versionData.bankChars = {}
         for idx=1, #guildConfig.bankChars do
-            local char = guildConfig.bankChars[idx].name
+            local char = guildConfig.bankChars[idx].name .. "-" .. (guildConfig.bankChars[idx].realm or GetRealmName())
             versionData.bankChars[char] = {}
             versionData.bankChars[char].inventoryVersion = guildConfig.bankChars[idx].inventoryVersion
             versionData.bankChars[char].logVersion = guildConfig.bankChars[idx].logVersion
