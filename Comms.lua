@@ -626,7 +626,8 @@ function Comms:ReceiveConfig(sender, data)
             guildConfig.minGuildRank = data.config.minGuildRank
             guildConfig.configTimestamp = data.config.configTimestamp
 
-            -- TODO: Update local UI
+            -- Update local UI
+            Events:Fire("PLGBC_RECEVIED_CONFIG")
         end
     end
 end
@@ -715,6 +716,7 @@ function Comms:ReceiveCharConfig(sender, data)
         end
 
         -- TODO: Update local UI
+        Events:Fire("PLGBC_RECEVIED_CHARCONFIG")
     end
 end
 
@@ -726,7 +728,8 @@ function Comms:ReceiveInventory(sender, data)
             bankCharData.inventoryVersion = data.inventoryVersion or bankCharData.inventoryVersion
             PLGuildBankClassic:SetCacheInventoryInfo(data.ownerInfo, data.bags)
 
-            -- TODO: Update local UI
+            -- Update local UI
+            Events:Fire("PLGBC_RECEVIED_INVENTORY", data.characterName)
         else
             PLGuildBankClassic:debug("No local bank char data found for '" ..  data.charaterName .. "'")
         end
@@ -745,7 +748,8 @@ function Comms:ReceiveMoney(sender, data)
             bankCharData.moneyVersion = data.moneyVersion or bankCharData.moneyVersion
             PLGuildBankClassic:SetCachedMoneyInfo(data.ownerInfo, bankCharData.money)
 
-            -- TODO: Update local UI
+            -- Update local UI
+            Events:Fire("PLGBC_RECEVIED_MONEY", data.characterName)
         else
             PLGuildBankClassic:debug("No local bank char data found for '" ..  data.charaterName .. "'")
         end
@@ -764,7 +768,8 @@ function Comms:ReceiveLog(sender, data)
             bankCharData.logVersion = data.logVersion or bankCharData.logVersion
             PLGuildBankClassic:MergeLogEntries(logForChar, data.data)
 
-            -- TODO: Update local UI
+            -- Update local UI
+            Events:Fire("PLGBC_RECEVIED_MONEY", data.characterName)
         else
             PLGuildBankClassic:debug("No local log or bank char data found for '" ..  data.charaterName .. "'")
         end

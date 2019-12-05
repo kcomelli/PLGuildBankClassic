@@ -254,31 +254,33 @@ function PLGuildBankClassic:OnUpdate(frame, elapsed)
     end
 
     if PLGuildBankClassic.CommsThresholdTriggers ~= nil and PLGuildBankClassic:countDictionaryKeys(PLGuildBankClassic.CommsThresholdTriggers, false) > 0 then
-        executingSendTriggers = true
-        for cmd, data in pairs(PLGuildBankClassic.CommsThresholdTriggers) do
-            for idx=#data, 1, -1 do -- loop from end to top (FIFO)
-                local sendInfo = data[idx]
-                if sendInfo ~= nil and sendInfo.trigger > 0 and sendInfo.trigger <= time() then
-                    -- ensure not sending data twice
-                    sendInfo.trigger = 0
-                    PLGuildBankClassic:debug("Executeing sync command '" .. cmd .. "' ...")
-                    -- send command and data
-                    PLGuildBankClassic.Comms:SendData(cmd, sendInfo.data)
-                    -- remove from table is ok because we are looping backwards
-                    tremove(data, idx) 
-                end
-            end
-
-            -- delete key from 
-            if not data or #data <= 0 then
-                PLGuildBankClassic.CommsThresholdTriggers[cmd] = nil
-            end
-        end
+        PLGuildBankClassic:ExecuteThresholdComms(false)
     end
-    
-    executingSendTriggers = false
 end
 
+function PLGuildBankClassic:ExecuteThresholdComms(force)
+    executingSendTriggers = true
+    for cmd, data in pairs(PLGuildBankClassic.CommsThresholdTriggers) do
+        for idx=#data, 1, -1 do -- loop from end to top (FIFO)
+            local sendInfo = data[idx]
+            if sendInfo ~= nil and sendInfo.trigger > 0 and (sendInfo.trigger <= time() or force == true) then
+                -- ensure not sending data twice
+                sendInfo.trigger = 0
+                PLGuildBankClassic:debug("Executeing sync command '" .. cmd .. "' ...")
+                -- send command and data
+                PLGuildBankClassic.Comms:SendData(cmd, sendInfo.data)
+                -- remove from table is ok because we are looping backwards
+                tremove(data, idx) 
+            end
+        end
+
+        -- delete key from 
+        if not data or #data <= 0 then
+            PLGuildBankClassic.CommsThresholdTriggers[cmd] = nil
+        end
+    end
+    executingSendTriggers = false
+end
 
 function PLGuildBankClassic:UpdatePlayerMoney()
     if PLGuildBankClassic:IsGuildBankChar() then
@@ -337,7 +339,8 @@ end
 function PLGuildBankClassic:PlayerLeavingWorld()
     self:CheckPendingTradeData("trade")
 
-    -- TODO: send queued comm stacks
+    -- send queued comm stacks
+    self:ExecuteThresholdComms(true)
 end
 
 function PLGuildBankClassic:SetOwnedCharacters()
@@ -557,6 +560,8 @@ function PLGuildBankClassic:GetBankCharDataByIndex(index)
     return nil
 end
 
+-- -------------------------------------------------------------------
+-- search character data by name and IGNORE isDeleted flag
 function PLGuildBankClassic:GetBankCharDataByName(characterName)
     local myName, myRealm, myServerName = PLGuildBankClassic:CharaterNameTranslation(characterName)
 
@@ -569,6 +574,27 @@ function PLGuildBankClassic:GetBankCharDataByName(characterName)
     for i=1, getn(guildConfig.bankChars) do
         local checkData = guildConfig.bankChars[i]
         if checkData.name == myName and (checkData.realm == myRealm or checkData.realm == nil) then
+            return guildConfig.bankChars[i]
+        end
+    end
+
+    return nil
+end
+
+-- -------------------------------------------------------------------
+-- search character data by name and DO NOT IGNORE isDeleted flag
+function PLGuildBankClassic:FindBankCharDataByName(characterName)
+    local myName, myRealm, myServerName = PLGuildBankClassic:CharaterNameTranslation(characterName)
+
+    local guildConfig = PLGuildBankClassic:GetGuildConfig() 
+
+    if guildConfig == nil or guildConfig.bankChars == nil then
+        return nil
+    end
+
+    for i=1, getn(guildConfig.bankChars) do
+        local checkData = guildConfig.bankChars[i]
+        if checkData.isDeleted ~= true and checkData.name == myName and (checkData.realm == myRealm or checkData.realm == nil) then
             return guildConfig.bankChars[i]
         end
     end

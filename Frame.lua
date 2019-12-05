@@ -209,12 +209,22 @@ function Frame:OnShow()
 	Events.Register(self, "PLGBC_EVENT_BANKCHAR_MONEYCHANGED")
 	Events.Register(self, "PLGBC_EVENT_BANKCHAR_ENTERED_WORLD")
 
+	Events.Register(self, "PLGBC_RECEVIED_CONFIG")
+	Events.Register(self, "PLGBC_RECEVIED_CHARCONFIG")
+	Events.Register(self, "PLGBC_RECEVIED_INVENTORY")
+	Events.Register(self, "PLGBC_RECEVIED_MONEY")
+	Events.Register(self, "PLGBC_RECEVIED_LOG")
+
 	self.addEditBankAltChar.callback = self.AddEditBankCharDialogResult
-    self:ApplyLocalization()
+	self:InitializeUi(true)
+	self:PLGuildBankFrameTab_OnClick(self.tabBankItems, 1)
+end
+
+function Frame:InitializeUi(firstInit)
+	self:ApplyLocalization()
 	self:UpdateTabard()
 	MoneyFrame_Update(self.moneyFrameBankChar:GetName(), 0)
-	self:PLGuildBankFrameTab_OnClick(self.tabBankItems, 1)
-	self:UpdateBankAltTabs(true)
+	self:UpdateBankAltTabs(firstInit or false)
 	self:SetSumGuildMoney()
 end
 
@@ -474,6 +484,64 @@ end
 
 -----------------------------------------------------------------------
 -- event handlers
+
+function Frame:PLGBC_RECEVIED_CONFIG(event)
+	PLGuildBankClassic:debug("RECEIVED new config via comms - update UI")
+	-- cought if new config data received via comms
+	Frame:InitializeUi(false)
+end
+
+function Frame:PLGBC_RECEVIED_CHARCONFIG(event)
+	PLGuildBankClassic:debug("RECEIVED new char-config via comms - update UI")
+	-- cought if new char config data received via comms
+	local currentAltTab = Frame.currentAltTab
+	Frame:InitializeUi(false)
+
+	-- check if there is still a char config at the given index
+	local charData = PLGuildBankClassic:GetBankCharDataByIndex(Frame.currentAltTab)
+	local numberOfBankAlts = PLGuildBankClassic:NumberOfConfiguredAlts()
+	if charData then
+		Frame:PLGuildBankTab_OnClick(Frame.CharTabs[currentAltTab].checkButton, "LeftButton", currentAltTab)
+	elseif numberOfBankAlts > 0 then
+		-- if not - select the first one (reset)
+		Frame:PLGuildBankTab_OnClick(Frame.CharTabs[1].checkButton, "LeftButton", 1)
+	end
+
+	PLGuildBankClassic:CheckIfAcceptenceIsPending()
+end
+
+function Frame:PLGBC_RECEVIED_INVENTORY(event, characterName)
+	PLGuildBankClassic:debug("RECEIVED new inventory via comms for '" .. characterName .. "' - update UI")
+	
+	local charData = PLGuildBankClassic:GetBankCharDataByIndex(Frame.currentAltTab)
+
+	if charData and charData.characterName == characterName then
+		-- fire button click will trigger a char selected event which will update the frames with data
+		Frame:PLGuildBankTab_OnClick(Frame.CharTabs[Frame.currentAltTab].checkButton, "LeftButton", Frame.currentAltTab)
+	end
+end
+
+function Frame:PLGBC_RECEVIED_MONEY(event, characterName)
+	PLGuildBankClassic:debug("RECEIVED new money via comms for '" .. characterName .. "' - update UI")
+	
+	local charData = PLGuildBankClassic:GetBankCharDataByIndex(Frame.currentAltTab)
+
+	if charData and charData.characterName == characterName then
+		-- fire button click will trigger a char selected event which will update the frames with data
+		Frame:PLGuildBankTab_OnClick(Frame.CharTabs[Frame.currentAltTab].checkButton, "LeftButton", Frame.currentAltTab)
+	end
+end
+
+function Frame:PLGBC_RECEVIED_LOG(event, characterName)
+	PLGuildBankClassic:debug("RECEIVED new log via comms for '" .. characterName .. "' - update UI")
+
+	local charData = PLGuildBankClassic:GetBankCharDataByIndex(Frame.currentAltTab)
+
+	if charData and charData.characterName == characterName then
+		-- fire button click will trigger a char selected event which will update the frames with data
+		Frame:PLGuildBankTab_OnClick(Frame.CharTabs[Frame.currentAltTab].checkButton, "LeftButton", Frame.currentAltTab)
+	end
+end
 
 function Frame:PLGBC_EVENT_BANKCHAR_ADDED(event, index, characterData)
 	PLGuildBankClassic:debug("Bankchar added at index " .. tostring(index) .. " using name " .. characterData.name)

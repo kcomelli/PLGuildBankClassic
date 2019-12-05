@@ -23,6 +23,15 @@ PLGBC_TRADE_UPDATE = "PLGBC_TRADE_UPDATE"
 PLGBC_MAIL_SUCCESS = "PLGBC_MAIL_SUCCESS"
 PLGBC_RECEVIED_ITEM = "PLGBC_RECEVIED_ITEM"
 
+-- internal events which will be fied if receiving different portions of data
+-- via comms and addon sync
+-- GUI can handle events and update apropriately
+PLGBC_RECEVIED_CONFIG = "PLGBC_RECEVIED_CONFIG"
+PLGBC_RECEVIED_CHARCONFIG = "PLGBC_RECEVIED_CHARCONFIG"
+PLGBC_RECEVIED_INVENTORY = "PLGBC_RECEVIED_INVENTORY"
+PLGBC_RECEVIED_MONEY = "PLGBC_RECEVIED_MONEY"
+PLGBC_RECEVIED_LOG = "PLGBC_RECEVIED_LOG"
+
 -- coms relevant events
 -- config may be changed by more members depending on the min-guild rank
 PLGBC_EVENT_CONFIG_CHANGED = "PLGBC_EVENT_CONFIG_CHANGED"
