@@ -6,6 +6,7 @@ local ItemCache = LibStub("LibItemCache-2.0")
 
 -- 1.00.00
 PLGBC_BUILD_NUMBER = 10000
+PLGBC_MAX_LOG_SIZE = 2000
 
 local dbProfile
 local dbFactionRealm
@@ -660,6 +661,7 @@ function PLGuildBankClassic:MergeLogEntries(currentLog, entriesToMerge)
             for i=1, #entriesToMerge do
                 tinsert(currentLog, entriesToMerge[i])
             end    
+            PLGuildBankClassic:LimitLog(currentLog)
             return
         end
 
@@ -681,6 +683,7 @@ function PLGuildBankClassic:MergeLogEntries(currentLog, entriesToMerge)
             end
         end
         
+        PLGuildBankClassic:LimitLog(currentLog)
         PLGuildBankClassic:debug("MergeLogEntries: Added '" .. tostring(added) .. "' new entries!")
     end
 end
@@ -713,6 +716,17 @@ function PLGuildBankClassic:FindInsertionIndex(currentLog, logEntryToInsert)
     end
 
     return 1
+end
+
+function PLGuildBankClassic:LimitLog(currentLog)
+    if currentLog and #currentLog > PLGBC_MAX_LOG_SIZE then
+        PLGuildBankClassic:debug("Limit logsize because it exceeds '" .. tostring(PLGBC_MAX_LOG_SIZE) .. "' entries!")
+        local nrtoRemove = #currentLog - PLGBC_MAX_LOG_SIZE
+        for i=1, nrtoRemove do
+            -- removing i times the last record
+            tremove(currentLog)
+        end
+    end
 end
 
 function PLGuildBankClassic:SumBankCharMoney()
@@ -964,6 +978,7 @@ function PLGuildBankClassic:PostAuctionOverride(minBid, buyoutPrice, runTime, co
                     playerLog[1] = logEntry
                 end
 
+                PLGuildBankClassic:LimitLog(playerLog)
                 PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
                 PLGuildBankClassic:UpdateVersionsInPublicNote()
                 PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
@@ -1312,6 +1327,7 @@ function PLGuildBankClassic:ExecuteTradeLog()
             
 
             if bChanged then
+                PLGuildBankClassic:LimitLog(playerLog)
                 PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
                 PLGuildBankClassic:UpdateVersionsInPublicNote()
                 PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
@@ -1384,6 +1400,7 @@ function PLGuildBankClassic:MailboxClosed()
                 end
             end
 
+            PLGuildBankClassic:LimitLog(playerLog)
             PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
             PLGuildBankClassic:UpdateVersionsInPublicNote()
             PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
@@ -1572,6 +1589,7 @@ function PLGuildBankClassic:MailSuccessfullySent()
             end
 
             if bChanged then
+                PLGuildBankClassic:LimitLog(playerLog)
                 PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
                 PLGuildBankClassic:UpdateVersionsInPublicNote()
                 PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
@@ -1660,6 +1678,7 @@ function PLGuildBankClassic:LogPlayerGotItem(event, characterName, itemId, itemQ
                     playerLog[1] = logEntry
                 end
 
+                PLGuildBankClassic:LimitLog(playerLog)
                 PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
                 PLGuildBankClassic:UpdateVersionsInPublicNote()
                 PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
@@ -1796,6 +1815,7 @@ function PLGuildBankClassic:LogPlayerMoneyGainOrLoss(event, characterName, value
                         playerLog[1] = logEntry
                     end
     
+                    PLGuildBankClassic:LimitLog(playerLog)
                     PLGuildBankClassic.atBankChar.logVersion = PLGuildBankClassic:GetTimestamp()
                     PLGuildBankClassic:UpdateVersionsInPublicNote()
                     PLGuildBankClassic.Events:Fire("PLGBC_GUILD_LOG_UPDATED", charServerName, PLGuildBankClassic.atBankChar.logVersion)
