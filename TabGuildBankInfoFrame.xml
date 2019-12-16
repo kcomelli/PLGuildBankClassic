@@ -79,6 +79,194 @@
                     </Layer>
                 </Layers>
             </Frame>
+
+            <Frame parentKey="infoReadContainer" name="$parentReadContainer" hidden="false">
+				<Size>
+					<AbsDimension x="200" y="200"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parent">
+						<Offset x="0" y="0"/>
+					</Anchor>
+					<Anchor point="BOTTOMRIGHT" relativeTo="$parent">
+						<Offset x="0" y="0"/>
+					</Anchor>
+				</Anchors>
+                <Frames>
+                    <ScrollingMessageFrame  parentKey="guildInfoMessages" name="$parentMassagesFrame" inherits="InlineHyperlinkFrameTemplate">
+                        <Size>
+                            <AbsDimension x="200" y="200" />
+                        </Size>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                                <Offset>
+                                    <AbsDimension x="0" y="0" />
+                                </Offset>
+                            </Anchor>
+                            <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
+                                <Offset>
+                                    <AbsDimension x="-20" y="0" />
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                    </ScrollingMessageFrame>
+                    <ScrollFrame parentKey="scrollFrame" name="$parentScrollFrame" inherits="FauxScrollFrameTemplate">
+                        <Size x="400" y="304"/>
+                        <Anchors>
+                            <Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPRIGHT" x="-20" y="0"/>
+                            <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT" x="0" y="0"/>
+                        </Anchors>
+                        <Layers>
+                            <Layer level="ARTWORK">
+                                <Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
+                                    <Size x="31" y="256"/>
+                                    <Anchors>
+                                        <Anchor point="TOPLEFT" relativePoint="TOPRIGHT" x="-2" y="5"/>
+                                    </Anchors>
+                                    <TexCoords left="0" right="0.484375" top="0" bottom="1.0"/>
+                                </Texture>
+                                <Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
+                                    <Size x="31" y="106"/>
+                                    <Anchors>
+                                        <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" x="-2" y="-2"/>
+                                    </Anchors>
+                                    <TexCoords left="0.515625" right="1.0" top="0" bottom="0.4140625"/>
+                                </Texture>
+                            </Layer>
+                        </Layers>
+                        <Scripts>
+                            <OnVerticalScroll>
+                                local parentFrame = self:GetParent():GetParent()
+                                FauxScrollFrame_OnVerticalScroll(self, offset, parentFrame.itemHeight, parentFrame.DoLogScroll)
+                            </OnVerticalScroll>
+                        </Scripts>
+                    </ScrollFrame>
+
+                    <Button parentKey="editButton" name="$parentEditSave" inherits="UIPanelButtonTemplate" text="EDIT">
+                        <Size x="124" y="21"/>
+                        <Anchors>
+                            <Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
+                                <Offset x="0" y="-10"/>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>
+                                self:GetParent():GetParent():OnEditClick();
+                            </OnClick>
+                        </Scripts>
+                    </Button>
+                </Frames>
+			</Frame>
+            
+            <Frame parentKey="infoEditContainer" name="$parentEditContainer" hidden="true">
+				<Size>
+					<AbsDimension x="200" y="200"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parent">
+						<Offset x="0" y="0"/>
+					</Anchor>
+					<Anchor point="BOTTOMRIGHT" relativeTo="$parent">
+						<Offset x="0" y="0"/>
+					</Anchor>
+				</Anchors>
+                <Frames>
+                    <ScrollFrame parentKey="scrollFrame" name="$parentScrollFrame" inherits="UIPanelScrollFrameTemplate">
+						<Size x="296" y="257"/>
+						<Anchors>
+							<Anchor point="TOPLEFT" x="0" y="0"/>
+						</Anchors>
+						<Layers>
+							<Layer level="BACKGROUND">
+								<Texture parentKey="SendStationeryBackgroundLeft" name="SendStationeryBackgroundLeft">
+									<Size x="252" y="256"/>
+									<Anchors>
+										<Anchor point="TOPLEFT"/>
+									</Anchors>
+								</Texture>
+								<Texture parentKey="SendStationeryBackgroundRight" name="SendStationeryBackgroundRight">
+									<Size x="64" y="256"/>
+									<Anchors>
+										<Anchor point="TOPLEFT" relativeTo="SendStationeryBackgroundLeft" relativePoint="TOPRIGHT"/>
+									</Anchors>
+								</Texture>
+							</Layer>
+							<Layer level="ARTWORK">
+								<Texture parentKey="SendScrollBarBackgroundTop" name ="SendScrollBarBackgroundTop" file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
+									<Size x="31" y="256"/>
+									<Anchors>
+										<Anchor point="TOPLEFT" relativePoint="TOPRIGHT" x="-2" y="5"/>
+									</Anchors>
+									<TexCoords left="0" right="0.484375" top="0" bottom="1.0"/>
+								</Texture>
+								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
+									<Size x="31" y="106"/>
+									<Anchors>
+										<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" x="-2" y="-2"/>
+									</Anchors>
+									<TexCoords left="0.515625" right="1.0" top="0" bottom="0.4140625"/>
+								</Texture>
+							</Layer>
+						</Layers>
+						<ScrollChild>
+							<EditBox  parentKey="editBox" name="$parentBodyEditBox" letters="2000" multiLine="true" enableMouse="true" autoFocus="false">
+                                <Size x="270" y="200"/>
+                                <Anchors>
+                                    <Anchor point="TOPLEFT" x="20" y="-10"/>
+                                </Anchors>
+                                <Scripts>
+                                    <OnCursorChanged function="ScrollingEdit_OnCursorChanged"/>
+                                    <OnTextChanged>
+                                        --self.cursorOffset = self.cursorOffset or 0;
+                                        --self.cursorHeight = self.cursorHeight or 0;
+                                        ScrollingEdit_OnTextChanged(self, self:GetParent());
+                                    </OnTextChanged>
+                                    <OnUpdate>
+                                        --self.cursorOffset = self.cursorOffset or 0;
+                                        --self.cursorHeight = self.cursorHeight or 0;
+                                        ScrollingEdit_OnUpdate(self, elapsed, self:GetParent());
+                                    </OnUpdate>
+                                    <OnTabPressed>
+                                        --EditBox_HandleTabbing(self, SEND_MAIL_TAB_LIST);
+                                    </OnTabPressed>
+                                    <OnEscapePressed function="EditBox_ClearFocus"/>
+                                </Scripts>
+                                <FontString inherits="ChatFontNormal"/>
+                                <HighlightColor a="1.0" r="0.82" g="0.82" b="0.82"/>
+                            </EditBox>
+						</ScrollChild>
+					</ScrollFrame>
+
+                    
+                    <Button name="$parentEditCancel" inherits="UIPanelButtonTemplate" text="CANCEL">
+                        <Size x="124" y="21"/>
+                        <Anchors>
+                            <Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
+                                <Offset x="0" y="-10"/>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>
+                                self:GetParent():GetParent():OnCancelClick();
+                            </OnClick>
+                        </Scripts>
+                    </Button>
+
+                    <Button parentKey="saveButton" name="$parentEditSave" inherits="UIPanelButtonTemplate" text="SAVE">
+                        <Size x="124" y="21"/>
+                        <Anchors>
+                            <Anchor point="TOPRIGHT" relativeTo="$parentEditCancel" relativePoint="TOPLEFT">
+                                <Offset x="-10" y="0"/>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>
+                                self:GetParent():GetParent():OnSaveClick();
+                            </OnClick>
+                        </Scripts>
+                    </Button>
+                </Frames>
+            </Frame>
         </Frames>
     </Frame> 
 </Ui>

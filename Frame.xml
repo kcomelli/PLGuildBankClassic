@@ -330,6 +330,20 @@
 			
 		</Layers>
 		<Frames>
+			<Button parentKey="acceptStateButton" name="$parentAcceptState" inherits="UIPanelButtonTemplate" text="ACCEPT" hidden="true">
+                <Size x="124" y="21"/>
+                <Anchors>
+                    <Anchor point="TOP" relativeTo="$parent" relativePoint="BOTTOM">
+                        <Offset x="0" y="100"/>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        self:GetParent():OnAcceptClick();
+                    </OnClick>
+                </Scripts>
+            </Button>
+
 			<Frame parentKey="EmblemFrame" name="PLGuildBankEmblemFrame">
 				<Size>
 					<AbsDimension x="700" y="80"/>
@@ -794,85 +808,11 @@
 				</Anchors>
 				<Layers>
 					<Layer level="BACKGROUND" textureSubLevel="-5">
-						<!-- TODO: Convert this to atlas -->
 						<Texture parentKey="Bg" file="Interface\FrameGeneral\UI-Background-Marble" horizTile="true" vertTile="true" setAllPoints="true"/>
 					</Layer>
 				</Layers>
 			</Frame>
 
-			<Frame parentKey="logFrame" name="PLGuildBankFrameLog" hidden="true">
-				<Size>
-					<AbsDimension x="400" y="300"/>
-				</Size>
-				<Anchors>
-					<Anchor point="TOPLEFT"  relativeTo="$parent">
-						<Offset x="50" y="50"/>
-					</Anchor>
-				</Anchors>
-				<Frames>
-					<ScrollingMessageFrame name="PLGuildBankMessageFrame" insertMode="TOP" maxLines="128" fade="false">
-						<Size>
-							<AbsDimension x="688" y="304"/>
-						</Size>
-						<Anchors>
-							<Anchor point="TOPLEFT" relativeTo="PLGuildBankFrameLog" relativePoint="TOPLEFT">
-								<Offset x="33" y="-73"/>
-							</Anchor>
-						</Anchors>
-						<Scripts>
-							<OnHyperlinkClick>
-								SetItemRef(link, text, button);
-							</OnHyperlinkClick>
-						</Scripts>
-						<FontString inherits="ChatFontNormal" justifyH="LEFT"/>
-					</ScrollingMessageFrame>
-					<ScrollFrame name="PLGuildBankTransactionsScrollFrame" inherits="FauxScrollFrameTemplate" hidden="true">
-						<Size>
-							<AbsDimension x="688" y="304"/>
-						</Size>
-						<Anchors>
-							<Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPRIGHT">
-								<Offset x="-50" y="-75"/>
-							</Anchor>
-						</Anchors> 
-						<Layers>
-							<Layer level="ARTWORK">
-								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
-									<Size>
-										<AbsDimension x="31" y="256"/>
-									</Size>
-									<Anchors>
-										<Anchor point="TOPLEFT" relativePoint="TOPRIGHT">
-											<Offset>
-												<AbsDimension x="-2" y="5"/>
-											</Offset>
-										</Anchor>
-									</Anchors>
-									<TexCoords left="0" right="0.484375" top="0" bottom="1.0"/>
-								</Texture>
-								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
-									<Size>
-										<AbsDimension x="31" y="106"/>
-									</Size>
-									<Anchors>
-										<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT">
-											<Offset>
-												<AbsDimension x="-2" y="-2"/>
-											</Offset>
-										</Anchor>
-									</Anchors>
-									<TexCoords left="0.515625" right="1.0" top="0" bottom="0.4140625"/>
-								</Texture>
-							</Layer>
-						</Layers>
-						<Scripts>
-							<OnVerticalScroll>
-								FauxScrollFrame_OnVerticalScroll(self, offset, PLGuildBANK_TRANSACTION_HEIGHT, PLGuildBankLogScroll)
-							</OnVerticalScroll>
-						</Scripts>
-					</ScrollFrame>
-				</Frames>
-			</Frame>
 			<EditBox parentKey="searchEditBox" name="PLGuildItemSearchBox" inherits="BagSearchBoxTemplate" letters="15">
 				<Size x="130" y="20"/>
 				<Anchors>
@@ -881,7 +821,7 @@
 				<Scripts>
 					<OnTextChanged>
 						SearchBoxTemplate_OnTextChanged(self)
-						self:GetParent():OnSearchTextChanged()
+						self:GetParent():OnSearchTextChanged(self, self:GetText())
 					</OnTextChanged>
 				</Scripts>
 			</EditBox>

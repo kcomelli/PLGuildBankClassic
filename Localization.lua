@@ -21,6 +21,7 @@ local L = LibStub("AceLocale-3.0"):NewLocale("PLGuildBankClassic", "enUS", true,
 
 L["Save"] = true
 L["Cancel"] = true
+L["Decide later"] = true
 L["%s's Guild Bank"] = true
 L["Available money"] = true
 L["Character %s:"] = true
@@ -46,12 +47,25 @@ L["Bank: %s\nChar: %s"] = true
 L["Common"] = true
 L["No cached or received data found for this character.\nIf you are the owner of the character, log on and visit the bank!\nIf not, then you will receive bank information as soon as the ownser visited the bank!"] = true
 L["The bank character must install this AddOn and accept the state of being a guild-bank character!\n \nThis is required because the character's inventory, bank \nand money will be synced with all guild-members which are using this AddOn!"] = true
+L["You have declined that your character is a bank-guild char! No inventory and money data will be shared!\n \nYou can change this state by accepting the state now by clicking the button below."] = true
 L["Accept"] = true
 L["Decline"] = true
 L["Decide later"] = true
 L["%s has configured your char as guild-bank character!\nDo you accept this state of the character?\n \nNote: All your inventory, bank and money will be shared across the guild!"] = true
+L["You have traded the following items and/or money with a guild-bank char:\n%s\n \nYou can enter a reason for the trade which will be shown in the guild log below:"] = true
 L["Purchaseable"] = true
 L["unknown"] = true
+L["Debug mode"] = true
+L["gave"] = true
+L["got"] = true
+L["Your version of PL GuildBank classic is out-of-date! Please update to latest version!"] = true
+L["No supported Cache AddOn found. Could NOT update local cache!"] = true
+L["Unkown version comparison type received: '%s'."] = true
+L["Are you sure that you want to remove the character '%s' from the list of bank-characters?"] = true
+L["Yes, keep Log"] = true
+L["Yes, with Log"] = true
+L["No, cancel"] = true
+L["Yes"] = true
 
 L["via direct trade"] = true
 L[" as %s"] = true
@@ -64,7 +78,25 @@ L["via mail"] = true
 L["via COD"] = true
 L["via auction"] = true
 L["via loot"] = true
+L["via vendor"] = true
+L["via enchanting"] = true
+L["via destruction"] = true
+L["via other"] = true
 L["via (unkown)"] = true
 L["( est. value: %s )"] = true
 
-L["(Horde|Alliance)+ Auction House"] = true
+-- auction house mail patterns
+L["Auction House"] = true
+L["Auction successful:"] = true
+L["Auction cancelled:"] = true
+L["Auction expired:"] = true
+L["Outbid on "] = true
+
+-- auction based logging titles
+L["Auction income"] = true
+L["Auction expense"] = true
+L["Auction expired"] = true
+L["Auction won"] = true
+L["Auction aborted"] = true
+L["Auction creation"] = true
+L["Auction outbid return"] = true

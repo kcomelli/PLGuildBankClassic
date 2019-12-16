@@ -29,26 +29,170 @@ function PLGuildBankClassic:GetItemPrice(itemId, forceVendorPrice)
 	return priceInfo
 end
 
+function PLGuildBankClassic:GetItemIdFromName(itemName)
+	if itemName then
+		local itemName, itemLink, itemRarity, _, itemMinLevel, itemType, _, _, _, _, itemVendorPrice, classID = GetItemInfo (itemName);
+
+		local itemId = string.match(itemLink, "Hitem:(%d+):")
+
+		if itemId then
+			return tonumber(itemId)
+		end
+	end
+
+	return nil
+end
+
+function PLGuildBankClassic:GetItemIdFromLink(itemLink)
+	if itemLink then
+		local itemId = string.match(itemLink, "Hitem:(%d+):")
+
+		if itemId then
+			return tonumber(itemId)
+		end
+	end
+
+	return nil
+end
+
+function PLGuildBankClassic:GetItemStringFromId(itemId)
+	if itemId then
+		local itemName, itemLink, itemRarity, _, itemMinLevel, itemType, _, _, _, _, itemVendorPrice, classID = GetItemInfo(itemId);
+		return PLGuildBankClassic:GetItemStringFromLink(itemLink)
+	end
+
+	return nil
+end
+
+function PLGuildBankClassic:GetItemStringFromName(itemName)
+	if itemName then
+		local itemName, itemLink, itemRarity, _, itemMinLevel, itemType, _, _, _, _, itemVendorPrice, classID = GetItemInfo(itemName);
+		return PLGuildBankClassic:GetItemStringFromLink(itemLink)
+	end
+
+	return nil
+end
+
+function PLGuildBankClassic:GetItemStringFromLink(itemLink)
+	if itemLink then
+		return select(3, strfind(itemLink, "|H(.+)|h"))
+	end
+
+	return nil
+end
+
 function PLGuildBankClassic:TryGetOpenMailData()
 	local mailIndex = 0
 	
 	if (InboxFrame and InboxFrame.openMailID) then
 		-- player has an inbox item frame open
 		mailIndex = InboxFrame.openMailID
+		--PLGuildBankClassic:debug("TryGetOpenMailData: using mailIndex " .. tostring(mailIndex or 0) .. " from open InboxFrame")
 	elseif OpenAllMail and OpenAllMail.mailIndex and not OpenAllMail:IsEnabled() then
 		-- player currently opening all mails
 		mailIndex = OpenAllMail.mailIndex
+		--PLGuildBankClassic:debug("TryGetOpenMailData: using mailIndex " .. tostring(mailIndex or 0) .. " from OpenAllMailMixin")
 	elseif self.lastClosedMailData then
 		-- player recently closed a mail frame - use last saved index
+		--PLGuildBankClassic:debug("TryGetOpenMailData: using mail " .. (self.lastClosedMailData.subject or "na") .. " from open lastClosedMailData")
 		return self.lastClosedMailData
 	end
 
 	if mailIndex > 0 then
 		return self.mailData[mailIndex]
 	end
+ 
+	return nil
+end
+
+function PLGuildBankClassic:GetNormalizedLogTitleFromSubject(subject)
+	return subject
+end
+
+function PLGuildBankClassic:IsAuctionHouseSender(sender)
+	if not sender then
+		return false
+	end
+
+	local pos = string.find(sender, L["Auction House"])
+	PLGuildBankClassic:debug("Finding " .. L["Auction House"] .. " in string " .. sender .. " - pos: " .. (tostring(pos) or "na"))
+	return pos ~= nil and pos > 0
+end
+
+function PLGuildBankClassic:IsAuctionSuccessful(subject)
+	if not subject then
+		return false
+	end
+
+	local pos = string.find(subject, L["Auction successful:"])
+	PLGuildBankClassic:debug("Finding " .. L["Auction successful:"] .. " in string " .. subject .. " - pos: " .. (tostring(pos) or "na"))
+	return pos ~= nil and pos > 0
+end
+function PLGuildBankClassic:IsAuctionCancelled(subject)
+	if not subject then
+		return false
+	end
+
+	local pos = string.find(subject, L["Auction cancelled:"])
+	PLGuildBankClassic:debug("Finding " .. L["Auction cancelled:"] .. " in string " .. subject .. " - pos: " .. (tostring(pos) or "na"))
+	return pos ~= nil and pos > 0
+end
+function PLGuildBankClassic:IsAuctionExpired(subject)
+	if not subject then
+		return false
+	end
+
+	local pos = string.find(subject, L["Auction expired:"])
+	PLGuildBankClassic:debug("Finding " .. L["Auction expired:"] .. " in string " .. subject .. " - pos: " .. (tostring(pos) or "na"))
+	return pos ~= nil and pos > 0
+end
+
+function PLGuildBankClassic:IsAuctionOutbid(subject)
+	if not subject then
+		return false
+	end
+
+	local pos = string.find(subject, L["Outbid on "])
+	PLGuildBankClassic:debug("Finding " .. L["Outbid on "] .. " in string " .. subject .. " - pos: " .. (tostring(pos) or "na"))
+	return pos ~= nil and pos > 0
+end
+
+function PLGuildBankClassic:UpdateVersionsInPublicNote()
+	if PLGuildBankClassic:IsGuildBankChar() then
+		local configVersion = PLGuildBankClassic.atBankChar.modifiedAt or 0
+		local inventoryVersion = PLGuildBankClassic.atBankChar.inventoryVersion or 0
+		local moneyVersion = PLGuildBankClassic.atBankChar.moneyVersion or 0
+		local logVersion = PLGuildBankClassic.atBankChar.logVersion or 0
+
+		local noteString = string.format("GB %s,%s,%s,%s", PLGuildBankClassic:base62Encode(configVersion), 
+			PLGuildBankClassic:base62Encode(inventoryVersion), 
+			PLGuildBankClassic:base62Encode(moneyVersion),
+			PLGuildBankClassic:base62Encode(logVersion))
+
+		local charIndex = PLGuildBankClassic:GetGuildRosterIndexOfBankChar()
+
+		if charIndex then
+			GuildRosterSetPublicNote(charIndex, noteString)
+			PLGuildBankClassic:debug("UpdateVersionsInPublicNote: Updated public note to: " .. noteString)
+			--PLGuildBankClassic:debug("UpdateVersionsInPublicNote: Used versions: " .. tostring(configVersion) .. ", " .. tostring(inventoryVersion) .. ", " .. tostring(moneyVersion) .. ", " .. tostring(logVersion))
+		else
+			PLGuildBankClassic:debug("UpdateVersionsInPublicNote: could not get guild roster index")
+		end
+	end
+end
+
+function PLGuildBankClassic:GetGuildRosterIndexOfBankChar()
+	if PLGuildBankClassic:IsGuildBankChar() then
+		local inGuild, name, rank, level, class, note, officernote, index = PLGuildBankClassic:IsPlayerInGuild(PLGuildBankClassic.atBankChar.name .. "-" .. PLGuildBankClassic.atBankChar.realm)
+		if inGuild then
+			return index
+		end
+	end
 
 	return nil
 end
+
+
 
 --[[ Slot Type ]]--
 
@@ -199,7 +343,7 @@ function PLGuildBankClassic:IsPlayerInGuild(characterName)
                   achievementPoints, achievementRank, isMobile, isSoREligible, standingID = GetGuildRosterInfo(i)
 
             if name == characterName then
-                return true, name, rank, level, class, note, officernote
+                return true, name, rank, level, class, note, officernote, i
             end
         end
     end
@@ -207,8 +351,89 @@ function PLGuildBankClassic:IsPlayerInGuild(characterName)
     return false, nil, nil, nil, nil, nil, nil
 end
 
+function PLGuildBankClassic:GetGuildRank(player)
+	local name, rank, rankIndex;
+	local guildSize;
+  
+	if IsInGuild() then
+	  guildSize = GetNumGuildMembers();
+	  for i=1, guildSize do
+		name, rank, rankIndex = GetGuildRosterInfo(i)
+		name = strsub(name, 1, string.find(name, "-")-1)  -- required to remove server name from player (can remove in classic if this is not an issue)
+		if name == player then
+		  return rank, rankIndex;
+		end
+	  end
+	  return "NOTINGUILD";
+	end
+	return "NOGUILD"
+  end
+  
+  function PLGuildBankClassic:GetGuildRankIndex(player)
+	local name, rank;
+	local guildSize,_,_ = GetNumGuildMembers();
+  
+	if IsInGuild() then
+	  for i=1, tonumber(guildSize) do
+		name,_,rank = GetGuildRosterInfo(i)
+		name = strsub(name, 1, string.find(name, "-")-1)  -- required to remove server name from player (can remove in classic if this is not an issue)
+		if name == player then
+		  return rank+1;
+		end
+	  end
+	  return false;
+	end
+  end
+
+  function PLGuildBankClassic:IsGuildPlayerOnline(player)
+	local name, rank, rankIndex;
+	local guildSize;
+  
+	if IsInGuild() then
+	  guildSize = GetNumGuildMembers();
+	  for i=1, guildSize do
+		name, rank, rankIndex, _, _, _, _, _, isOnline, _, _, _, _, isMobile = GetGuildRosterInfo(i)
+		name = strsub(name, 1, string.find(name, "-")-1)  -- required to remove server name from player (can remove in classic if this is not an issue)
+		if name == player and isOnline == true and isMobile == false then
+		  return true
+		end
+	  end
+	  return false
+	end
+	return false
+  end
+
+function PLGuildBankClassic:CheckOfficer()      -- checks if user is an officer IF core.IsOfficer is empty. Use before checks against core.IsOfficer
+	if PLGuildBankClassic.IsOfficer == "" then      -- used as a redundency as it should be set on load in init.lua GUILD_ROSTER_UPDATE event
+	  if PLGuildBankClassic:GetGuildRankIndex(UnitName("player")) == 1 then       -- automatically gives permissions above all settings if player is guild leader
+		PLGuildBankClassic.IsOfficer = true
+		return;
+	  end
+	  if IsInGuild() then
+		local curPlayerRank = PLGuildBankClassic:GetGuildRankIndex(UnitName("player"))
+		if curPlayerRank then
+			PLGuildBankClassic.IsOfficer = C_GuildInfo.GuildControlGetRankFlags(curPlayerRank)[12]
+		end
+	  else
+		PLGuildBankClassic.IsOfficer = false;
+	  end
+	end
+  end
+
+
 function PLGuildBankClassic:IsGuildBankChar()
     return PLGuildBankClassic.atBankChar ~= nil
+end
+
+function PLGuildBankClassic:CharacterOwnedByAccount(characterName)
+
+	if characterName and self.db.factionrealm then
+		local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(characterName)
+
+		return (self.db.factionrealm.accountChars and self.db.factionrealm.accountChars[charServerName])
+	end
+
+	return false
 end
 
 function PLGuildBankClassic:IsInGuild()
@@ -252,6 +477,7 @@ function PLGuildBankClassic:GetSpellorMacroIconInfo(index)
 		return texture;
 	end
 end
+
 
 function PLGuildBankClassic:SecondsToTimeTable(seconds, noSeconds, roundUp)
 	local tempTime;
@@ -376,6 +602,60 @@ function PLGuildBankClassic:round (v)
 	return math.floor (v + 0.5);
   end
 
+function PLGuildBankClassic:base62Encode(number)
+local base = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+local index = number % 62 + 1
+local result = base:sub(index, index)
+local quotient = math.floor(number / 62)
+while quotient ~= 0 do
+	index = quotient % 62 + 1
+	quotient = math.floor(quotient / 62)
+	result = base:sub(index, index) .. result
+end
+return result
+end
+
+function PLGuildBankClassic:base62Decode(number)
+local base = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+local char = number:sub(1, 1)
+local result = base:find(char) - 1
+local limit = number:len()
+for i=2, limit do
+	result = 62 * result + (base:find(number:sub(i, i)) - 1)
+end
+return result
+end
+
+function PLGuildBankClassic:countDictionaryKeys(dictionary, countNils)
+	local cnt = 0
+
+	if dictionary ~= nil and type(dictionary) == 'table' then
+		for k,v in pairs(dictionary) do
+			if v ~= nil or (v == nil and countNils == true) then
+				cnt = cnt + 1
+			end
+		end
+	end
+
+	return cnt
+end
+
+function PLGuildBankClassic:sliceTable(tableData, start, numberOfItems)
+	if tableData == nil or type(tableData) ~= 'table' then
+		return nil
+	end
+
+	local ret = {}
+	
+	for i=start, numberOfItems do
+		if tableData[i] then
+			tinsert(ret, tableData[i])
+		end
+	end
+
+	return ret
+end
+
 -------------------------------------------------------------------------------
 -- printing functions
 -------------------------------------------------------------------------------
@@ -386,7 +666,7 @@ function PLGuildBankClassic:round (v)
 -- Prints a debug message if debug mode is enabled in addon settings
 -------------------------------------------------------------------------------
 function PLGuildBankClassic:debug(message)
-	if (PLGuildBankClassic.db.profile.config.debug) then
+	if (message and PLGuildBankClassic.db.profile.config.debug) then
 		DEFAULT_CHAT_FRAME:AddMessage(PLGBCLASSIC_CHAT_WHITE .. "PLGBC-DBG: " .. message .. PLGBCLASSIC_CHAT_END, 0.1, 0.1, 1);
 	end
 end
@@ -397,7 +677,7 @@ end
 -- Prints a chatframe message if message output or debug mode is enabled
 -------------------------------------------------------------------------------
 function PLGuildBankClassic:println(message)
-	if (PLGuildBankClassic.db.profile.config.printMessage or PLGuildBankClassic.db.profile.config.debug) then
+	if (message and PLGuildBankClassic.db.profile.config.printMessage or PLGuildBankClassic.db.profile.config.debug) then
 		DEFAULT_CHAT_FRAME:AddMessage(PLGBCLASSIC_CHAT_YELLOW .. message .. PLGBCLASSIC_CHAT_END, 1, 1, 1);
 	end
 end
@@ -408,7 +688,9 @@ end
 -- Prints a chatframe message
 -------------------------------------------------------------------------------
 function PLGuildBankClassic:info(message)
-	DEFAULT_CHAT_FRAME:AddMessage(PLGBCLASSIC_CHAT_BLUE .. message .. PLGBCLASSIC_CHAT_END, 1, 1, 1);
+	if message then
+		DEFAULT_CHAT_FRAME:AddMessage(PLGBCLASSIC_CHAT_BLUE .. message .. PLGBCLASSIC_CHAT_END, 1, 1, 1);
+	end
 end
 -------------------------------------------------------------------------------
 -- function  PLGuildBankClassic:errln( Message)
@@ -416,7 +698,7 @@ end
 -- Prints an error message if error pronting is enabled
 -------------------------------------------------------------------------------
 function PLGuildBankClassic:errln(mMessage)
-	if (PLGuildBankClassic.db.profile.config.printErrors) then
+	if (message and PLGuildBankClassic.db.profile.config.printErrors) then
 		DEFAULT_CHAT_FRAME:AddMessage(PLGBCLASSIC_CHAT_RED .. message .. PLGBCLASSIC_CHAT_END, 1, 0.1, 0.1);
 	end
 end
@@ -427,5 +709,7 @@ end
 -- Prints a message within the error screen.
 -------------------------------------------------------------------------------
 function PLGuildBankClassic:screen(message )
-	UIErrorsFrame:AddMessage(message, 1.0, 1.0, 0.0, 1.0, UIERRORS_HOLD_TIME);
+	if message then
+		UIErrorsFrame:AddMessage(message, 1.0, 1.0, 0.0, 1.0, UIERRORS_HOLD_TIME);
+	end
 end

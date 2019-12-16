@@ -20,7 +20,7 @@ function PLGuildBankClassic.GuildBankContentFrame:Create(parent)
     -- settings
 	frame.bagButtons = {}
 	frame.displayingCharacterData = nil
-
+ 
 	-- components
 	frame.itemContainer = PLGuildBankClassic.ItemContainer:Create(frame)
 	frame.itemContainer:SetPoint("TOPLEFT", 0, ITEM_CONTAINER_OFFSET_H)
@@ -142,14 +142,18 @@ function GuildBankContentFrame:Update(characterData)
 		
         self:UpdateBags(characterData)
         self.itemContainer.ownerName = characterData.name .. "-" .. characterData.realm
-		self.itemContainer:UpdateBags()
+        self.itemContainer:UpdateBags()
+        
+        if(self.itemContainer.searchText) then
+            self:ApplySearch(self.itemContainer.searchText)
+        end
     else
         -- clear items
 
     end
 end
 
-function GuildBankContentFrame:PLGBC_GUILD_LOG_UPDATED(event, chacaterName)
+function GuildBankContentFrame:PLGBC_GUILD_LOG_UPDATED(event, chacaterName, logVersion)
     local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(chacaterName)
 
     if self.displayingCharacterData and self.displayingCharacterData.name == charName and self.displayingCharacterData.realm == charRealm then

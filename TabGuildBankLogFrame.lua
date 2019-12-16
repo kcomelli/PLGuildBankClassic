@@ -6,7 +6,7 @@ local GuildBankLogFrame_MT = {__index = GuildBankLogFrame}
 
 local Events = PLGuildBankClassic:GetModule("Events")
 
-local MAX_SHOWN_TRANSACTIONS = 2000
+local MAX_SHOWN_TRANSACTIONS = PLGBC_MAX_LOG_SIZE
 local GUILDBANK_TRANSACTION_HEIGHT = 10.2
 local GUILD_BANK_LOG_TIME_PREPEND = "|cff009999   "
 
@@ -43,10 +43,21 @@ function GuildBankLogFrame:OnHide()
 end
 
 function GuildBankLogFrame:OnSizeChanged()
+    local scrollHeight = self:GetHeight()/2
+    self.scrollFrame:SetHeight(scrollHeight);
+    self.scrollFrame:SetWidth(self:GetWidth()-20);
+
+    self.scrollFrame.SendScrollBarBackgroundTop:SetHeight(min(scrollHeight, 256));
+	self.scrollFrame.SendScrollBarBackgroundTop:SetTexCoord(0, 0.484375, 0, min(scrollHeight, 256) / 256);
+	self.scrollFrame.SendStationeryBackgroundLeft:SetHeight(min(scrollHeight, 256));
+	self.scrollFrame.SendStationeryBackgroundLeft:SetTexCoord(0, 1.0, 0, min(scrollHeight, 256) / 256);
+	self.scrollFrame.SendStationeryBackgroundRight:SetHeight(min(scrollHeight, 256));
+    self.scrollFrame.SendStationeryBackgroundRight:SetTexCoord(0, 1.0, 0, min(scrollHeight, 256) / 256);
+
     self:DoLogScroll()
 end
 
-function GuildBankLogFrame:PLGBC_GUILD_LOG_UPDATED(event, chacaterName)
+function GuildBankLogFrame:PLGBC_GUILD_LOG_UPDATED(event, chacaterName, logVersion)
     local charName, charRealm, charServerName = PLGuildBankClassic:CharaterNameTranslation(chacaterName)
 
     if self.displayingCharacterData and self.displayingCharacterData.name == charName and self.displayingCharacterData.realm == charRealm then
@@ -161,7 +172,7 @@ function GuildBankLogFrame:PrintTransactions()
             money = PLGuildBankClassic:PriceToMoneyString(moneyValue, true)
 
             if record.mode == PLGuildBankClassic.transactionModes.deposit then
-                msg = format(L["%s deposited %s"], name, money)
+                msg = format(L["%s deposited %s"], name, money) 
 
                 if record.title then
                     msg = msg .. " " .. ORANGE_FONT_COLOR_CODE .. format(L[" as %s"], record.title) .. " " .. FONT_COLOR_CODE_CLOSE
@@ -184,6 +195,7 @@ function GuildBankLogFrame:PrintTransactions()
 
         elseif record.type == PLGuildBankClassic.transactionTypes.item then
 
+            --PLGuildBankClassic:debug("Getting item info for: " .. tostring(record.itemId))
             local sName, sLink, iRarity, iLevel, iMinLevel, sType, sSubType, iStackCount = GetItemInfo(record.itemId);
 
             moneyValue = (record.goldPerItem or 0) * (record.quantity or 1)
@@ -196,10 +208,18 @@ function GuildBankLogFrame:PrintTransactions()
                 if ( record.quantity > 1 ) then
                     msg = msg..format(L[" x %d"], record.quantity);
                 end
+
+                if record.title then
+                    msg = msg .. " " .. ORANGE_FONT_COLOR_CODE .. format(L[" for %s"], record.title) .. " " .. FONT_COLOR_CODE_CLOSE
+                end
             else
                 msg = format(L["%s |cffff2020withdrew|r %s"], (name or L["unknown"]), (sLink or L["unknown"]));
                 if ( record.quantity > 1 ) then
                     msg = msg..format(L[" x %d"], record.quantity);
+                end
+
+                if record.title then
+                    msg = msg .. " " .. ORANGE_FONT_COLOR_CODE .. format(L[" for %s"], record.title) .. " " .. FONT_COLOR_CODE_CLOSE
                 end
             end
 
@@ -233,6 +253,14 @@ function GuildBankLogFrame:ConvertSourceToExt(source)
         return L["via auction"]
     elseif source == PLGuildBankClassic.transactionSource.loot then
         return L["via loot"]
+    elseif source == PLGuildBankClassic.transactionSource.vendor then
+        return L["via vendor"]
+    elseif source == PLGuildBankClassic.transactionSource.enchanting then
+        return L["via enchanting"]
+    elseif source == PLGuildBankClassic.transactionSource.destroy then
+        return L["via destruction"]
+    elseif source == PLGuildBankClassic.transactionSource.other then
+        return L["via other"]
     end
 
     return L["via (unkown)"]

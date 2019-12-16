@@ -354,7 +354,7 @@
 			</CheckButton>
 
             <Button parentKey="saveButton" name="$parentEditSave" inherits="UIPanelButtonTemplate" text="SAVE">
-                <Size x="124" y="21"/>
+                <Size x="105" y="21"/>
                 <Anchors>
                     <Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT">
                         <Offset x="10" y="4"/>
@@ -367,7 +367,7 @@
                 </Scripts>
             </Button>
             <Button name="$parentEditCancel" inherits="UIPanelButtonTemplate" text="CANCEL">
-                <Size x="124" y="21"/>
+                <Size x="105" y="21"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentEditSave" relativePoint="RIGHT">
                         <Offset x="10" y="0"/>
@@ -376,6 +376,19 @@
                 <Scripts>
                     <OnClick>
                         self:GetParent():OnCancelClick();
+                    </OnClick>
+                </Scripts>
+            </Button>
+            <Button name="$parentEditDelete" inherits="UIPanelButtonTemplate" text="DELETE" parentKey="deleteButton" hidden="true">
+                <Size x="105" y="21"/>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parentEditCancel" relativePoint="RIGHT">
+                        <Offset x="10" y="0"/>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        self:GetParent():OnDeleteClick();
                     </OnClick>
                 </Scripts>
             </Button>

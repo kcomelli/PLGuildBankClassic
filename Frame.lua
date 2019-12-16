@@ -33,6 +33,9 @@ MoneyTypeInfo["PLGUILDBANKCLASSIC"] = {
 	showSmallerCoins = "Backpack"
 };
 
+PLGuildBankClassic.CommsThresholdTriggers = {}
+PLGuildBankClassic.LastBankCharOnlineQuery = 0
+
 PLGuildBankClassic.Frame = {}
 PLGuildBankClassic.Frame.defaults = {}
 PLGuildBankClassic.Frame.prototype = Frame
@@ -84,29 +87,65 @@ end
 
 function Frame:AddEditBankCharDialogResult(initiator, tab, mode, characterData, createNew)
 	if mode == "save" then
-			local changedName = false
-			--local tab = initiator.addEditBankAltChar.openedByTab
-			if createNew then
-				PLGuildBankClassic:debug("Creating new bank character config using char: " .. characterData.name)
-				PLGuildBankClassic:CreateBankChar(characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture, characterData.acceptState)
-			else
-				PLGuildBankClassic:debug("Updating new bank character config using char: " .. characterData.name)
-				changedName = PLGuildBankClassic:EditBankChar(tab:GetID(), characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture, characterData.acceptState)
+		local changedName = false
+		local existingDeleted = PLGuildBankClassic:GetBankCharDataByName(characterData.name)
+
+		--local tab = initiator.addEditBankAltChar.openedByTab
+		if createNew and existingDeleted == nil then
+			PLGuildBankClassic:debug("Creating new bank character config using char: " .. characterData.name)
+			PLGuildBankClassic:CreateBankChar(characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture, characterData.acceptState)
+		else
+			PLGuildBankClassic:debug("Updating bank character config using char: " .. characterData.name)
+			if existingDeleted and existingDeleted.isDeleted then
+				PLGuildBankClassic:debug("Reactivate deleted char: " .. characterData.name)
+			end
+
+			changedName = PLGuildBankClassic:EditBankChar(tab:GetID(), characterData.name, characterData.realm, characterData.description, characterData.class, characterData.icon, characterData.iconTexture, characterData.acceptState)
+		end
+
+		initiator:UpdateBankAltTabs(false)
+
+		if createNew then
+			Events:Fire("PLGBC_EVENT_BANKCHAR_ADDED", tab:GetID(), characterData)
+		else
+			Events:Fire("PLGBC_EVENT_BANKCHAR_UPDATED", tab:GetID(), characterData, changedName)
+		end
+
+		initiator:UpdateCurrentTab()
+
+		if initiator.currentTab == 1 then
+			initiator:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", tab:GetID(), characterData)
+		end
+	elseif mode == "delete" or mode=="delete-with-log" then
+		PLGuildBankClassic:debug("Deleting character '" .. characterData.name .. "' ..")
+		local existingDeleted = PLGuildBankClassic:GetBankCharDataByName(characterData.name)
+		if existingDeleted then
+			existingDeleted.isDeleted = true
+			existingDeleted.acceptState = 0 -- reset accept state
+
+			if mode=="delete-with-log" then
+				-- delete log!
+				PLGuildBankClassic:debug("Deleting character " .. characterData.name .. "'s LOG ..")
+			end
+
+			if not PLGuildBankClassic:CharacterOwnedByAccount(characterData.name) then
+				-- remove cache
+				PLGuildBankClassic:debug("Deleting character " .. characterData.name .. "'s cached-Inventory ..")
 			end
 
 			initiator:UpdateBankAltTabs(false)
-
-			if createNew then
-				Events:Fire("PLGBC_EVENT_BANKCHAR_ADDED", tab:GetID(), characterData)
-			else
-				Events:Fire("PLGBC_EVENT_BANKCHAR_UPDATED", tab:GetID(), characterData, changedName)
-			end
+			Events:Fire("PLGBC_EVENT_BANKCHAR_REMOVED", tab:GetID(), characterData)
 
 			initiator:UpdateCurrentTab()
-
-			if initiator.currentTab == 1 then
-				initiator:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", tab:GetID(), characterData)
+			if initiator.currentTab == tab:GetID() then
+				local changedData = PLGuildBankClassic.GetBankCharDataByIndex(tab:GetID())
+				if changedData then
+					initiator:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", tab:GetID(), changedData)
+				end
 			end
+		else
+			PLGuildBankClassic:debug("Deleting character " .. characterData.name .. "' not possible - char not found !")
+		end
 	end
 end
 
@@ -170,12 +209,22 @@ function Frame:OnShow()
 	Events.Register(self, "PLGBC_EVENT_BANKCHAR_MONEYCHANGED")
 	Events.Register(self, "PLGBC_EVENT_BANKCHAR_ENTERED_WORLD")
 
+	Events.Register(self, "PLGBC_RECEVIED_CONFIG")
+	Events.Register(self, "PLGBC_RECEVIED_CHARCONFIG")
+	Events.Register(self, "PLGBC_RECEVIED_INVENTORY")
+	Events.Register(self, "PLGBC_RECEVIED_MONEY")
+	Events.Register(self, "PLGBC_RECEVIED_LOG")
+
 	self.addEditBankAltChar.callback = self.AddEditBankCharDialogResult
-    self:ApplyLocalization()
+	self:InitializeUi(true)
+	self:PLGuildBankFrameTab_OnClick(self.tabBankItems, 1)
+end
+
+function Frame:InitializeUi(firstInit)
+	self:ApplyLocalization()
 	self:UpdateTabard()
 	MoneyFrame_Update(self.moneyFrameBankChar:GetName(), 0)
-	self:PLGuildBankFrameTab_OnClick(self.tabBankItems, 1)
-	self:UpdateBankAltTabs(true)
+	self:UpdateBankAltTabs(firstInit or false)
 	self:SetSumGuildMoney()
 end
 
@@ -207,11 +256,25 @@ end
 function Frame:DisplayErrorMessage(message)
 	self.errorMessage:SetText(message)
 	self.errorMessage:Show()
+	self.acceptStateButton:Hide()
 	self:HideFrames();
+
+	if PLGuildBankClassic:IsGuildBankChar() and 
+		(message == L["The bank character must install this AddOn and accept the state of being a guild-bank character!\n \nThis is required because the character's inventory, bank \nand money will be synced with all guild-members which are using this AddOn!"] or
+		 message == L["You have declined that your character is a bank-guild char! No inventory and money data will be shared!\n \nYou can change this state by accepting the state now by clicking the button below."]) then
+		-- show an additional accept button
+		self.acceptStateButton:Show()
+	end
+end
+
+function Frame:OnAcceptClick()
+	PLGuildBankClassic:AcceptOrDeclineState("accept")
+	self.acceptStateButton:Hide()
 end
 
 function Frame:HideError()
 	self.errorMessage:Hide()
+	self.acceptStateButton:Hide()
 	self:DisplayTab(self.currentTab)
 end
 
@@ -320,7 +383,6 @@ end
 
 function Frame:HideFrames()
 	self:SetTabContentVisibility(false)
-	self.logFrame:Hide()
 	self.guildConfigFrame:Hide()
 	self.bankContents:Hide()
 	self.bankLog:Hide()
@@ -335,8 +397,8 @@ function Frame:SetTabContentVisibility(visible)
 	end
 end
 
-function Frame:OnSearchTextChanged()
-	self.bankContents:ApplySearch(self.searchEditBox:GetText())
+function Frame:OnSearchTextChanged(editBox, text)
+	self.bankContents:ApplySearch(text)
 end
 
 -----------------------------------------------------------------------
@@ -390,12 +452,17 @@ function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTabId)
 		self.addEditBankAltChar:InitCreateNew()
 		self.addEditBankAltChar:Show()
 		self.addEditBankAltChar.openedByTab = tab
-		checkButton.checked = false
+		checkButton:SetChecked(false)
 	else
 		self.currentAltTab = currentTabId
 		-- clear character money info - will be set later if data is available
 		MoneyFrame_Update(self.moneyFrameBankChar:GetName(), 0)
 		local charData = PLGuildBankClassic:GetBankCharDataByIndex(currentTabId)
+
+		for i=1, #self.CharTabs do
+			self.CharTabs[i].checkButton:SetChecked(false)
+		end
+		checkButton:SetChecked(true)
 
 		if mouseButton == "RightButton" then
 			PLGuildBankClassic:debug("Changeing character info by index: " .. currentTabId)
@@ -408,7 +475,7 @@ function Frame:PLGuildBankTab_OnClick(checkButton, mouseButton, currentTabId)
 			else
 				PLGuildBankClassic:debug("Could not load bank character data by index: " .. currentTabId)
 			end
-			checkButton.checked = false
+			checkButton:SetChecked(false)
 		else
 			Events:Fire("PLGBC_EVENT_BANKCHAR_SLOT_SELECTED", currentTabId, charData)
 		end
@@ -417,6 +484,64 @@ end
 
 -----------------------------------------------------------------------
 -- event handlers
+
+function Frame:PLGBC_RECEVIED_CONFIG(event)
+	PLGuildBankClassic:debug("RECEIVED new config via comms - update UI")
+	-- cought if new config data received via comms
+	Frame:InitializeUi(false)
+end
+
+function Frame:PLGBC_RECEVIED_CHARCONFIG(event)
+	PLGuildBankClassic:debug("RECEIVED new char-config via comms - update UI")
+	-- cought if new char config data received via comms
+	local currentAltTab = Frame.currentAltTab
+	Frame:InitializeUi(false)
+
+	-- check if there is still a char config at the given index
+	local charData = PLGuildBankClassic:GetBankCharDataByIndex(Frame.currentAltTab)
+	local numberOfBankAlts = PLGuildBankClassic:NumberOfConfiguredAlts()
+	if charData then
+		Frame:PLGuildBankTab_OnClick(Frame.CharTabs[currentAltTab].checkButton, "LeftButton", currentAltTab)
+	elseif numberOfBankAlts > 0 then
+		-- if not - select the first one (reset)
+		Frame:PLGuildBankTab_OnClick(Frame.CharTabs[1].checkButton, "LeftButton", 1)
+	end
+
+	PLGuildBankClassic:CheckIfAcceptenceIsPending()
+end
+
+function Frame:PLGBC_RECEVIED_INVENTORY(event, characterName)
+	PLGuildBankClassic:debug("RECEIVED new inventory via comms for '" .. characterName .. "' - update UI")
+	
+	local charData = PLGuildBankClassic:GetBankCharDataByIndex(Frame.currentAltTab)
+
+	if charData and charData.characterName == characterName then
+		-- fire button click will trigger a char selected event which will update the frames with data
+		Frame:PLGuildBankTab_OnClick(Frame.CharTabs[Frame.currentAltTab].checkButton, "LeftButton", Frame.currentAltTab)
+	end
+end
+
+function Frame:PLGBC_RECEVIED_MONEY(event, characterName)
+	PLGuildBankClassic:debug("RECEIVED new money via comms for '" .. characterName .. "' - update UI")
+	
+	local charData = PLGuildBankClassic:GetBankCharDataByIndex(Frame.currentAltTab)
+
+	if charData and charData.characterName == characterName then
+		-- fire button click will trigger a char selected event which will update the frames with data
+		Frame:PLGuildBankTab_OnClick(Frame.CharTabs[Frame.currentAltTab].checkButton, "LeftButton", Frame.currentAltTab)
+	end
+end
+
+function Frame:PLGBC_RECEVIED_LOG(event, characterName)
+	PLGuildBankClassic:debug("RECEIVED new log via comms for '" .. characterName .. "' - update UI")
+
+	local charData = PLGuildBankClassic:GetBankCharDataByIndex(Frame.currentAltTab)
+
+	if charData and charData.characterName == characterName then
+		-- fire button click will trigger a char selected event which will update the frames with data
+		Frame:PLGuildBankTab_OnClick(Frame.CharTabs[Frame.currentAltTab].checkButton, "LeftButton", Frame.currentAltTab)
+	end
+end
 
 function Frame:PLGBC_EVENT_BANKCHAR_ADDED(event, index, characterData)
 	PLGuildBankClassic:debug("Bankchar added at index " .. tostring(index) .. " using name " .. characterData.name)
@@ -451,7 +576,11 @@ function Frame:PLGBC_EVENT_BANKCHAR_SLOT_SELECTED(event, index, characterData)
 			PLGuildBankClassic:debug("No cached data found")
 		end
 
-		self:DisplayErrorMessage(L["The bank character must install this AddOn and accept the state of being a guild-bank character!\n \nThis is required because the character's inventory, bank \nand money will be synced with all guild-members which are using this AddOn!"])
+		if characterData.acceptState == -1 then
+			self:DisplayErrorMessage(L["You have declined that your character is a bank-guild char! No inventory and money data will be shared!\n \nYou can change this state by accepting the state now by clicking the button below."])
+		else
+			self:DisplayErrorMessage(L["The bank character must install this AddOn and accept the state of being a guild-bank character!\n \nThis is required because the character's inventory, bank \nand money will be synced with all guild-members which are using this AddOn!"])
+		end
 		return
 	end
 

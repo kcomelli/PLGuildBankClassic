@@ -69,6 +69,29 @@
 				</OnShow>
 			</Scripts>
             </Button>
+
+             <CheckButton parentKey="enableDebugMode" name="$parentEnableDebug" inherits="UICheckButtonTemplate">
+                <Size><AbsDimension x="20" y="20" /></Size>
+                <Anchors>
+                <Anchor point="RIGHT" relativeTo="$parent" relativePoint="TOPRIGHT">
+                    <Offset><AbsDimension x="-80" y="-20"/></Offset>
+                </Anchor>
+                </Anchors>
+                <Layers>
+                <Layer level="BACKGROUND">
+                    <FontString parentKey="Text" inherits="GameFontNormalSmall" text="DEBUG_LABEL">
+                    <Anchors>
+                        <Anchor point="LEFT" relativePoint="RIGHT">
+                        <Offset><AbsDimension x="2" y="1"/></Offset>
+                        </Anchor>
+                    </Anchors>
+                    </FontString>
+                </Layer>
+                </Layers>
+                <Scripts>
+                <OnClick>self:GetParent():ToggleDebugMode(self)</OnClick>
+                </Scripts>
+            </CheckButton>
         </Frames>
     </Frame>
 
