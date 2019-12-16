@@ -150,7 +150,7 @@ function GuildBankLogFrame:PrintTransactions()
         local min = dateTable.minutes
         local sec = dateTable.seconds
 
-        PLGuildBankClassic:debug(format("Converted timedif %d into year=%d, month=%d, day=%d, hour=%d, min=%d, sec=%d", timediff, year, month, day, hour, min, sec))
+        --PLGuildBankClassic:debug(format("Converted timedif %d into year=%d, month=%d, day=%d, hour=%d, min=%d, sec=%d", timediff, year, month, day, hour, min, sec))
 
         name = NORMAL_FONT_COLOR_CODE..record.name..FONT_COLOR_CODE_CLOSE
 

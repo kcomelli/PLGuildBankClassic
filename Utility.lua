@@ -16,7 +16,11 @@ function PLGuildBankClassic:GetItemPrice(itemId, forceVendorPrice)
 	if not forceVendorPrice then
 		-- Auctionator support
 		if Atr_STWP_GetPrices then
+			local oldDisenchantValue = AUCTIONATOR_D_TIPS
+			
+			AUCTIONATOR_D_TIPS = 0
 			local vendorPrice, auctionPrice, dePrice = Atr_STWP_GetPrices (itemLink, 1, false, itemVendorPrice, itemName, classID, itemRarity, itemLevel);
+			AUCTIONATOR_D_TIPS = oldDisenchantValue
 
 			priceInfo = (auctionPrice or 0)
 		end

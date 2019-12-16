@@ -568,6 +568,7 @@ end
 function PLGuildBankClassic:MailboxItemClosed(event, itemIndex)
     if self.mailData and self.mailData[itemIndex] then
         self.lastClosedMailData = self.mailData[itemIndex]
+        self.lastClosedMailIndex = itemIndex
     end
 end
 
@@ -581,9 +582,15 @@ function PLGuildBankClassic:ScanMailbox()
     end
 
     PLGuildBankClassic:debug("ScanMailbox: scanning mails")
-    self.scanningMails = true
-    
     local numItems = GetInboxNumItems()
+    self.scanningMails = true
+
+    if self.lastClosedMailIndex and self.lastClosedMailIndex <= numItems and self.mailData then
+        self.lastClosedMailData = self.mailData[self.lastClosedMailIndex]
+    end
+
+    self.mailData = {}
+    
 
     PLGuildBankClassic:debug("ScanMailbox: nr of items: " .. (numItems or 0))
     for i=1, numItems do
@@ -635,37 +642,42 @@ function PLGuildBankClassic:ScanMailbox()
             end
         end
 
-        PLGuildBankClassic:debug("Mail info:")
-        PLGuildBankClassic:debug("   from: " .. (self.mailData[i].sender or "na") .. " subject: " .. (self.mailData[i].subject or "none") .. " returned: " .. (self.mailData[i].returned or "no"))
-        if self.mailData[i].money then
-            PLGuildBankClassic:debug("   sending money: " .. (self.mailData[i].money or "0"))
-        end
-        if self.mailData[i].hasItem then
-            PLGuildBankClassic:debug("   Nr of attachments: " .. tostring(#self.mailData[i].attachments))
-            for a=1, #self.mailData[i].attachments do
-                if self.mailData[i].attachments[a] then
-                    PLGuildBankClassic:debug("       Att [" .. tostring(a) .. "]: name: " .. (self.mailData[i].attachments[a].name or "na"))
-                    PLGuildBankClassic:debug("       Att [" .. tostring(a) .. "]: count: " .. (self.mailData[i].attachments[a].count or "na"))
-                    --PLGuildBankClassic:debug("       Att [" .. tostring(a) .. "]: quality: " .. (self.mailData[i].attachments[a].quality or "na"))
-                    PLGuildBankClassic:debug("       Att [" .. tostring(a) .. "]: itemLink: " .. (self.mailData[i].attachments[a].itemLink or "na"))
-                else
-                    -- this attachment has been taken or removed
-                end
-            end
-        end
-        if self.mailData[i].isAHInvoice then
-            PLGuildBankClassic:debug("   AH Invoice: type:" .. (self.mailData[i].invoice.type or "na"))
-            PLGuildBankClassic:debug("   AH Invoice: player:" .. (self.mailData[i].invoice.player or "na"))
-            PLGuildBankClassic:debug("   AH Invoice: item:" .. (self.mailData[i].invoice.itemName or "na"))
-            PLGuildBankClassic:debug("   AH Invoice: bid:" .. tostring(self.mailData[i].invoice.bid or -1))
-            PLGuildBankClassic:debug("   AH Invoice: buyout:" .. tostring(self.mailData[i].invoice.buyout or -1))
-            PLGuildBankClassic:debug("   AH Invoice: deposit:" .. tostring(self.mailData[i].invoice.deposit or -1))
-            PLGuildBankClassic:debug("   AH Invoice: fee:" .. tostring(self.mailData[i].invoice.fee or -1))
-        end
+        --self:printMailData(self.mailData[i])
     end
 
     self.scanningMails = false
 end
+
+function PLGuildBankClassic:printMailData(mailData)
+    PLGuildBankClassic:debug("Mail info:")
+    PLGuildBankClassic:debug("   from: " .. (mailData.sender or "na") .. " subject: " .. (mailData.subject or "none") .. " returned: " .. (mailData.returned or "no"))
+    if mailData.money then
+        PLGuildBankClassic:debug("   sending money: " .. (mailData.money or "0"))
+    end
+    if mailData.hasItem then
+        PLGuildBankClassic:debug("   Nr of attachments: " .. tostring(#mailData.attachments))
+        for a=1, #mailData.attachments do
+            if mailData.attachments[a] then
+                PLGuildBankClassic:debug("       Att [" .. tostring(a) .. "]: name: " .. (mailData.attachments[a].name or "na"))
+                PLGuildBankClassic:debug("       Att [" .. tostring(a) .. "]: count: " .. (mailData.attachments[a].count or "na"))
+                --PLGuildBankClassic:debug("       Att [" .. tostring(a) .. "]: quality: " .. (mailData.attachments[a].quality or "na"))
+                PLGuildBankClassic:debug("       Att [" .. tostring(a) .. "]: itemLink: " .. (mailData.attachments[a].itemLink or "na"))
+            else
+                -- this attachment has been taken or removed
+            end
+        end
+    end
+    if mailData.isAHInvoice then
+        PLGuildBankClassic:debug("   AH Invoice: type:" .. (mailData.invoice.type or "na"))
+        PLGuildBankClassic:debug("   AH Invoice: player:" .. (mailData.invoice.player or "na"))
+        PLGuildBankClassic:debug("   AH Invoice: item:" .. (mailData.invoice.itemName or "na"))
+        PLGuildBankClassic:debug("   AH Invoice: bid:" .. tostring(mailData.invoice.bid or -1))
+        PLGuildBankClassic:debug("   AH Invoice: buyout:" .. tostring(mailData.invoice.buyout or -1))
+        PLGuildBankClassic:debug("   AH Invoice: deposit:" .. tostring(mailData.invoice.deposit or -1))
+        PLGuildBankClassic:debug("   AH Invoice: fee:" .. tostring(mailData.invoice.fee or -1))
+    end
+end
+
 
 function PLGuildBankClassic:LogPlayerGotItem(event, characterName, itemId, itemQuantity)
     PLGuildBankClassic:debug("LogPlayerGotItem: " .. characterName .. " itemId: " .. tostring(itemId) .. " quantity: " .. tostring(itemQuantity))
