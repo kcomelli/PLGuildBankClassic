@@ -172,8 +172,11 @@ function PLGuildBankClassic:UpdateVersionsInPublicNote()
 		local charIndex = PLGuildBankClassic:GetGuildRosterIndexOfBankChar()
 
 		if charIndex then
-			GuildRosterSetPublicNote(charIndex, noteString)
-			PLGuildBankClassic:debug("UpdateVersionsInPublicNote: Updated public note to: " .. noteString)
+			-- currently disabled
+			--GuildRosterSetPublicNote(charIndex, noteString)
+			-- PLGuildBankClassic:debug("UpdateVersionsInPublicNote: Updated public note to: " .. noteString)
+			
+			
 			--PLGuildBankClassic:debug("UpdateVersionsInPublicNote: Used versions: " .. tostring(configVersion) .. ", " .. tostring(inventoryVersion) .. ", " .. tostring(moneyVersion) .. ", " .. tostring(logVersion))
 		else
 			PLGuildBankClassic:debug("UpdateVersionsInPublicNote: could not get guild roster index")
